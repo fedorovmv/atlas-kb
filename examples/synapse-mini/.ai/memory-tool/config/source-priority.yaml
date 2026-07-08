@@ -1,0 +1,16 @@
+priority:
+  - current-code
+  - current-tests
+  - api-contracts
+  - reviewed-memory
+  - current-docs
+  - reviewed-specs
+  - new-specs
+  - historical-specs
+  - demo-modules
+rules:
+  - New specs describe proposed behavior, not current behavior.
+  - Historical specs may preserve rationale but must not override current code.
+  - Demo modules are examples, not production evidence.
+  - If code and memory conflict, write conflict instead of silently updating memory.
+  - If rationale is inferred, mark it as inferred.

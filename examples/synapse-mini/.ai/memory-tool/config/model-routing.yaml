@@ -1,0 +1,18 @@
+models:
+  extractor:
+    provider_model: qwen-3.6-27b
+    purpose: cheap structured extraction and classification
+  coder:
+    provider_model: qwen-coder-next
+    purpose: codebase search, code evidence, tests, markdown patches
+  reviewer:
+    provider_model: qwen-thinking-large
+    purpose: rationale, conflicts, design decisions, final review
+routing:
+  document_classification: extractor
+  fact_extraction: extractor
+  rationale_extraction: reviewer
+  code_evidence_check: coder
+  memory_patch_generation: coder
+  conflict_resolution: reviewer
+  final_review: reviewer

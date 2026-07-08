@@ -1,0 +1,21 @@
+modules:
+  agent-tool-registry:
+    title: Agent & Tool Registry
+    memory_file: .ai/memory/modules/agent-tool-registry.md
+    aliases:
+      - agent registry
+      - tool registry
+      - реестр агентских карточек
+    code_globs:
+      - internal/**/registry/**
+      - pkg/**/agentcard/**
+    test_globs:
+      - tests/**/agent-registry/**
+    responsibilities:
+      - discovery
+      - metadata storage
+      - access filtering
+    not_responsible_for:
+      - agent selection
+      - business orchestration
+      - runtime execution

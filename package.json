@@ -1,0 +1,45 @@
+{
+  "name": "repo-memory-opencode-kit",
+  "version": "0.1.0",
+  "description": "Markdown/frontmatter memory bank CLI, OpenCode skills, commands, agents and tools for coding-agent project memory.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "repo-memory": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "memory": "tsx src/cli.ts",
+    "memory:init": "tsx src/cli.ts init",
+    "memory:validate": "tsx src/cli.ts validate",
+    "memory:context": "tsx src/cli.ts context",
+    "check": "npm run build && npm run test"
+  },
+  "keywords": [
+    "opencode",
+    "memory-bank",
+    "frontmatter",
+    "coding-agent",
+    "markdown"
+  ],
+  "dependencies": {
+    "@opencode-ai/plugin": "^0.7.16",
+    "commander": "^12.1.0",
+    "fast-glob": "^3.3.3",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
