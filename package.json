@@ -25,7 +25,7 @@
     "markdown"
   ],
   "dependencies": {
-    "@opencode-ai/plugin": "^0.7.16",
+    "@opencode-ai/plugin": "^1.17.15",
     "commander": "^12.1.0",
     "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",
