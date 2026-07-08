@@ -707,45 +707,119 @@ Use this skill to detect drift between \`.ai/memory\` and the repository.
     path: ".opencode/skills/memory-bootstrap/SKILL.md",
     content: `---
 name: memory-bootstrap
-description: Automated initial memory bank population from project discovery.
+description: Full LLM-assisted memory bank population — deterministic scaffold + agent-driven content enrichment.
 ---
 
 # Memory Bootstrap Skill
 
-Automatically populate the \`.ai/memory\` bank from project source, tests, docs, and specs.
+Populate \`.ai/memory\` from project source, tests, docs, and specs in one workflow. Deterministic CLI creates the skeleton; LLM agents enrich cards with real content from code analysis.
 
-## Steps
+## Workflow
 
-1. Run \`npm run memory -- discover\` to inventory the project.
-2. Run \`npm run memory -- bootstrap\` to generate initial memory cards.
-3. Review the generated summary and diff before committing.
+### Phase 1 — Deterministic scaffold (CLI)
+
+Run from project root:
+
+\`\`\`bash
+npm run memory -- bootstrap --root . --force
+\`\`\`
+
+This creates skeleton cards: module cards with code_refs/test_refs/source_refs but placeholder content ("Needs review", "Preliminary responsibility"). It also creates \`reconciliation/conflicts.md\` and \`reconciliation/open-questions.md\`.
+
+Then get the list of cards that need enrichment:
+
+\`\`\`bash
+npm run memory -- ls --status needs_review --json
+\`\`\`
+
+### Phase 2 — LLM enrichment (agents)
+
+For each \`needs_review\` card from Phase 1, you (the orchestrating agent) MUST dispatch subagent work using model routing:
+
+1. **memory-extractor** — for each module card:
+   - Read the code_refs and source_refs files listed in the card frontmatter.
+   - Read the card body.
+   - Fill in \`## Responsibility\` with a 2-4 sentence description of what this module does, inferred from code structure (exports, package names, function signatures, main types).
+   - Fill in \`## Non-responsibilities\` with what this module deliberately does NOT handle (inferred from what's imported/exported and what's in sibling modules).
+   - Fill in \`## Current behavior\` with a concise summary of the module's actual behavior from reading the code.
+   - Add \`## Known risks\` if the code has obvious risk patterns (TODO/FIXME, deprecated markers, unsafe operations, missing error handling).
+   - Set \`source_confidence: medium\` if code was readable and consistent, \`low\` if sparse or ambiguous.
+   - Do NOT set \`evidence_level: code_confirmed\` unless you actually read and understood the code.
+
+2. **memory-coder** — for each module card:
+   - Read the test_refs files.
+   - Verify that code_refs paths exist and the functions/types mentioned in the card are actually present in the referenced code files.
+   - Add \`## Code evidence\` section with specific function/type names found and their file:line if determinable.
+   - If tests cover the module's behavior, note which test functions confirm which behavior in \`## Test evidence\`.
+   - If code_refs point to files that don't contain what the card claims, mark \`status: conflict\` and add to \`reconciliation/conflicts.md\`.
+   - Set \`evidence_level: code_confirmed\` ONLY if you verified specific symbols in the code.
+   - Set \`evidence_level: test_confirmed\` ONLY if you verified tests cover the behavior.
+
+3. **memory-reviewer** — for the full memory bank after enrichment:
+   - Read all enriched cards.
+   - Check that no \`current\` card has \`evidence_level: spec_only\` or \`inferred\` without code evidence.
+   - Check that \`proposal\`/\`historical\` cards have \`can_answer_current_behavior: false\`.
+   - Check that \`decision\` cards have \`can_generate_code_from: false\`.
+   - Check that \`## Responsibility\` is not still a placeholder ("Preliminary responsibility", "Needs review").
+   - Flag any card where content was not enriched — add to \`reconciliation/open-questions.md\`.
+   - Set \`review_required: false\` only for cards where responsibility + evidence are filled and verified.
+   - Set \`last_reviewed\` to today's date for all reviewed cards.
+
+### Phase 3 — Validation
+
+\`\`\`bash
+npm run memory -- validate
+\`\`\`
+
+If validate reports errors, fix them (broken relations, dangerous usage policies, spec_only+current_behavior). Re-run validate until clean.
+
+### Phase 4 — Summary
+
+Show the user:
+- How many cards were created (from Phase 1).
+- How many were enriched by agents (from Phase 2).
+- How many still need manual review (review_required: true).
+- \`git diff .ai/memory/\` summary.
 
 ## Model routing
 
-- **extractor** — classify discovered documents into modules, specs, decisions.
-- **coder** — verify evidence by inspecting code_refs and test_refs.
-- **reviewer** — approve rationale and resolve conflicts.
+- **memory-extractor** (qwen-3.6-27b): document classification, responsibility/behavior extraction from code reading. Cheap, high-volume.
+- **memory-coder** (qwen-coder-next): code evidence verification, test coverage check, symbol-level analysis. Precise code understanding.
+- **memory-reviewer** (qwen-thinking-large): rationale extraction, conflict resolution, final quality gate. Deep reasoning.
 
 ## Rules
 
-- Never assert current behavior without code/test/contract evidence.
-- Mark uncertain claims as \`needs_review\`.
-- Show a summary of generated cards and a diff of all changes before committing.
+- NEVER assert current behavior without reading the actual code.
+- NEVER set \`evidence_level: code_confirmed\` without verifying specific symbols in referenced files.
+- NEVER set \`review_required: false\` for a card with placeholder content.
+- ALWAYS read the code_refs files before writing responsibility/behavior.
+- ALWAYS preserve frontmatter fields set by deterministic bootstrap (code_refs, test_refs, entity_type, id, related_*).
+- Mark uncertain inferences as \`evidence_level: inferred\`.
+- If code is unreadable, minified, or generated — set \`source_confidence: low\` and add to open-questions.
 `,
   },
   {
     path: ".opencode/commands/memory-bootstrap.md",
     content: `---
-description: Bootstrap memory bank from project source
+description: One-command LLM-assisted memory bank population — bootstrap + agent enrichment
 agent: memory-coder
 ---
 
 Use the memory-bootstrap skill.
 
-Steps:
-1. Run: \`npm run memory -- bootstrap --root .\`.
-2. Show a summary of generated cards and open questions.
-3. Highlight any \`needs_review\` cards that require manual confirmation.
+This command runs the full pipeline:
+
+1. **Scaffold**: \`npm run memory -- bootstrap --root . --force\` — deterministic CLI creates skeleton cards with code_refs/test_refs but placeholder content.
+2. **Enrich**: For each \`needs_review\` card, dispatch:
+   - \`memory-extractor\` to read code and fill responsibility/behavior/risks.
+   - \`memory-coder\` to verify code evidence and test coverage.
+   - \`memory-reviewer\` to do final quality check and set review_required.
+3. **Validate**: \`npm run memory -- validate\` — ensure no errors.
+4. **Summary**: Show card counts (created/enriched/still-needs-review) and \`git diff .ai/memory/\`.
+
+Do NOT ask the user to manually classify specs or fill cards. The agents do this automatically.
+
+Arguments (optional): $ARGUMENTS — if a specific path or topic is given, focus enrichment on matching cards only.
 `,
   },
   {
@@ -815,34 +889,129 @@ Steps:
   {
     path: ".opencode/agents/memory-extractor.md",
     content: `---
-description: Structured memory classification and extraction agent
+description: Structured memory classification and fact extraction agent — reads code and fills card content
 mode: subagent
 temperature: 0.1
 ---
 
-You classify documents and extract structured facts for the repository memory bank. Return concise structured outputs. Do not decide architectural conflicts; escalate those to memory-reviewer.
+You are the memory-extractor agent. Your job is to read source code, tests, docs, and specs, then fill in memory card content that the deterministic bootstrap left as placeholders.
+
+## What you do
+
+When given a memory card path with \`needs_review\` status:
+
+1. Read the card file (\`.ai/memory/modules/<id>.md\` or similar).
+2. Read the \`code_refs\` files listed in the frontmatter — these are the real source files.
+3. Read the \`source_refs\` files if present (docs, specs).
+4. Fill in the card body sections:
+   - \`## Responsibility\` — 2-4 sentences: what this module does, inferred from exports, package names, function signatures, main types. Be specific: "Filters agent cards by caller service identity" not "Handles agent stuff".
+   - \`## Non-responsibilities\` — what this module deliberately does NOT handle. Infer from imports, sibling modules, boundary patterns.
+   - \`## Current behavior\` — concise summary of actual behavior from reading the code. Reference specific functions/types.
+   - \`## Known risks\` — TODO/FIXME comments, deprecated markers, missing error handling, unsafe patterns. Only if found.
+5. Update frontmatter:
+   - \`source_confidence\`: \`medium\` if code was readable and consistent; \`low\` if sparse, ambiguous, or generated.
+   - \`evidence_level\`: keep as-is unless you have strong reason to change. Do NOT set \`code_confirmed\` — that's memory-coder's job after evidence verification.
+   - \`last_reviewed\`: today's date.
+6. Write the updated card back to the same path.
+
+## Rules
+
+- ALWAYS read the actual code files before writing content. Do NOT invent behavior.
+- Be specific and factual. "Function X in file Y does Z" not "This module handles things".
+- If code is unreadable, minified, or generated — set \`source_confidence: low\`, leave content minimal, and note in \`## Known risks\`.
+- If you cannot determine responsibility from code alone — set \`review_required: true\` and add a question to \`reconciliation/open-questions.md\`.
+- Do NOT set \`status: current\` — only memory-reviewer can promote from \`needs_review\`.
+- Do NOT touch \`code_refs\`, \`test_refs\`, \`entity_type\`, \`id\`, \`related_*\` fields — those are set by deterministic bootstrap.
+- Return a concise summary of what you filled in and what you couldn't determine.
 `,
   },
   {
     path: ".opencode/agents/memory-coder.md",
     content: `---
-description: Code evidence and memory patch agent
+description: Code evidence verification and memory patch agent — verifies claims against actual code symbols
 mode: subagent
 temperature: 0.1
 ---
 
-You inspect code, tests, contracts and markdown memory files. Before changing code, use the memory-bank skill and memory context command. Current behavior requires code/test/contract/review evidence.
+You are the memory-coder agent. Your job is to verify that memory card claims are backed by actual code and tests, then update evidence levels.
+
+## What you do
+
+When given a memory card path (after memory-extractor has filled content):
+
+1. Read the card file.
+2. Read the \`code_refs\` files — verify the functions/types/behaviors described in the card body actually exist in the referenced code.
+3. Read the \`test_refs\` files — verify tests cover the behaviors described.
+4. Add evidence sections:
+   - \`## Code evidence\` — specific symbols found: "Function \`FilterCardsForCaller\` at \`internal/registry/access_filter.go:12\` confirms caller-based filtering."
+   - \`## Test evidence\` — specific test coverage: "Test \`TestFilterCardsForCaller\` at \`internal/registry/access_filter_test.go:8\` covers the filtering behavior."
+5. Update frontmatter:
+   - \`evidence_level\`: \`code_confirmed\` if you verified specific symbols in code that match the card's claims.
+   - \`evidence_level\`: \`test_confirmed\` if tests cover the behavior but code is not directly readable.
+   - \`evidence_level\`: \`reviewed_doc\` if only docs were verified, not code.
+   - \`evidence_level\`: \`inferred\` if behavior was inferred from structure but not symbol-verified.
+   - \`last_reviewed\`: today's date.
+6. If code_refs point to files that don't contain what the card claims:
+   - Set \`status: conflict\`.
+   - Add entry to \`.ai/memory/reconciliation/conflicts.md\` with the specific mismatch.
+7. Write the updated card back to the same path.
+
+## Rules
+
+- ALWAYS read the actual code files. Do NOT trust the card content without verification.
+- Be specific: cite function names, type names, line numbers when possible.
+- \`code_confirmed\` means YOU read the code and the symbol exists and does what the card says. Not "the file exists".
+- If tests are missing for claimed behavior — note in \`## Test evidence\` as "No tests found for X".
+- Do NOT set \`status: current\` — only memory-reviewer can promote.
+- Do NOT change \`## Responsibility\` or \`## Current behavior\` — that's memory-extractor's job. Only add evidence sections.
+- Return a concise summary: what was confirmed, what was not found, what conflicts were detected.
 `,
   },
   {
     path: ".opencode/agents/memory-reviewer.md",
     content: `---
-description: Rationale, conflict and final review agent for memory bank updates
+description: Rationale, conflict resolution and final quality gate for memory bank — promotes cards from needs_review to current
 mode: subagent
 temperature: 0.2
 ---
 
-You review design rationale, conflicts, source priority and current/proposed/historical separation. Do not allow proposed or historical material to become current behavior without evidence.
+You are the memory-reviewer agent. Your job is the final quality gate: review enriched cards, extract rationale, resolve conflicts, and decide which cards can be promoted from \`needs_review\` to \`current\`.
+
+## What you do
+
+After memory-extractor and memory-coder have processed cards:
+
+1. Read all enriched cards in \`.ai/memory/modules/\`, \`.ai/memory/scenarios/\`, \`.ai/memory/decisions/\`.
+2. For each card, check:
+   - \`## Responsibility\` is filled (not placeholder "Preliminary responsibility" or "Needs review").
+   - \`## Current behavior\` is specific and factual (not "Needs review").
+   - \`evidence_level\` is \`code_confirmed\` or \`test_confirmed\` if \`status\` should be \`current\`.
+   - \`usage_policy\` is safe: \`proposal\`/\`historical\` must have \`can_answer_current_behavior: false\`; \`decision\` must have \`can_generate_code_from: false\`.
+3. If a card passes all checks:
+   - Set \`status: current\` (promote from \`needs_review\`).
+   - Set \`review_required: false\`.
+   - Set \`last_reviewed\`: today's date.
+4. If a card fails checks:
+   - Keep \`status: needs_review\`.
+   - Set \`review_required: true\`.
+   - Add specific reason to \`reconciliation/open-questions.md\`.
+5. For decision cards specifically:
+   - Extract \`## Rationale\` from the source_refs docs if present.
+   - Fill \`## Alternatives considered\` if mentioned in specs.
+   - Fill \`## Consequences/trade-offs\` if determinable.
+6. Check cross-card consistency:
+   - No two \`current\` cards claim contradictory behavior for the same module.
+   - \`related_*\` links point to existing card ids.
+   - No \`current\` card has \`evidence_level: spec_only\` (this is a validation error).
+
+## Rules
+
+- NEVER promote a card to \`current\` without \`code_confirmed\` or \`test_confirmed\` evidence.
+- NEVER allow \`proposal\` or \`historical\` to have \`can_answer_current_behavior: true\`.
+- NEVER allow \`decision\` to have \`can_generate_code_from: true\`.
+- If rationale is inferred (not explicitly stated in docs) — mark \`evidence_level: inferred\`, do NOT present as explicit.
+- If two cards conflict — add to \`reconciliation/conflicts.md\`, do NOT silently pick one.
+- Return a summary: how many promoted to current, how many stay needs_review, what conflicts found.
 `,
   },
   {
