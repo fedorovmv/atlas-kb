@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createTempProject } from "./helpers.js";
+import { createTempProject, loadSynapseMini } from "./helpers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -43,5 +43,38 @@ describe("CLI commands", () => {
     expect(output).toContain("Memory context pack");
     expect(output).toContain("Agent & Tool Registry");
     expect(output).toContain("Related code paths");
+  });
+
+  it("discovers project files", () => {
+    const root = loadSynapseMini();
+    const output = runCli(root, ["discover", "--json"]);
+    const report = JSON.parse(output);
+    expect(report.files.length).toBeGreaterThan(0);
+    expect(report.candidateModules.length).toBeGreaterThan(0);
+    expect(report.files.some((f: { kind: string }) => f.kind === "code")).toBe(true);
+  });
+
+  it("bootstraps memory bank", async () => {
+    const root = await createTempProject();
+    const output = runCli(root, ["bootstrap", "--force"]);
+    expect(output).toContain("Written");
+  });
+
+  it("ingests a spec", () => {
+    const root = loadSynapseMini();
+    const output = runCli(root, ["ingest-spec", "specs/legacy/2025-agent-routing.md", "--force", "--json"]);
+    const results = JSON.parse(output);
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].actuality).toBe("historical_context");
+  });
+
+  it("reconciles memory", async () => {
+    const root = await createTempProject();
+    const output = runCli(root, ["reconcile", "--json"]);
+    const report = JSON.parse(output);
+    expect(report).toHaveProperty("staleRefs");
+    expect(report).toHaveProperty("weakCurrentClaims");
+    expect(report).toHaveProperty("realizableProposals");
+    expect(report).toHaveProperty("orphanModules");
   });
 });

@@ -25,3 +25,7 @@ export async function createTempProject() {
 
   return root;
 }
+
+export function loadSynapseMini(): string {
+  return path.resolve(__dirname, "..", "examples", "synapse-mini");
+}

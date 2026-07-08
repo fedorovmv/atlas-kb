@@ -1,7 +1,32 @@
+import path from "node:path";
+import { readFile } from "node:fs/promises";
 import type { ContextPack, MemoryCard, RepoMemoryOptions } from "./types.js";
 import { loadMemoryCards } from "./loadMemory.js";
 import { getDirectRelatedIds } from "./relations.js";
 import { scoreCard } from "./score.js";
+import { resolveMemoryRoot, resolveRoot } from "./paths.js";
+import { SourcePrioritySchema } from "../schemas/sourcePriority.js";
+import * as yaml from "js-yaml";
+
+const DEFAULT_PRIORITY = [
+  "current-code",
+  "current-tests",
+  "api-contracts",
+  "reviewed-memory",
+  "current-docs",
+  "reviewed-specs",
+  "new-specs",
+  "historical-specs",
+  "demo-modules",
+];
+
+const DEFAULT_RULES = [
+  "New specs describe proposed behavior, not current behavior.",
+  "Historical specs may preserve rationale but must not override current code.",
+  "Demo modules are examples, not production evidence.",
+  "If code and memory conflict, write conflict instead of silently updating memory.",
+  "If rationale is inferred, mark it as inferred.",
+];
 
 function unique<T>(items: T[]) {
   return [...new Set(items)];
@@ -16,9 +41,46 @@ function renderCardLine(card: MemoryCard) {
   return `- \`${card.relativePath}\` — ${card.meta.title} [${card.meta.entity_type}, ${card.meta.status}, evidence=${card.meta.evidence_level}]`;
 }
 
+type SourcePriority = {
+  priority: string[];
+  rules: string[];
+};
+
+export async function loadSourcePriority(options: RepoMemoryOptions): Promise<SourcePriority> {
+  try {
+    const root = resolveRoot(options);
+    const configPath = path.join(root, ".ai", "memory-tool", "config", "source-priority.yaml");
+    const raw = await readFile(configPath, "utf8");
+    const parsed = yaml.load(raw) as Record<string, unknown>;
+    const validated = SourcePrioritySchema.parse(parsed);
+    return { priority: validated.priority, rules: validated.rules };
+  } catch {
+    return { priority: DEFAULT_PRIORITY, rules: DEFAULT_RULES };
+  }
+}
+
+async function loadReconciliationFile(memoryRoot: string, filename: string): Promise<string | null> {
+  try {
+    const filePath = path.join(memoryRoot, "reconciliation", filename);
+    const raw = await readFile(filePath, "utf8");
+    // Strip frontmatter if present
+    const withoutFrontmatter = raw.replace(/^---\n[\s\S]*?\n---\n/, "");
+    const body = withoutFrontmatter.trim();
+    return body.length > 0 ? body : null;
+  } catch {
+    return null;
+  }
+}
+
+function renderUsagePolicyLine(card: MemoryCard): string {
+  const p = card.meta.usage_policy;
+  return `- \`${card.meta.id}\`: current_behavior=${p.can_answer_current_behavior}, code_gen=${p.can_generate_code_from}, rationale=${p.can_use_as_rationale}, example=${p.can_use_as_example}, code_check=${p.requires_code_check_before_change}, warning=${p.requires_warning}`;
+}
+
 export async function buildMemoryContext(query: string, options: RepoMemoryOptions & { limit?: number } = {}): Promise<ContextPack> {
   const limit = options.limit ?? 8;
   const cards = await loadMemoryCards(options);
+  const sourcePriority = await loadSourcePriority(options);
   const scored = cards
     .map((card) => ({ card, score: scoreCard(card, query) }))
     .filter((item) => item.score > 0)
@@ -37,6 +99,37 @@ export async function buildMemoryContext(query: string, options: RepoMemoryOptio
   const codeRefs = unique(all.flatMap((card) => card.meta.code_refs.map((ref) => ref.path))).sort();
   const testRefs = unique(all.flatMap((card) => card.meta.test_refs.map((ref) => ref.path))).sort();
 
+  // Load reconciliation files
+  const memoryRoot = resolveMemoryRoot(options);
+  const conflictsContent = await loadReconciliationFile(memoryRoot, "conflicts.md");
+  const openQuestionsContent = await loadReconciliationFile(memoryRoot, "open-questions.md");
+
+  const reconciliationSection: string[] = [];
+  if (conflictsContent || openQuestionsContent) {
+    reconciliationSection.push("## Conflicts and open questions");
+    if (conflictsContent) {
+      reconciliationSection.push("### Conflicts");
+      reconciliationSection.push(compactExcerpt(conflictsContent, 500));
+    }
+    if (openQuestionsContent) {
+      reconciliationSection.push("");
+      reconciliationSection.push("### Open questions");
+      reconciliationSection.push(compactExcerpt(openQuestionsContent, 500));
+    }
+  } else {
+    reconciliationSection.push("## Conflicts and open questions");
+    reconciliationSection.push("- No open conflicts or questions.");
+  }
+
+  // Build usage policy section
+  const usagePolicySection: string[] = [];
+  if (selected.length > 0) {
+    usagePolicySection.push("## Usage policy");
+    usagePolicySection.push(...selected.map(renderUsagePolicyLine));
+  }
+
+  const priorityRules = sourcePriority.rules.length > 0 ? sourcePriority.rules : DEFAULT_RULES;
+
   const markdown = [
     `# Memory context pack`,
     ``,
@@ -54,12 +147,15 @@ export async function buildMemoryContext(query: string, options: RepoMemoryOptio
     `## Related test paths`,
     ...(testRefs.length ? testRefs.map((ref) => `- \`${ref}\``) : ["- No test refs found."]),
     ``,
+    `## Source priority`,
+    ...sourcePriority.priority.map((p, i) => `${i + 1}. ${p}`),
+    ``,
     `## Source rules`,
-    `- Prefer current code and tests over memory.`,
-    `- Treat proposals as proposed behavior, not current behavior.`,
-    `- Treat historical cards as rationale/context, not implementation guidance.`,
-    `- Do not implement from rationale alone.`,
-    `- If sources conflict, record the conflict.`,
+    ...priorityRules.map((rule) => `- ${rule}`),
+    ``,
+    ...usagePolicySection,
+    ``,
+    ...reconciliationSection,
     ``,
     `## Compact excerpts`,
     ...selected.flatMap((card) => [``, `### ${card.meta.title} — \`${card.relativePath}\``, compactExcerpt(card.body)]),

@@ -88,6 +88,10 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
       warnings.push(`${card.relativePath}: current file still has review_required=true`);
     }
 
+    if (m.evidence_level === "spec_only" && m.knowledge_types.includes("current_behavior")) {
+      errors.push(`${card.relativePath}: spec_only evidence cannot claim current_behavior without code/test/contract evidence`);
+    }
+
     for (const field of RELATION_FIELDS) {
       for (const id of m[field] ?? []) {
         if (!allIds.has(id)) errors.push(`${card.relativePath}: broken relation ${field}: ${id}`);

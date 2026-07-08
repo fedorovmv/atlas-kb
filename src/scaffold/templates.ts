@@ -704,6 +704,51 @@ Use this skill to detect drift between \`.ai/memory\` and the repository.
 `,
   },
   {
+    path: ".opencode/skills/memory-bootstrap/SKILL.md",
+    content: `---
+name: memory-bootstrap
+description: Automated initial memory bank population from project discovery.
+---
+
+# Memory Bootstrap Skill
+
+Automatically populate the \`.ai/memory\` bank from project source, tests, docs, and specs.
+
+## Steps
+
+1. Run \`npm run memory -- discover\` to inventory the project.
+2. Run \`npm run memory -- bootstrap\` to generate initial memory cards.
+3. Review the generated summary and diff before committing.
+
+## Model routing
+
+- **extractor** — classify discovered documents into modules, specs, decisions.
+- **coder** — verify evidence by inspecting code_refs and test_refs.
+- **reviewer** — approve rationale and resolve conflicts.
+
+## Rules
+
+- Never assert current behavior without code/test/contract evidence.
+- Mark uncertain claims as \`needs_review\`.
+- Show a summary of generated cards and a diff of all changes before committing.
+`,
+  },
+  {
+    path: ".opencode/commands/memory-bootstrap.md",
+    content: `---
+description: Bootstrap memory bank from project source
+agent: memory-coder
+---
+
+Use the memory-bootstrap skill.
+
+Steps:
+1. Run: \`npm run memory -- bootstrap --root .\`.
+2. Show a summary of generated cards and open questions.
+3. Highlight any \`needs_review\` cards that require manual confirmation.
+`,
+  },
+  {
     path: ".opencode/commands/memory-context.md",
     content: `---
 description: Build a compact memory context pack for a task
@@ -847,6 +892,32 @@ export const related = tool({
   },
   async execute(args) {
     return runMemory(["related", args.id, "--json"]);
+  },
+});
+
+export const discover = tool({
+  description: "Discover project files and candidate modules.",
+  args: {
+    root: tool.schema.string().optional().describe("Repository root path"),
+  },
+  async execute(args) {
+    return runMemory(["discover", ...(args.root ? ["--root", args.root] : [])]);
+  },
+});
+
+export const bootstrap = tool({
+  description: "Bootstrap memory bank from project discovery.",
+  args: {
+    root: tool.schema.string().optional().describe("Repository root path"),
+    force: tool.schema.boolean().optional().describe("Overwrite existing memory cards"),
+    dryRun: tool.schema.boolean().optional().describe("Preview without writing"),
+  },
+  async execute(args) {
+    const flags: string[] = [];
+    if (args.root) flags.push("--root", args.root);
+    if (args.force) flags.push("--force");
+    if (args.dryRun) flags.push("--dry-run");
+    return runMemory(["bootstrap", ...flags]);
   },
 });
 `,

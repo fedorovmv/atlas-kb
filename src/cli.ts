@@ -6,6 +6,10 @@ import { relatedMemory } from "./commands/related.js";
 import { contextMemory } from "./commands/context.js";
 import { validateMemoryCommand } from "./commands/validate.js";
 import { initMemory } from "./commands/init.js";
+import { discoverMemoryCommand } from "./commands/discover.js";
+import { bootstrapMemoryCommand } from "./commands/bootstrap.js";
+import { ingestSpecCommand } from "./commands/ingestSpec.js";
+import { reconcileMemoryCommand } from "./commands/reconcile.js";
 
 const program = new Command();
 
@@ -75,6 +79,47 @@ program
   .action(async (opts) => {
     const root = program.opts().root;
     await validateMemoryCommand({ root, json: opts.json, strictWarnings: opts.strictWarnings });
+  });
+
+program
+  .command("discover")
+  .description("Discover project files and candidate modules")
+  .option("--json", "print JSON", false)
+  .action(async (opts) => {
+    const root = program.opts().root;
+    await discoverMemoryCommand({ root, json: opts.json });
+  });
+
+program
+  .command("bootstrap")
+  .description("Bootstrap memory bank from project discovery")
+  .option("--force", "overwrite existing cards", false)
+  .option("--dry-run", "preview without writing", false)
+  .option("--json", "print JSON", false)
+  .action(async (opts) => {
+    const root = program.opts().root;
+    await bootstrapMemoryCommand({ root, force: opts.force, dryRun: opts.dryRun, json: opts.json });
+  });
+
+program
+  .command("ingest-spec")
+  .description("Process a spec into proposal/historical/conflict memory")
+  .argument("<spec>", "spec path or glob")
+  .option("--force", "overwrite existing cards", false)
+  .option("--dry-run", "preview without writing", false)
+  .option("--json", "print JSON", false)
+  .action(async (spec, opts) => {
+    const root = program.opts().root;
+    await ingestSpecCommand(spec, { root, force: opts.force, dryRun: opts.dryRun, json: opts.json });
+  });
+
+program
+  .command("reconcile")
+  .description("Report stale or mismatched memory")
+  .option("--json", "print JSON", false)
+  .action(async (opts) => {
+    const root = program.opts().root;
+    await reconcileMemoryCommand({ root, json: opts.json });
   });
 
 try {
