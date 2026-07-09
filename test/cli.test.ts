@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { writeFile, readFile, rm, mkdtemp, mkdir } from "node:fs/promises";
+import { writeFile, readFile, rm, mkdtemp, mkdir, copyFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { createTempProject, loadSynapseMini } from "./helpers.js";
 import { initMemory } from "../src/commands/init.js";
+import { ingestSpecCommand } from "../src/commands/ingestSpec.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -63,12 +64,28 @@ describe("CLI commands", () => {
     expect(output).toContain("Written");
   });
 
-  it("ingests a spec", () => {
-    const root = loadSynapseMini();
-    const output = runCli(root, ["ingest-spec", "specs/legacy/2025-agent-routing.md", "--force", "--json"]);
+  it("ingests a spec", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "cli-ingest-"));
+    // Copy synapse-mini project files (without .ai/memory) into temp
+    const src = path.resolve(repoRoot, "examples/synapse-mini");
+    for (const dir of ["internal/registry", "internal/mcp", "docs", "specs/legacy", "examples/demo-agent", "pkg/agentcard"]) {
+      await mkdir(path.join(dest, dir), { recursive: true });
+    }
+    await copyFile(path.join(src, "internal/registry/access_filter.go"), path.join(dest, "internal/registry/access_filter.go"));
+    await copyFile(path.join(src, "internal/registry/access_filter_test.go"), path.join(dest, "internal/registry/access_filter_test.go"));
+    await copyFile(path.join(src, "internal/mcp/gateway.go"), path.join(dest, "internal/mcp/gateway.go"));
+    await copyFile(path.join(src, "docs/agent-registry.md"), path.join(dest, "docs/agent-registry.md"));
+    await copyFile(path.join(src, "specs/2027-agent-tool-registry.md"), path.join(dest, "specs/2027-agent-tool-registry.md"));
+    await copyFile(path.join(src, "specs/legacy/2025-agent-routing.md"), path.join(dest, "specs/legacy/2025-agent-routing.md"));
+    await copyFile(path.join(src, "examples/demo-agent/main.go"), path.join(dest, "examples/demo-agent/main.go"));
+    await copyFile(path.join(src, "pkg/agentcard/card.go"), path.join(dest, "pkg/agentcard/card.go"));
+
+    const output = runCli(dest, ["ingest-spec", "specs/legacy/2025-agent-routing.md", "--force", "--json"]);
     const results = JSON.parse(output);
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].actuality).toBe("historical_context");
+
+    await rm(dest, { recursive: true, force: true });
   });
 
   it("reconciles memory", async () => {
@@ -146,5 +163,53 @@ describe("CLI commands", () => {
       dirExists = false;
     }
     expect(dirExists).toBe(false);
+  });
+
+  it("reconcile --fix updates claim evidence via CLI", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "repo-memory-fix-claim-"));
+    await initMemory({ root });
+
+    // Create Go + test files
+    await mkdir(path.join(root, "internal/registry"), { recursive: true });
+    await writeFile(
+      path.join(root, "internal/registry/access_filter.go"),
+      "package registry\n\nfunc FilterCardsForCaller(caller string) {}\n",
+      "utf8",
+    );
+    await mkdir(path.join(root, "tests/agent-registry"), { recursive: true });
+    await writeFile(
+      path.join(root, "tests/agent-registry/access_filter_test.go"),
+      "package registry_test\n\nfunc TestFilterCardsForCaller() {}\n",
+      "utf8",
+    );
+
+    // Create and ingest spec
+    await mkdir(path.join(root, "specs"), { recursive: true });
+    await writeFile(
+      path.join(root, "specs/access-filter.md"),
+      `# Access Filter Spec
+
+Status: accepted
+
+## Requirements
+
+- Registry filters available agent cards by caller service identity
+- The filtering logic lives in \`internal/registry/access_filter.go\`
+`,
+      "utf8",
+    );
+    await ingestSpecCommand("specs/access-filter.md", { root, force: true });
+
+    // Delete the Go file so evidence changes
+    await rm(path.join(root, "internal/registry/access_filter.go"));
+    await rm(path.join(root, "tests/agent-registry/access_filter_test.go"));
+    await rm(path.join(root, "tests/agent-registry"), { recursive: true });
+
+    const output = runCli(root, ["reconcile", "--fix", "--json"]);
+    const report = JSON.parse(output);
+
+    // appliedFixes should have claimsUpdated
+    expect(report.appliedFixes).toBeDefined();
+    expect(report.appliedFixes.claimsUpdated.length).toBeGreaterThan(0);
   });
 });

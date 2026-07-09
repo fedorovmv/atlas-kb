@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { bootstrapMemory } from "../src/core/bootstrapMemory.js";
 import { reconcileMemory } from "../src/core/reconcile.js";
+import { initMemory } from "../src/commands/init.js";
+import { ingestSpecCommand } from "../src/commands/ingestSpec.js";
 
 describe("reconcile", () => {
   it("reports stale references after file deletion", async () => {
@@ -113,6 +115,75 @@ Recently reviewed proposal.
     const report = await reconcileMemory({ root: dest });
     expect(report.staleProposals).toBeDefined();
     expect(report.staleProposals!.length).toBe(0);
+    await rm(dest, { recursive: true, force: true });
+  });
+
+  it("reconcile detects changed claim evidence after code deletion", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-claim-"));
+    await initMemory({ root: dest });
+
+    // Create a Go source file
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "internal/registry/access_filter.go"),
+      "package registry\n\nfunc FilterCardsForCaller(caller string) {}\n",
+      "utf8",
+    );
+    // Create a test file to ensure confirmed_by_code status
+    await mkdir(path.join(dest, "tests/agent-registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "tests/agent-registry/access_filter_test.go"),
+      "package registry_test\n\nfunc TestFilterCardsForCaller() {}\n",
+      "utf8",
+    );
+
+    // Create a spec that will generate claims referencing the filter
+    await mkdir(path.join(dest, "specs"), { recursive: true });
+    await writeFile(
+      path.join(dest, "specs/access-filter.md"),
+      `# Access Filter Spec
+
+Status: accepted
+
+## Requirements
+
+- Registry filters available agent cards by caller service identity
+- The filtering logic lives in \`internal/registry/access_filter.go\`
+`,
+      "utf8",
+    );
+
+    // Ingest the spec — creates a card with claims
+    await ingestSpecCommand("specs/access-filter.md", { root: dest, force: true });
+
+    // Verify claims were created with confirmed status
+    {
+      const report = await reconcileMemory({ root: dest });
+      const changed = report.changedClaimEvidence ?? [];
+      // Before deletion, claims should match — no changes expected
+      expect(changed).toEqual([]);
+    }
+
+    // Delete the Go file — evidence should now show not_found
+    await rm(path.join(dest, "internal/registry/access_filter.go"));
+    await rm(path.join(dest, "tests/agent-registry/access_filter_test.go"));
+    await rm(path.join(dest, "tests/agent-registry"), { recursive: true });
+
+    const report = await reconcileMemory({ root: dest });
+    const changed = report.changedClaimEvidence ?? [];
+    expect(changed.length).toBeGreaterThan(0);
+    const firstChange = changed[0];
+    expect(firstChange.oldStatus).toEqual("confirmed_by_code");
+    expect(firstChange.newStatus).toEqual("not_found");
+
+    await rm(dest, { recursive: true, force: true });
+  });
+
+  it("reconcile skips cards without claims", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-no-claims-"));
+    await bootstrapMemory({ root: dest });
+    const report = await reconcileMemory({ root: dest });
+    expect(report.changedClaimEvidence).toEqual([]);
     await rm(dest, { recursive: true, force: true });
   });
 });

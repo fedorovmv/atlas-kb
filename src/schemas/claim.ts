@@ -41,3 +41,10 @@ export const EvidenceSchema = z.object({
 
 export type Claim = z.infer<typeof ClaimSchema>;
 export type Evidence = z.infer<typeof EvidenceSchema>;
+
+export const StoredClaimSchema = ClaimSchema.extend({
+  evidence: EvidenceSchema.optional(),
+  last_checked: z.string().optional(),
+});
+
+export type StoredClaim = z.infer<typeof StoredClaimSchema>;

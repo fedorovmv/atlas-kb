@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { loadSynapseMini } from "./helpers.js";
+import { loadSynapseMini, createTempProject } from "./helpers.js";
 import { discoverProject } from "../src/core/discoverProject.js";
 import { classifySpecActuality, extractClaims, checkEvidence } from "../src/core/specClassification.js";
-import { readFile } from "node:fs/promises";
+import { ingestSpecCommand } from "../src/commands/ingestSpec.js";
+import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import yamll from "js-yaml";
 
 describe("spec classification and claim extraction", () => {
   it("extracts claims from 2027 spec", async () => {
@@ -90,5 +92,97 @@ describe("spec classification and claim extraction", () => {
   it("empty spec extracts no claims", () => {
     const claims = extractClaims("", "empty.md");
     expect(claims).toEqual([]);
+  });
+});
+
+describe("ingestSpecCommand stores claims with evidence in card frontmatter", () => {
+  async function extractFrontmatter(filePath: string): Promise<Record<string, any>> {
+    const content = await readFile(filePath, "utf8");
+    const match = content.match(/^---\n([\s\S]*?)\n---\n/);
+    expect(match).not.toBeNull();
+    const parsed = yamll.load(match![1]) as Record<string, any>;
+    return parsed;
+  }
+
+  it("confirmed spec creates card with stored claims + evidence", async () => {
+    const root = await createTempProject();
+    const memoryRoot = path.join(root, ".ai/memory");
+
+    // Write a spec with "accepted" keyword + a claim matching existing code
+    const spec = `# Agent Registry Filter Spec
+
+Status: accepted
+Status: implemented
+
+## Requirements
+
+- The registry MUST filter cards by caller service identity
+`;
+    const specDir = path.join(root, "specs");
+    await mkdir(specDir, { recursive: true });
+    await writeFile(path.join(specDir, "agent-registry-filter.md"), spec, "utf8");
+
+    await ingestSpecCommand("specs/*.md", {
+      root,
+      memoryRoot,
+      force: true,
+    });
+
+    // Find the created card — it should land in proposals/ since it's "accepted + implemented"
+    const proposalsDir = path.join(memoryRoot, "proposals");
+    const fileNames = await readdir(proposalsDir);
+    const cardFile = fileNames.find((f) => f.endsWith(".md") && f !== ".gitkeep");
+    expect(cardFile).toBeDefined();
+
+    const meta = await extractFrontmatter(path.join(proposalsDir, cardFile!));
+    expect(meta.claims).toBeDefined();
+    expect(Array.isArray(meta.claims)).toBe(true);
+    expect(meta.claims.length).toBeGreaterThan(0);
+
+    // At least one claim should have evidence with confirmed status
+    const confirmedClaim = meta.claims.find((c: any) => c.evidence?.status === "confirmed_by_code");
+    expect(confirmedClaim).toBeDefined();
+    expect(confirmedClaim.last_checked).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("proposed spec creates card with claims where evidence is not_found", async () => {
+    const root = await createTempProject();
+    const memoryRoot = path.join(root, ".ai/memory");
+
+    // Write a proposed spec with a claim that has NO matching code
+    const spec = `# Quantum Entanglement Protocol
+
+Status: draft
+
+## Requirements
+
+- The system MUST support quantum entanglement channels
+`;
+    const specDir = path.join(root, "specs");
+    await mkdir(specDir, { recursive: true });
+    await writeFile(path.join(specDir, "quantum-protocol.md"), spec, "utf8");
+
+    await ingestSpecCommand("specs/*.md", {
+      root,
+      memoryRoot,
+      force: true,
+    });
+
+    // Find the created card
+    const proposalsDir = path.join(memoryRoot, "proposals");
+    const fileNames = await readdir(proposalsDir);
+    const cardFile = fileNames.find((f) => f.endsWith(".md") && f !== ".gitkeep");
+    expect(cardFile).toBeDefined();
+
+    const meta = await extractFrontmatter(path.join(proposalsDir, cardFile!));
+    expect(meta.claims).toBeDefined();
+    expect(Array.isArray(meta.claims)).toBe(true);
+    expect(meta.claims.length).toBeGreaterThan(0);
+
+    // Claim should have evidence status not_found since no code matches "quantum entanglement"
+    const firstClaim = meta.claims[0];
+    expect(firstClaim.evidence).toBeDefined();
+    expect(firstClaim.evidence.status).toBe("not_found");
+    expect(firstClaim.last_checked).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

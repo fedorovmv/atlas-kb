@@ -87,16 +87,16 @@
 - `ClaimSchema` / `EvidenceSchema` (zod);
 - `extractClaims` — извлечение из markdown;
 - `checkEvidence` — keyword matching;
-- `classifySpecActuality` — классификация по evidence count + path/content signals.
+- `classifySpecActuality` — классификация по evidence count + path/content signals;
+- хранение claims в memory-файлах — `claims[]` в frontmatter card'ов (StoredClaimSchema);
+- повторная проверка claims при reconcile (reconcile re-runs checkEvidence, `--fix` обновляет stored evidence);
+- claim evidence storage в frontmatter (StoredClaim с embedded evidence + last_checked).
 
 Не реализовано:
 
 - дедупликация похожих claims;
-- связь claim → module/scenario/decision (только `source_path`);
-- хранение claims в memory-файлах (claims генерируются runtime, не сохраняются);
-- повторная проверка claims при reconcile (reconcile проверяет stale refs, не claims);
-- нормализация claims (canonical form);
-- claim evidence storage в frontmatter (только runtime `Evidence[]`).
+- связь claim → module/scenario/decision (source_path присутствует; optional module/scenario/decision поля есть, но не автозаполняются);
+- нормализация claims (canonical form).
 
 ### 4.3 Code evidence check — keyword-based, не symbol analysis
 
@@ -279,8 +279,8 @@
 Не выполнено (перенесено в v0.2+):
 
 - глубокий LLM-assisted claim extraction (semantic, не keyword);
-- claim storage в memory-файлах;
-- claim re-check при reconcile;
+- ✅ claim storage в memory-файлах;
+- ✅ claim re-check при reconcile;
 - semantic code evidence (symbol analysis);
 - cross-document comparison.
 

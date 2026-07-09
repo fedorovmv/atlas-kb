@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { StoredClaimSchema } from "./claim.js";
 
 export const EntityTypeSchema = z.enum([
   "module",
@@ -115,6 +116,8 @@ export const MemoryFrontmatterSchema = z.object({
   source_refs: z.array(RefSchema).optional().default([]),
 
   usage_policy: UsagePolicySchema,
+
+  claims: z.array(StoredClaimSchema).optional().default([]),
 }).passthrough();
 
 export type MemoryFrontmatter = z.infer<typeof MemoryFrontmatterSchema>;

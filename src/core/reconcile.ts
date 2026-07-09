@@ -4,6 +4,8 @@ import { loadMemoryCards } from "./loadMemory.js";
 import { discoverProject } from "./discoverProject.js";
 import { resolveRoot } from "./paths.js";
 import type { RepoMemoryOptions } from "./types.js";
+import type { Claim } from "../schemas/claim.js";
+import { checkEvidence } from "./specClassification.js";
 
 export type ReconcileReport = {
   staleRefs: string[];
@@ -14,6 +16,7 @@ export type ReconcileReport = {
   weakCurrentClaimsDetailed?: { cardId: string; evidenceLevel: string }[];
   realizableProposalsDetailed?: { cardId: string }[];
   staleProposals?: { cardId: string; lastReviewed: string; daysSinceReview: number }[];
+  changedClaimEvidence?: { cardId: string; claimId: string; oldStatus: string; newStatus: string }[];
 };
 
 export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<ReconcileReport> {
@@ -31,6 +34,7 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
   const weakCurrentClaimsDetailed: { cardId: string; evidenceLevel: string }[] = [];
   const realizableProposalsDetailed: { cardId: string }[] = [];
   const staleProposals: { cardId: string; lastReviewed: string; daysSinceReview: number }[] = [];
+  const changedClaimEvidence: { cardId: string; claimId: string; oldStatus: string; newStatus: string }[] = [];
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -66,6 +70,22 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
         }
       }
     }
+    // Claim evidence re-check
+    if (card.meta.claims && card.meta.claims.length > 0) {
+      const freshEvidence = checkEvidence(card.meta.claims as Claim[], discovery);
+      for (let i = 0; i < card.meta.claims.length; i++) {
+        const stored = card.meta.claims[i];
+        const fresh = freshEvidence.find((e) => e.claim_id === stored.id);
+        if (fresh && stored.evidence && fresh.status !== stored.evidence.status) {
+          changedClaimEvidence.push({
+            cardId: card.meta.id,
+            claimId: stored.id,
+            oldStatus: stored.evidence.status,
+            newStatus: fresh.status,
+          });
+        }
+      }
+    }
   }
 
   const moduleIds = new Set(cards.filter((c) => c.meta.entity_type === "module").map((c) => c.meta.id));
@@ -77,7 +97,7 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
     }
   }
 
-  return { staleRefs, weakCurrentClaims, realizableProposals, orphanModules, staleRefsDetailed, weakCurrentClaimsDetailed, realizableProposalsDetailed, staleProposals };
+  return { staleRefs, weakCurrentClaims, realizableProposals, orphanModules, staleRefsDetailed, weakCurrentClaimsDetailed, realizableProposalsDetailed, staleProposals, changedClaimEvidence };
 }
 
 function parseDate(dateStr: string): Date | null {

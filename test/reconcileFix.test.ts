@@ -7,6 +7,8 @@ import { reconcileMemory } from "../src/core/reconcile.js";
 import { applyReconcileFixes } from "../src/core/reconcileFix.js";
 import { updateMemoryCard } from "../src/core/updateMemory.js";
 import { loadMemoryCards } from "../src/core/loadMemory.js";
+import { initMemory } from "../src/commands/init.js";
+import { ingestSpecCommand } from "../src/commands/ingestSpec.js";
 
 describe("applyReconcileFixes", () => {
   const daysAgo = (days: number) => {
@@ -221,6 +223,116 @@ Proposed behavior — requires evidence.
 
     expect(afterOpenQ).toBe(beforeOpenQ);
     expect(afterConflicts).toBe(beforeConflicts);
+
+    await rm(dest, { recursive: true, force: true });
+  });
+
+  it("reconcile --fix updates stored claim evidence", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-fix-claim-"));
+    await initMemory({ root: dest });
+
+    // Create Go + test files
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "internal/registry/access_filter.go"),
+      "package registry\n\nfunc FilterCardsForCaller(caller string) {}\n",
+      "utf8",
+    );
+    await mkdir(path.join(dest, "tests/agent-registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "tests/agent-registry/access_filter_test.go"),
+      "package registry_test\n\nfunc TestFilterCardsForCaller() {}\n",
+      "utf8",
+    );
+
+    // Create and ingest spec
+    await mkdir(path.join(dest, "specs"), { recursive: true });
+    await writeFile(
+      path.join(dest, "specs/access-filter.md"),
+      `# Access Filter Spec
+
+Status: accepted
+
+## Requirements
+
+- Registry filters available agent cards by caller service identity
+- The filtering logic lives in \`internal/registry/access_filter.go\`
+`,
+      "utf8",
+    );
+    await ingestSpecCommand("specs/access-filter.md", { root: dest, force: true });
+
+    // Delete the code files
+    await rm(path.join(dest, "internal/registry/access_filter.go"));
+    await rm(path.join(dest, "tests/agent-registry/access_filter_test.go"));
+    await rm(path.join(dest, "tests/agent-registry"), { recursive: true });
+
+    const report = await reconcileMemory({ root: dest });
+    expect((report.changedClaimEvidence?.length ?? 0)).toBeGreaterThan(0);
+
+    const result = await applyReconcileFixes(report, { root: dest });
+    expect(result.claimsUpdated.length).toBeGreaterThan(0);
+
+    // Reload the card and verify evidence was updated
+    const cards = await loadMemoryCards({ root: dest });
+    const updatedCard = cards.find((c) => c.meta.id === report.changedClaimEvidence![0].cardId);
+    expect(updatedCard).toBeDefined();
+    const claim = updatedCard!.meta.claims?.[0];
+    expect(claim).toBeDefined();
+    expect(claim!.evidence.status).toBe("not_found");
+    expect(claim!.last_checked).toBeDefined();
+
+    await rm(dest, { recursive: true, force: true });
+  });
+
+  it("reconcile --fix claim update is idempotent", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-fix-claim-idem-"));
+    await initMemory({ root: dest });
+
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "internal/registry/access_filter.go"),
+      "package registry\n\nfunc FilterCardsForCaller(caller string) {}\n",
+      "utf8",
+    );
+    await mkdir(path.join(dest, "tests/agent-registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "tests/agent-registry/access_filter_test.go"),
+      "package registry_test\n\nfunc TestFilterCardsForCaller() {}\n",
+      "utf8",
+    );
+
+    await mkdir(path.join(dest, "specs"), { recursive: true });
+    await writeFile(
+      path.join(dest, "specs/access-filter.md"),
+      `# Access Filter Spec
+
+Status: accepted
+
+## Requirements
+
+- Registry filters available agent cards by caller service identity
+`,
+      "utf8",
+    );
+    await ingestSpecCommand("specs/access-filter.md", { root: dest, force: true });
+
+    await rm(path.join(dest, "internal/registry/access_filter.go"));
+    await rm(path.join(dest, "tests/agent-registry/access_filter_test.go"));
+    await rm(path.join(dest, "tests/agent-registry"), { recursive: true });
+
+    const report = await reconcileMemory({ root: dest });
+    // First fix
+    const result1 = await applyReconcileFixes(report, { root: dest });
+    expect(result1.claimsUpdated.length).toBeGreaterThan(0);
+
+    // Reconcile again — statuses are now already updated, so no changedClaimEvidence
+    const report2 = await reconcileMemory({ root: dest });
+    expect(report2.changedClaimEvidence).toEqual([]);
+
+    // Second fix — should have nothing to do
+    const result2 = await applyReconcileFixes(report2, { root: dest });
+    expect(result2.claimsUpdated).toEqual([]);
 
     await rm(dest, { recursive: true, force: true });
   });
