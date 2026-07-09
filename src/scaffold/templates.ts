@@ -803,22 +803,22 @@ Show the user:
     path: ".opencode/commands/memory-bootstrap.md",
     content: `---
 description: One-command LLM-assisted memory bank population — bootstrap + agent enrichment
-agent: memory-coder
 ---
 
 Use the memory-bootstrap skill.
 
-This command runs the full pipeline:
+You are the orchestrator. Run the full pipeline yourself, dispatching subagents for each role:
 
-1. **Scaffold**: \`npm run memory -- bootstrap --root . --force\` — deterministic CLI creates skeleton cards with code_refs/test_refs but placeholder content.
-2. **Enrich**: For each \`needs_review\` card, dispatch:
-   - \`memory-extractor\` to read code and fill responsibility/behavior/risks.
-   - \`memory-coder\` to verify code evidence and test coverage.
-   - \`memory-reviewer\` to do final quality check and set review_required.
-3. **Validate**: \`npm run memory -- validate\` — ensure no errors.
-4. **Summary**: Show card counts (created/enriched/still-needs-review) and \`git diff .ai/memory/\`.
+1. **Scaffold**: Run \`npm run memory -- bootstrap --root . --force\` — deterministic CLI creates skeleton cards with code_refs/test_refs but placeholder content.
+2. **List needs_review**: Run \`npm run memory -- ls --status needs_review --json\` — get cards to enrich.
+3. **Enrich**: For each \`needs_review\` card, dispatch subagents (do NOT do the work yourself):
+   - Dispatch \`memory-extractor\` subagent: it reads code_refs, fills Responsibility/Non-responsibilities/Current behavior/Known risks using the \`updateCard\` tool.
+   - After extractor completes, dispatch \`memory-coder\` subagent: it verifies code evidence, adds Code evidence/Test evidence sections, sets evidence_level using the \`updateCard\` tool.
+   - After coder completes, dispatch \`memory-reviewer\` subagent: it checks quality, promotes needs_review→current only with code_confirmed, sets review_required=false.
+4. **Validate**: Run \`npm run memory -- validate\` — ensure no errors. Fix if needed.
+5. **Summary**: Show card counts (created/enriched/still-needs-review) and \`git diff .ai/memory/\`.
 
-Do NOT ask the user to manually classify specs or fill cards. The agents do this automatically.
+Do NOT ask the user to manually classify specs or fill cards. The subagents do this automatically.
 
 Arguments (optional): $ARGUMENTS — if a specific path or topic is given, focus enrichment on matching cards only.
 `,
@@ -846,45 +846,43 @@ Steps:
     path: ".opencode/commands/memory-ingest-spec.md",
     content: `---
 description: Process a new spec into proposal/rationale/conflict memory updates
-agent: memory-reviewer
 ---
 
-Use the memory-ingest-spec skill.
+You are the orchestrator. Use the memory-ingest-spec skill.
 
 Spec path:
 $ARGUMENTS
 
-Steps:
-1. Read the spec.
-2. Read \`.ai/memory/ontology.md\`.
-3. Run memory context for the spec topic.
-4. Classify the spec.
-5. Extract proposed behavior and rationale.
-6. Check related code/test evidence.
-7. Create or update a proposal in \`.ai/memory/proposals/\`.
-8. Update conflicts/open-questions if needed.
-9. Do not update Current behavior unless evidence confirms it.
-10. Show final diff and review notes.
+Steps (dispatch subagents for each role, do NOT do all work yourself):
+
+1. Read the spec and \`.ai/memory/ontology.md\` yourself.
+2. Run \`npm run memory -- context "$ARGUMENTS" --json\` to get related memory.
+3. Dispatch \`memory-extractor\` subagent: it reads the spec, extracts claims, classifies spec actuality. It returns structured claims + actuality status.
+4. Dispatch \`memory-coder\` subagent: it checks claims against code/test evidence, returns evidence results.
+5. Dispatch \`memory-reviewer\` subagent: it decides proposal/historical/conflict, creates the card using \`updateCard\` tool or \`npm run memory -- ingest-spec\`, updates conflicts/open-questions if needed.
+6. Run \`npm run memory -- validate\` — ensure no errors.
+7. Show final diff and review notes.
+
+Do NOT update Current behavior unless evidence confirms it.
 `,
   },
   {
     path: ".opencode/commands/memory-reconcile.md",
     content: `---
 description: Reconcile memory bank with code, tests and docs
-agent: memory-reviewer
 ---
 
-Use the memory-reconcile skill.
+You are the orchestrator. Use the memory-reconcile skill.
 
 Goal: reconcile \`.ai/memory\` with current code, tests, contracts and docs.
 
-Steps:
-1. Run \`npm run memory -- validate\`.
-2. Extract current claims from module/scenario cards.
-3. Verify claims against code_refs/test_refs.
-4. Find stale proposals and weak-evidence current claims.
-5. Update conflicts and open questions.
-6. Show a concise reconciliation report and diff.
+Steps (dispatch subagents for evidence work, do NOT do all work yourself):
+
+1. Run \`npm run memory -- validate\` and \`npm run memory -- reconcile --json\` yourself to get the report.
+2. Dispatch \`memory-coder\` subagent: for each stale ref and weak current claim from the report, it reads the referenced code/tests, verifies whether the claim still holds, returns findings.
+3. Dispatch \`memory-reviewer\` subagent: it reviews the coder findings, decides which cards need status changes, updates conflicts and open questions using the \`updateCard\` tool.
+4. Run \`npm run memory -- validate\` again — ensure no errors.
+5. Show a concise reconciliation report and \`git diff .ai/memory/\`.
 `,
   },
   {
