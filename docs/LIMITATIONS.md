@@ -13,7 +13,7 @@
 
 ## 2. Что реализовано
 
-Текущая реализация закрывает v0.1+v0.2 roadmap:
+Текущая реализация закрывает v0.1+v0.2+v0.3 roadmap:
 
 - TypeScript CLI (10 команд: init, discover, bootstrap, ls, show, related, context, validate, ingest-spec, reconcile);
 - Markdown memory bank с YAML frontmatter + Zod-схемы;
@@ -23,7 +23,7 @@
 - Claim extraction — `extractClaims` (deterministic, из markdown headings/bullets/code-refs);
 - Evidence check — `checkEvidence` (keyword matching против discovery, не symbol analysis);
 - Ingest-spec — CLI команда, создаёт proposal/historical/conflict cards;
-- Reconcile — stale refs, weak current claims, realizable proposals, orphan modules (read-only report);
+- Reconcile — stale refs, weak current claims, realizable proposals, orphan modules, stale proposal detection; --fix mode применяет безопасные патчи (needs_review, conflicts.md, open-questions.md);
 - Context pack — source priority из config, per-card usage_policy, conflicts/open-questions;
 - Validation — 9.5 из 11 инвариантов REQUIREMENTS §13 (включая spec_only+current_behavior rejection);
 - OpenCode skills/commands/agents/tools (memory-bank, memory-bootstrap, memory-ingest-spec, memory-reconcile);
@@ -165,14 +165,18 @@
 - weak current claims (status=current + evidence_level=spec_only/inferred/unknown);
 - realizable proposals (proposal card body keyword match с discovery code files);
 - orphan modules (candidate modules без memory card);
-- read-only report (JSON + text).
+- read-only report (JSON + text);
+- stale proposal detection (proposals старше 90 дней с weak evidence → needs_review);
+- automatic update `conflicts.md` и `open-questions.md` из reconcile results (append-only, idempotent);
+- safe memory patch generation (`applyReconcileFixes` — structured patch + idempotency);
+- `--fix` mode (read-only → apply safe patches).
 
-Не реализовано:
+Не реализовано (относится к другим разделам / более поздним версиям):
 
-- stale proposal detection (proposals, которые старые и никогда не подтверждены);
-- automatic update `conflicts.md` и `open-questions.md` из reconcile results;
-- safe memory patch generation (reconcile только report, не предлагает fixes);
-- `--fix` mode (v0.2 feature, сейчас read-only).
+- semantic code evidence (symbol analysis) — см. §4.3;
+- claim storage в memory-файлах — см. §4.2;
+- claim re-check при reconcile — см. §4.2;
+- cross-document comparison — см. §4.5.
 
 ### 4.8 Model routing — config есть, CLI не исполняет
 
@@ -280,12 +284,12 @@
 - semantic code evidence (symbol analysis);
 - cross-document comparison.
 
-### v0.3 — reconcile enhancements
+### v0.3 (текущая) — выполнен
 
-- stale proposal detection;
-- automatic conflict/open-question update из reconcile;
-- safe memory patch generation;
-- `--fix` mode (read-only → propose fixes).
+- ✅ stale proposal detection;
+- ✅ automatic conflict/open-question update из reconcile;
+- ✅ safe memory patch generation;
+- ✅ `--fix` mode (read-only → propose fixes).
 
 ### v0.4 — OpenCode integration
 

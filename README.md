@@ -81,6 +81,7 @@ repo-memory discover [--json]      # исследовать проект: фай
 repo-memory bootstrap [--force] [--dry-run]  # автоматически наполнить memory bank из discover
 repo-memory ingest-spec <path>      # обработать спеку → proposal/historical/conflict
 repo-memory reconcile [--json]     # сверить memory с текущим кодом (read-only)
+repo-memory reconcile --fix        # сверить и применить безопасные патчи (stale→needs_review, update conflicts/open-questions)
 repo-memory ls [--type module] [--status current]
 repo-memory show <id>
 repo-memory related <id>
@@ -181,7 +182,7 @@ usage_policy:
 - **Bootstrap** — автоматически наполнить memory bank из discovery: module/scenario/decision/historical/proposal cards. Не перезаписывает существующее без `--force`.
 - **Spec classification + claim extraction** — `classifySpecActuality` определяет статус спеки (current_confirmed / partially_confirmed / proposed_unconfirmed / historical_context / conflicting / unknown_needs_review). `extractClaims` извлекает атомарные claims. `checkEvidence` сверяет claims с кодом/тестами.
 - **Ingest-spec** — обрабатывает спеку и создаёт proposal/historical/conflict card в зависимости от классификации.
-- **Reconcile** — сверяет memory с текущим кодом: stale refs, weak current claims, realizable proposals, orphan modules. Read-only.
+- **Reconcile** — сверяет memory с текущим кодом: stale refs, weak current claims, realizable proposals, orphan modules, stale proposal detection (`--fix`). Read-only; `--fix` применяет безопасные патчи.
 - **Validation invariants** — все 11 инвариантов REQUIREMENTS §13, включая rejection `spec_only + current_behavior`.
 - **Context pack** — source priority из config, per-card usage_policy, conflicts/open-questions.
 - **Model routing** — extractor/coder/reviewer roles в config.
@@ -190,7 +191,7 @@ usage_policy:
 ## Что сознательно отложено (v0.2+/v0.4)
 
 - Semantic classifier через runtime LLM — v0.1 использует deterministic heuristics; semantic reasoning через OpenCode agents после bootstrap.
-- `--fix` mode для reconcile (auto-promote proposals) — v0.1 только report.
+- claim re-check при reconcile (сейчас проверяет stale refs, не claims).
 - Graph export — v0.4.
 - MCP server — v0.4.
 - Decision card content extraction (сейчас signal-based; content parsing — v0.2).

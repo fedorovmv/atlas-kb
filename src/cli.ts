@@ -118,9 +118,10 @@ program
   .command("reconcile")
   .description("Report stale or mismatched memory")
   .option("--json", "print JSON", false)
+  .option("--fix", "apply safe fixes to memory", false)
   .action(async (opts) => {
     const root = program.opts().root;
-    await reconcileMemoryCommand({ root, json: opts.json });
+    await reconcileMemoryCommand({ root, json: opts.json, fix: opts.fix });
   });
 
 program

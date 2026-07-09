@@ -1,0 +1,227 @@
+import { describe, it, expect } from "vitest";
+import { mkdir, writeFile, rm, mkdtemp, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { bootstrapMemory } from "../src/core/bootstrapMemory.js";
+import { reconcileMemory } from "../src/core/reconcile.js";
+import { applyReconcileFixes } from "../src/core/reconcileFix.js";
+import { updateMemoryCard } from "../src/core/updateMemory.js";
+import { loadMemoryCards } from "../src/core/loadMemory.js";
+
+describe("applyReconcileFixes", () => {
+  const daysAgo = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d.toISOString().slice(0, 10);
+  };
+
+  it("appends stale refs to open-questions.md", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-fix-stale-"));
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "internal/registry/access_filter.go"),
+      "package registry\n\nfunc Filter() {}\n",
+      "utf8"
+    );
+    await bootstrapMemory({ root: dest });
+
+    // Delete the Go file to create a stale ref
+    await rm(path.join(dest, "internal/registry/access_filter.go"));
+
+    const report = await reconcileMemory({ root: dest });
+    expect(report.staleRefsDetailed).toBeDefined();
+    expect(report.staleRefsDetailed!.length).toBeGreaterThan(0);
+
+    const result = await applyReconcileFixes(report, { root: dest });
+    expect(result.openQuestionsAppended.length).toBeGreaterThan(0);
+
+    const openQ = await readFile(
+      path.join(dest, ".ai/memory/reconciliation/open-questions.md"),
+      "utf8"
+    );
+    const cardId = report.staleRefsDetailed![0].cardId;
+    expect(openQ).toContain(`Stale ref: card=${cardId}`);
+
+    await rm(dest, { recursive: true, force: true });
+  });
+
+  it("appends weak current claims to conflicts.md", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-fix-weak-"));
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "internal/registry/access_filter.go"),
+      "package registry\n\nfunc Filter() {}\n",
+      "utf8"
+    );
+    await bootstrapMemory({ root: dest });
+
+    // Edit module card to status: current + evidence_level: spec_only
+    const cards = await loadMemoryCards({ root: dest });
+    const moduleCard = cards.find((c) => c.meta.entity_type === "module");
+    expect(moduleCard).toBeDefined();
+    const moduleId = moduleCard!.meta.id;
+
+    await updateMemoryCard(moduleId, {
+      root: dest,
+      fields: { status: "current", evidence_level: "spec_only" },
+    });
+
+    const report = await reconcileMemory({ root: dest });
+    expect(report.weakCurrentClaimsDetailed).toBeDefined();
+    expect(report.weakCurrentClaimsDetailed!.length).toBeGreaterThan(0);
+
+    const result = await applyReconcileFixes(report, { root: dest });
+    expect(result.conflictsAppended.length).toBeGreaterThan(0);
+
+    const conflicts = await readFile(
+      path.join(dest, ".ai/memory/reconciliation/conflicts.md"),
+      "utf8"
+    );
+    expect(conflicts).toContain("Weak current evidence");
+
+    await rm(dest, { recursive: true, force: true });
+  });
+
+  it("marks stale proposals as needs_review", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-fix-proposal-"));
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "internal/registry/access_filter.go"),
+      "package registry\n\nfunc Filter() {}\n",
+      "utf8"
+    );
+    await bootstrapMemory({ root: dest });
+
+    // Now create a stale proposal card (after bootstrap so it's not overwritten)
+    await mkdir(path.join(dest, ".ai/memory/proposals"), { recursive: true });
+    const proposalCard = `---
+entity_type: proposal
+id: proposal-test-feature
+title: Test Feature
+status: proposed
+authority: proposed
+evidence_level: spec_only
+stability: experimental
+source_confidence: low
+last_reviewed: ${daysAgo(100)}
+review_required: true
+knowledge_types:
+  - proposed_behavior
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Test Feature (proposal)
+
+Proposed behavior — requires evidence.
+`;
+    await writeFile(
+      path.join(dest, ".ai/memory/proposals/test-feature.md"),
+      proposalCard,
+      "utf8"
+    );
+
+    const report = await reconcileMemory({ root: dest, staleProposalDays: 90 });
+    expect(report.staleProposals).toBeDefined();
+    expect(report.staleProposals!.length).toBeGreaterThan(0);
+
+    const result = await applyReconcileFixes(report, { root: dest });
+    expect(result.proposalCardsUpdated.length).toBeGreaterThan(0);
+
+    const updatedCards = await loadMemoryCards({ root: dest });
+    const updatedCard = updatedCards.find((c) => c.meta.id === "proposal-test-feature");
+    expect(updatedCard).toBeDefined();
+    expect(updatedCard!.meta.status).toBe("needs_review");
+    expect(updatedCard!.body).toContain("Stale proposal");
+
+    await rm(dest, { recursive: true, force: true });
+  });
+
+  it("is idempotent — second run does not duplicate", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-fix-idem-"));
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "internal/registry/access_filter.go"),
+      "package registry\n\nfunc Filter() {}\n",
+      "utf8"
+    );
+    await bootstrapMemory({ root: dest });
+
+    // Delete the Go file
+    await rm(path.join(dest, "internal/registry/access_filter.go"));
+
+    const report = await reconcileMemory({ root: dest });
+    expect(report.staleRefsDetailed!.length).toBeGreaterThan(0);
+
+    // First run
+    await applyReconcileFixes(report, { root: dest });
+    const openQ1 = await readFile(
+      path.join(dest, ".ai/memory/reconciliation/open-questions.md"),
+      "utf8"
+    );
+
+    // Second run — should not add any new entries
+    const result2 = await applyReconcileFixes(report, { root: dest });
+    expect(result2.openQuestionsAppended).toEqual([]);
+    const openQ2 = await readFile(
+      path.join(dest, ".ai/memory/reconciliation/open-questions.md"),
+      "utf8"
+    );
+    expect(openQ2).toBe(openQ1);
+
+    await rm(dest, { recursive: true, force: true });
+  });
+
+  it("does nothing when report is empty", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-fix-empty-"));
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(
+      path.join(dest, "internal/registry/access_filter.go"),
+      "package registry\n\nfunc Filter() {}\n",
+      "utf8"
+    );
+    await bootstrapMemory({ root: dest });
+
+    const beforeOpenQ = await readFile(
+      path.join(dest, ".ai/memory/reconciliation/open-questions.md"),
+      "utf8"
+    );
+    const beforeConflicts = await readFile(
+      path.join(dest, ".ai/memory/reconciliation/conflicts.md"),
+      "utf8"
+    );
+
+    const emptyReport = {
+      staleRefs: [],
+      weakCurrentClaims: [],
+      realizableProposals: [],
+      orphanModules: [],
+      staleRefsDetailed: [],
+      weakCurrentClaimsDetailed: [],
+      realizableProposalsDetailed: [],
+      staleProposals: [],
+    };
+
+    const result = await applyReconcileFixes(emptyReport, { root: dest });
+    expect(result.openQuestionsAppended).toEqual([]);
+    expect(result.conflictsAppended).toEqual([]);
+    expect(result.proposalCardsUpdated).toEqual([]);
+
+    const afterOpenQ = await readFile(
+      path.join(dest, ".ai/memory/reconciliation/open-questions.md"),
+      "utf8"
+    );
+    const afterConflicts = await readFile(
+      path.join(dest, ".ai/memory/reconciliation/conflicts.md"),
+      "utf8"
+    );
+
+    expect(afterOpenQ).toBe(beforeOpenQ);
+    expect(afterConflicts).toBe(beforeConflicts);
+
+    await rm(dest, { recursive: true, force: true });
+  });
+});

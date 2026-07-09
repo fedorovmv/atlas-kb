@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeFile, readFile, rm, mkdtemp, mkdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { createTempProject, loadSynapseMini } from "./helpers.js";
+import { initMemory } from "../src/commands/init.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -91,5 +94,57 @@ describe("CLI commands", () => {
     expect(card.meta.entity_type).toBe("module");
     expect(card.meta.id).toBe("agent-tool-registry");
     expect(card.body).toContain("Updated title");
+  });
+
+  it("reconcile --fix updates open-questions.md", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "repo-memory-fix-test-"));
+    await initMemory({ root });
+
+    // Create project structure and a Go source file
+    await mkdir(path.join(root, "internal/registry"), { recursive: true });
+    await writeFile(
+      path.join(root, "internal/registry/access_filter.go"),
+      `package registry\n\nfunc FilterCards() {}\n`,
+      "utf8",
+    );
+
+    // Bootstrap creates cards with file-level code_refs
+    runCli(root, ["bootstrap"]);
+
+    // Delete the Go file so it becomes a stale ref
+    await rm(path.join(root, "internal/registry/access_filter.go"));
+
+    const output = runCli(root, ["reconcile", "--fix", "--json"]);
+    const report = JSON.parse(output);
+
+    // appliedFixes should exist and contain open questions
+    expect(report.appliedFixes).toBeDefined();
+    expect(report.appliedFixes.openQuestionsAppended.length).toBeGreaterThan(0);
+
+    // Verify open-questions.md was written and contains the stale ref
+    const openQuestionsPath = path.join(root, ".ai", "memory", "reconciliation", "open-questions.md");
+    const openQuestionsContent = await readFile(openQuestionsPath, "utf8");
+    expect(openQuestionsContent).toContain("Stale ref:");
+  });
+
+  it("reconcile without --fix stays read-only", async () => {
+    const root = await createTempProject();
+
+    const output = runCli(root, ["reconcile", "--json"]);
+    const report = JSON.parse(output);
+
+    // appliedFixes should NOT be present when --fix is not set
+    expect(report.appliedFixes).toBeUndefined();
+
+    // Verify no reconciliation files were modified
+    const reconciliationDir = path.join(root, ".ai", "memory", "reconciliation");
+    let dirExists = true;
+    try {
+      await mkdir(reconciliationDir, { recursive: false });
+      await rm(reconciliationDir, { recursive: true });
+    } catch {
+      dirExists = false;
+    }
+    expect(dirExists).toBe(false);
   });
 });

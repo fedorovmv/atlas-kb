@@ -10,10 +10,15 @@ export type ReconcileReport = {
   weakCurrentClaims: string[];
   realizableProposals: string[];
   orphanModules: string[];
+  staleRefsDetailed?: { cardId: string; refPath: string }[];
+  weakCurrentClaimsDetailed?: { cardId: string; evidenceLevel: string }[];
+  realizableProposalsDetailed?: { cardId: string }[];
+  staleProposals?: { cardId: string; lastReviewed: string; daysSinceReview: number }[];
 };
 
 export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<ReconcileReport> {
   const root = resolveRoot(options);
+  const staleProposalDays = options.staleProposalDays ?? 90;
   const cards = await loadMemoryCards(options);
   const discovery = await discoverProject(options);
   const discoveredPaths = new Set(discovery.files.map((f) => f.path));
@@ -22,6 +27,13 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
   const weakCurrentClaims: string[] = [];
   const realizableProposals: string[] = [];
   const orphanModules: string[] = [];
+  const staleRefsDetailed: { cardId: string; refPath: string }[] = [];
+  const weakCurrentClaimsDetailed: { cardId: string; evidenceLevel: string }[] = [];
+  const realizableProposalsDetailed: { cardId: string }[] = [];
+  const staleProposals: { cardId: string; lastReviewed: string; daysSinceReview: number }[] = [];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   for (const card of cards) {
     for (const ref of [...card.meta.code_refs, ...card.meta.test_refs]) {
@@ -29,14 +41,30 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
       const resolved = path.resolve(root, ref.path);
       if (!existsSync(resolved) && !discoveredPaths.has(ref.path)) {
         staleRefs.push(`${card.meta.id}: ${ref.path}`);
+        staleRefsDetailed.push({ cardId: card.meta.id, refPath: ref.path });
       }
     }
     if (card.meta.status === "current" && ["spec_only", "inferred", "unknown"].includes(card.meta.evidence_level)) {
       weakCurrentClaims.push(`${card.meta.id}: ${card.meta.evidence_level}`);
+      weakCurrentClaimsDetailed.push({ cardId: card.meta.id, evidenceLevel: card.meta.evidence_level });
     }
     if (card.meta.entity_type === "proposal") {
       const codeMatch = discovery.files.some((f) => f.kind === "code" && card.body.toLowerCase().includes(f.basename.toLowerCase().replace(/\.\w+$/, "")));
-      if (codeMatch) realizableProposals.push(card.meta.id);
+      if (codeMatch) {
+        realizableProposals.push(card.meta.id);
+        realizableProposalsDetailed.push({ cardId: card.meta.id });
+      }
+      // Stale proposal detection
+      if (["spec_only", "inferred", "unknown"].includes(card.meta.evidence_level)) {
+        const lastReviewedDate = parseDate(card.meta.last_reviewed);
+        if (lastReviewedDate) {
+          const diffMs = today.getTime() - lastReviewedDate.getTime();
+          const daysSinceReview = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          if (daysSinceReview > staleProposalDays) {
+            staleProposals.push({ cardId: card.meta.id, lastReviewed: card.meta.last_reviewed, daysSinceReview });
+          }
+        }
+      }
     }
   }
 
@@ -49,5 +77,18 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
     }
   }
 
-  return { staleRefs, weakCurrentClaims, realizableProposals, orphanModules };
+  return { staleRefs, weakCurrentClaims, realizableProposals, orphanModules, staleRefsDetailed, weakCurrentClaimsDetailed, realizableProposalsDetailed, staleProposals };
+}
+
+function parseDate(dateStr: string): Date | null {
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  const d = new Date(Number(year), Number(month) - 1, Number(day));
+  d.setHours(0, 0, 0, 0);
+  // Validate the date parsed correctly (handles invalid dates like Feb 30)
+  if (d.getFullYear() !== Number(year) || d.getMonth() !== Number(month) - 1 || d.getDate() !== Number(day)) {
+    return null;
+  }
+  return d;
 }

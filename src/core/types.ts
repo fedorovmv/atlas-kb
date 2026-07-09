@@ -11,6 +11,7 @@ export type MemoryCard = {
 export type RepoMemoryOptions = {
   root?: string;
   memoryRoot?: string;
+  staleProposalDays?: number;
 };
 
 export type ValidationResult = {
