@@ -1,7 +1,8 @@
 import path from "node:path";
-import { mkdir, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
 import yaml from "js-yaml";
+import matter from "gray-matter";
 import { discoverProject } from "./discoverProject.js";
 import { resolveRoot, resolveMemoryRoot, toPosixPath } from "./paths.js";
 import type { DiscoveryReport, CandidateModule, FileRecord } from "../schemas/discovery.js";
@@ -19,13 +20,16 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
   const written: string[] = [];
   const skipped: string[] = [];
 
-  // Helper: write or skip
+  // Helper: write or skip. Skip enriched cards even with --force to prevent data loss.
   const writeCard = async (relativePath: string, content: string) => {
     const target = path.join(memoryRoot, relativePath);
     const rel = toPosixPath(path.relative(root, target));
-    if (existsSync(target) && !options.force) {
-      skipped.push(rel);
-      return;
+    if (existsSync(target)) {
+      const skipReason = shouldSkipExisting(target, options.force ?? false);
+      if (skipReason) {
+        skipped.push(`${rel} (${skipReason})`);
+        return;
+      }
     }
     if (!options.dryRun) {
       await mkdir(path.dirname(target), { recursive: true });
@@ -79,6 +83,25 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
   }
 
   return { written, skipped, report };
+}
+
+// --- Skip logic ---
+
+function shouldSkipExisting(target: string, force: boolean): string | null {
+  if (!force) return "exists";
+  // With --force: skip enriched cards to prevent data loss
+  try {
+    const raw = readFileSync(target, "utf8");
+    if (!raw.trimStart().startsWith("---")) return null; // no frontmatter — overwrite
+    const parsed = matter(raw);
+    const meta = parsed.data as { review_required?: boolean; evidence_level?: string; status?: string };
+    // Skip if card is enriched (review completed or evidence confirmed)
+    if (meta.review_required === false) return "already reviewed";
+    if (meta.evidence_level === "code_confirmed" || meta.evidence_level === "test_confirmed") return "evidence confirmed";
+    return null; // needs_review or unconfirmed — safe to overwrite
+  } catch {
+    return null; // can't read — overwrite
+  }
 }
 
 // --- Card renderers ---

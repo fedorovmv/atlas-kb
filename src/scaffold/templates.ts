@@ -721,7 +721,7 @@ Populate \`.ai/memory\` from project source, tests, docs, and specs in one workf
 Run from project root:
 
 \`\`\`bash
-npm run memory -- bootstrap --root . --force
+npm run memory -- bootstrap --root .
 \`\`\`
 
 This creates skeleton cards: module cards with code_refs/test_refs/source_refs but placeholder content ("Needs review", "Preliminary responsibility"). It also creates \`reconciliation/conflicts.md\` and \`reconciliation/open-questions.md\`.
@@ -809,7 +809,7 @@ Use the memory-bootstrap skill.
 
 You are the orchestrator. Run the full pipeline yourself, dispatching subagents for each role:
 
-1. **Scaffold**: Run \`npm run memory -- bootstrap --root . --force\` — deterministic CLI creates skeleton cards with code_refs/test_refs but placeholder content.
+1. **Scaffold**: Run \`npm run memory -- bootstrap --root .\` — deterministic CLI creates skeleton cards with code_refs/test_refs but placeholder content. Enriched cards (review_required=false or evidence_level=code_confirmed) are preserved automatically.
 2. **List needs_review**: Run \`npm run memory -- ls --status needs_review --json\` — get cards to enrich.
 3. **Enrich**: For each \`needs_review\` card, dispatch subagents (do NOT do the work yourself):
    - Dispatch \`memory-extractor\` subagent: it reads code_refs, fills Responsibility/Non-responsibilities/Current behavior/Known risks using the \`updateCard\` tool.
