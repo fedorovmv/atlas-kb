@@ -17,6 +17,7 @@ export type ReconcileReport = {
   realizableProposalsDetailed?: { cardId: string }[];
   staleProposals?: { cardId: string; lastReviewed: string; daysSinceReview: number }[];
   changedClaimEvidence?: { cardId: string; claimId: string; oldStatus: string; newStatus: string }[];
+  brokenRelations?: { cardId: string; field: string; targetId: string }[];
 };
 
 export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<ReconcileReport> {
@@ -97,7 +98,23 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
     }
   }
 
-  return { staleRefs, weakCurrentClaims, realizableProposals, orphanModules, staleRefsDetailed, weakCurrentClaimsDetailed, realizableProposalsDetailed, staleProposals, changedClaimEvidence };
+  // Broken relation detection
+  const brokenRelations: { cardId: string; field: string; targetId: string }[] = [];
+  const allIds = new Set(cards.map(c => c.meta.id));
+  const relationFields = ["supersedes", "superseded_by", "conflicts_with", "related_specs"];
+  for (const card of cards) {
+    for (const field of relationFields) {
+      const ids = (card.meta as any)[field] as string[] | undefined;
+      if (!ids || ids.length === 0) continue;
+      for (const targetId of ids) {
+        if (!allIds.has(targetId)) {
+          brokenRelations.push({ cardId: card.meta.id, field, targetId });
+        }
+      }
+    }
+  }
+
+  return { staleRefs, weakCurrentClaims, realizableProposals, orphanModules, staleRefsDetailed, weakCurrentClaimsDetailed, realizableProposalsDetailed, staleProposals, changedClaimEvidence, brokenRelations };
 }
 
 function parseDate(dateStr: string): Date | null {

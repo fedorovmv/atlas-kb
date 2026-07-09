@@ -5,8 +5,10 @@ import fg from "fast-glob";
 import yaml from "js-yaml";
 import { discoverProject } from "../core/discoverProject.js";
 import { classifySpecActuality, extractClaims, checkEvidence } from "../core/specClassification.js";
-import { loadMemoryCards } from "../core/loadMemory.js";
+import { loadMemoryCards, findCardById } from "../core/loadMemory.js";
+import { updateMemoryCard } from "../core/updateMemory.js";
 import { resolveRoot, resolveMemoryRoot } from "../core/paths.js";
+import { detectSpecRelations } from "../core/specRelations.js";
 import type { RepoMemoryOptions } from "../core/types.js";
 import type { StoredClaim } from "../schemas/claim.js";
 
@@ -16,6 +18,14 @@ function frontmatterYaml(data: Record<string, unknown>): string {
 
 function today() {
   return new Date().toISOString().slice(0, 10);
+}
+
+async function readFileIfExists(filePath: string): Promise<string> {
+  try {
+    return await readFile(filePath, "utf8");
+  } catch {
+    return "";
+  }
 }
 
 async function writeCard(memoryRoot: string, relPath: string, content: string, force: boolean, dryRun: boolean): Promise<"written" | "skipped"> {
@@ -30,7 +40,7 @@ async function writeCard(memoryRoot: string, relPath: string, content: string, f
 
 export async function ingestSpecCommand(
   specArg: string,
-  options: { root?: string; memoryRoot?: string; force?: boolean; dryRun?: boolean; json?: boolean } = {},
+  options: { root?: string; memoryRoot?: string; force?: boolean; dryRun?: boolean; json?: boolean; topicThreshold?: number } = {},
 ) {
   const root = resolveRoot(options);
   const memoryRoot = resolveMemoryRoot(options);
@@ -56,13 +66,13 @@ export async function ingestSpecCommand(
 
     let cardWritten = false;
     if (actuality === "historical_context") {
-      const card = `---\n${frontmatterYaml({ entity_type: "historical", id: `historical-${slug}`, title: path.basename(specRel), status: "historical", authority: "historical_context", evidence_level: "spec_only", stability: "deprecated", source_confidence: "low", last_reviewed: today(), review_required: false, knowledge_types: ["historical_context"], source_refs: [{ path: specRel, role: "historical" }], claims: storedClaims, usage_policy: { can_answer_current_behavior: false, can_generate_code_from: false, can_use_as_rationale: true, requires_code_check_before_change: true } })}\n---\n\n# ${path.basename(specRel)} (historical)\n\nLegacy spec preserved for rationale. Not implementation guide.\n`;
+      const card = `---\n${frontmatterYaml({ entity_type: "historical", id: `historical-${slug}`, title: path.basename(specRel), status: "historical", authority: "historical_context", evidence_level: "spec_only", stability: "deprecated", source_confidence: "low", last_reviewed: today(), review_required: false, knowledge_types: ["historical_context"], source_refs: [{ path: specRel, role: "historical" }], claims: storedClaims, usage_policy: { can_answer_current_behavior: false, can_generate_code_from: false, can_use_as_rationale: true, requires_code_check_before_change: true } })}\n---\n\n# ${path.basename(specRel)} (historical)\n\nLegacy spec preserved for rationale. Not implementation guide.\n\n---\n\n${content}\n`;
       cardWritten = (await writeCard(memoryRoot, `historical/${slug}.md`, card, options.force ?? false, options.dryRun ?? false)) === "written";
     } else if (actuality === "proposed_unconfirmed" || actuality === "unknown_needs_review") {
-      const card = `---\n${frontmatterYaml({ entity_type: "proposal", id: `proposal-${slug}`, title: path.basename(specRel), status: "proposed", authority: "proposed", evidence_level: "spec_only", stability: "experimental", source_confidence: "low", last_reviewed: today(), review_required: true, knowledge_types: ["proposed_behavior"], source_refs: [{ path: specRel, role: "spec" }], claims: storedClaims, usage_policy: { can_answer_current_behavior: false, can_generate_code_from: false, can_use_as_rationale: true, requires_code_check_before_change: true } })}\n---\n\n# ${path.basename(specRel)} (proposal)\n\nProposed behavior — requires evidence before becoming current.\n`;
+      const card = `---\n${frontmatterYaml({ entity_type: "proposal", id: `proposal-${slug}`, title: path.basename(specRel), status: "proposed", authority: "proposed", evidence_level: "spec_only", stability: "experimental", source_confidence: "low", last_reviewed: today(), review_required: true, knowledge_types: ["proposed_behavior"], source_refs: [{ path: specRel, role: "spec" }], claims: storedClaims, usage_policy: { can_answer_current_behavior: false, can_generate_code_from: false, can_use_as_rationale: true, requires_code_check_before_change: true } })}\n---\n\n# ${path.basename(specRel)} (proposal)\n\nProposed behavior — requires evidence before becoming current.\n\n---\n\n${content}\n`;
       cardWritten = (await writeCard(memoryRoot, `proposals/${slug}.md`, card, options.force ?? false, options.dryRun ?? false)) === "written";
     } else if (actuality === "current_confirmed" || actuality === "partially_confirmed") {
-      const card = `---\n${frontmatterYaml({ entity_type: "proposal", id: `proposal-${slug}`, title: path.basename(specRel), status: "proposed", authority: "proposed", evidence_level: actuality === "current_confirmed" ? "code_confirmed" : "spec_only", stability: "evolving", source_confidence: "medium", last_reviewed: today(), review_required: true, knowledge_types: ["proposed_behavior", "code_evidence"], source_refs: [{ path: specRel, role: "spec" }], claims: storedClaims, usage_policy: { can_answer_current_behavior: false, can_generate_code_from: false, can_use_as_rationale: true, requires_code_check_before_change: true } })}\n---\n\n# ${path.basename(specRel)}\n\nSpec with partial/full code evidence. Review before promoting to current.\n`;
+      const card = `---\n${frontmatterYaml({ entity_type: "proposal", id: `proposal-${slug}`, title: path.basename(specRel), status: "proposed", authority: "proposed", evidence_level: actuality === "current_confirmed" ? "code_confirmed" : "spec_only", stability: "evolving", source_confidence: "medium", last_reviewed: today(), review_required: true, knowledge_types: ["proposed_behavior", "code_evidence"], source_refs: [{ path: specRel, role: "spec" }], claims: storedClaims, usage_policy: { can_answer_current_behavior: false, can_generate_code_from: false, can_use_as_rationale: true, requires_code_check_before_change: true } })}\n---\n\n# ${path.basename(specRel)}\n\nSpec with partial/full code evidence. Review before promoting to current.\n\n---\n\n${content}\n`;
       cardWritten = (await writeCard(memoryRoot, `proposals/${slug}.md`, card, options.force ?? false, options.dryRun ?? false)) === "written";
     } else if (actuality === "conflicting") {
       const conflictsPath = path.join(memoryRoot, "reconciliation", "conflicts.md");
@@ -74,6 +84,74 @@ export async function ingestSpecCommand(
       cardWritten = true;
     }
     results.push({ spec: specRel, actuality, claims: claims.length, cardWritten });
+  }
+
+  // Post-comparison pass: detect and apply cross-spec relations
+  const allCards = await loadMemoryCards({ root, memoryRoot });
+  const relations = detectSpecRelations(allCards, { topicThreshold: options.topicThreshold ?? 0.3 });
+
+  if (relations.length > 0 && !options.dryRun) {
+    // Group relations by cardId+type to batch-update
+    const updatesByCard = new Map<string, Record<string, string[]>>();
+
+    for (const rel of relations) {
+      if (!updatesByCard.has(rel.fromId)) updatesByCard.set(rel.fromId, {});
+      const cardUpdates = updatesByCard.get(rel.fromId)!;
+      if (!cardUpdates[rel.type]) cardUpdates[rel.type] = [];
+      if (!cardUpdates[rel.type].includes(rel.toId)) {
+        cardUpdates[rel.type].push(rel.toId);
+      }
+    }
+
+    // For supersedes relations, also set reverse: superseded_by on the target
+    for (const rel of relations.filter((r) => r.type === "supersedes")) {
+      if (!updatesByCard.has(rel.toId)) updatesByCard.set(rel.toId, {});
+      const cardUpdates = updatesByCard.get(rel.toId)!;
+      if (!cardUpdates.superseded_by) cardUpdates.superseded_by = [];
+      if (!cardUpdates.superseded_by.includes(rel.fromId)) {
+        cardUpdates.superseded_by.push(rel.fromId);
+      }
+    }
+
+    // Apply updates — with change detection to avoid unnecessary writes
+    for (const [cardId, newRelations] of updatesByCard) {
+      const card = findCardById(allCards, cardId);
+      if (!card) continue;
+      const merged: Record<string, string[]> = {};
+      let hasChanges = false;
+      for (const [field, newIds] of Object.entries(newRelations)) {
+        const existing = ((card.meta as any)[field] as string[] | undefined) ?? [];
+        const deduped = [...new Set([...existing, ...newIds])];
+        merged[field] = deduped;
+        // Check if anything actually changed
+        if (deduped.length !== existing.length || !deduped.every((id, idx) => existing[idx] === id)) {
+          hasChanges = true;
+        }
+      }
+      if (hasChanges) {
+        await updateMemoryCard(cardId, { root, memoryRoot, fields: merged });
+      }
+    }
+
+    // Append conflicts to reconciliation/conflicts.md (idempotent)
+    const conflictRelations = relations.filter((r) => r.type === "conflicts_with");
+    if (conflictRelations.length > 0) {
+      const memoryRootForConflicts = resolveMemoryRoot(options);
+      const conflictsPath = path.join(memoryRootForConflicts, "reconciliation", "conflicts.md");
+      const today = new Date().toISOString().slice(0, 10);
+      const existing = await readFileIfExists(conflictsPath);
+      const newLines: string[] = [];
+      for (const rel of conflictRelations) {
+        const line = `- [ingest ${today}] Conflict: card=${rel.fromId} conflicts_with=${rel.toId} — ${rel.reason}`;
+        if (!existing.includes(line)) {
+          newLines.push(`\n${line}\n`);
+        }
+      }
+      if (newLines.length > 0) {
+        await mkdir(path.dirname(conflictsPath), { recursive: true });
+        await appendFile(conflictsPath, newLines.join(""));
+      }
+    }
   }
 
   if (options.json) {

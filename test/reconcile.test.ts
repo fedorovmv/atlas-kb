@@ -186,4 +186,97 @@ Status: accepted
     expect(report.changedClaimEvidence).toEqual([]);
     await rm(dest, { recursive: true, force: true });
   });
+
+  it("reconcile detects broken supersedes link", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-broken-"));
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(path.join(dest, "internal/registry/access_filter.go"), "package registry\n\nfunc Filter() {}\n", "utf8");
+    await bootstrapMemory({ root: dest });
+
+    // Read the generated card, inject a broken supersedes link
+    const modulesDir = path.join(dest, ".ai/memory/modules");
+    const files = await readdir(modulesDir);
+    const cardPath = path.join(modulesDir, files[0]);
+    let cardContent = await readFile(cardPath, "utf8");
+
+    // Inject supersedes field into frontmatter (right after the first ---)
+    cardContent = cardContent.replace(/^---\n/m, "---\nsupersedes:\n  - nonexistent-id-123\n");
+    await writeFile(cardPath, cardContent, "utf8");
+
+    const report = await reconcileMemory({ root: dest });
+    expect(report.brokenRelations).toBeDefined();
+    expect(report.brokenRelations!.length).toBeGreaterThan(0);
+    expect(report.brokenRelations![0].targetId).toBe("nonexistent-id-123");
+    expect(report.brokenRelations![0].field).toBe("supersedes");
+
+    await rm(dest, { recursive: true, force: true });
+  });
+
+  it("reconcile no broken relations when links are valid", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-valid-rel-"));
+    await mkdir(path.join(dest, ".ai/memory/modules"), { recursive: true });
+
+    // Create two cards that reference each other via related_specs
+    const today = new Date().toISOString().slice(0, 10);
+    const cardA = `---
+entity_type: module
+id: mod-alpha
+title: Module Alpha
+status: current
+authority: source_of_truth
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: ${today}
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: false
+related_specs:
+  - mod-beta
+---
+
+# Module Alpha
+
+Description of alpha.
+`;
+    const cardB = `---
+entity_type: module
+id: mod-beta
+title: Module Beta
+status: current
+authority: source_of_truth
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: ${today}
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: false
+related_specs:
+  - mod-alpha
+---
+
+# Module Beta
+
+Description of beta.
+`;
+    await writeFile(path.join(dest, ".ai/memory/modules/alpha.md"), cardA, "utf8");
+    await writeFile(path.join(dest, ".ai/memory/modules/beta.md"), cardB, "utf8");
+
+    const report = await reconcileMemory({ root: dest });
+    expect(report.brokenRelations).toBeDefined();
+    expect(report.brokenRelations!.length).toBe(0);
+
+    await rm(dest, { recursive: true, force: true });
+  });
 });

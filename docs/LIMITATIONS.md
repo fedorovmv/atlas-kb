@@ -133,16 +133,21 @@
 - выявление спеки, которая конфликтует с текущим кодом (только evidence status);
 - автоматическое присвоение статуса на основе claim/evidence (используется evidence count, не per-claim analysis).
 
-### 4.5 Сверка документов между собой — не реализована
+### 4.5 Сверка документов между собой — частично реализована
+
+Реализовано:
+
+- сравнение нескольких спек по одной теме (Jaccard topic overlap, threshold 0.3);
+- определение supersedes (deprecated/historical → proposal/current, year + "replaces" keyword);
+- построение relations: `supersedes`, `superseded_by`, `conflicts_with`, `related_specs` (card IDs в frontmatter);
+- автоматическое обновление `conflicts.md` по результатам междокументного сравнения (idempotent append);
+- reconcile detects broken relations (card → non-existent ID).
 
 Не реализовано:
 
-- сравнение нескольких спек по одной теме;
-- определение, какая спека supersedes другую;
-- выявление противоречий между старой и новой спецификацией;
-- извлечение общей topic graph;
-- построение relations вида `proposes`, `supersedes`, `conflicts_with`, `motivates`, `implements`, `tests`;
-- автоматическое обновление `conflicts.md` по результатам междокументного сравнения.
+- извлечение общей topic graph (v0.4 optional graph export);
+- semantic conflict detection — NLP, понимание "A says X MUST, B says X MUST NOT" (v0.4+);
+- relation types `proposes`, `motivates`, `implements`, `tests` (требуют semantic understanding).
 
 ### 4.6 Глубокое извлечение design rationale — не реализовано
 
@@ -282,7 +287,7 @@
 - ✅ claim storage в memory-файлах;
 - ✅ claim re-check при reconcile;
 - semantic code evidence (symbol analysis);
-- cross-document comparison.
+- ✅ cross-document comparison (detectSpecRelations, relation building, conflicts.md append, broken-relation reconcile).
 
 ### v0.3 (текущая) — выполнен
 
