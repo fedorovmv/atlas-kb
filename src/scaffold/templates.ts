@@ -911,7 +911,7 @@ When given a memory card path with \`needs_review\` status:
    - \`source_confidence\`: \`medium\` if code was readable and consistent; \`low\` if sparse, ambiguous, or generated.
    - \`evidence_level\`: keep as-is unless you have strong reason to change. Do NOT set \`code_confirmed\` — that's memory-coder's job after evidence verification.
    - \`last_reviewed\`: today's date.
-6. Write the updated card back to the same path.
+6. Use the \`updateCard\` tool to save: pass \`id\` (from frontmatter), \`body\` (new body content), and \`setLastReviewed\`/\`setSourceConfidence\` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
 
 ## Rules
 
@@ -953,7 +953,7 @@ When given a memory card path (after memory-extractor has filled content):
 6. If code_refs point to files that don't contain what the card claims:
    - Set \`status: conflict\`.
    - Add entry to \`.ai/memory/reconciliation/conflicts.md\` with the specific mismatch.
-7. Write the updated card back to the same path.
+7. Use the \`updateCard\` tool to save: pass \`id\` (from frontmatter), \`body\` (with new evidence sections appended), and \`setEvidenceLevel\`/\`setLastReviewed\`/\`setStatus\` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
 
 ## Rules
 
@@ -1002,12 +1002,14 @@ After memory-extractor and memory-coder have processed cards:
    - No two \`current\` cards claim contradictory behavior for the same module.
    - \`related_*\` links point to existing card ids.
    - No \`current\` card has \`evidence_level: spec_only\` (this is a validation error).
+7. Use the \`updateCard\` tool to save changes: pass \`id\`, \`body\` (if you filled rationale/alternatives for decision cards), \`setStatus\` (current or needs_review), \`setReviewRequired\`, \`setLastReviewed\`. NEVER use Write tool — it corrupts YAML frontmatter.
 
 ## Rules
 
 - NEVER promote a card to \`current\` without \`code_confirmed\` or \`test_confirmed\` evidence.
 - NEVER allow \`proposal\` or \`historical\` to have \`can_answer_current_behavior: true\`.
 - NEVER allow \`decision\` to have \`can_generate_code_from: true\`.
+- NEVER use Write tool on memory .md files — ALWAYS use \`updateCard\` tool.
 - If rationale is inferred (not explicitly stated in docs) — mark \`evidence_level: inferred\`, do NOT present as explicit.
 - If two cards conflict — add to \`reconciliation/conflicts.md\`, do NOT silently pick one.
 - Return a summary: how many promoted to current, how many stay needs_review, what conflicts found.
