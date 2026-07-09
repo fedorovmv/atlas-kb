@@ -77,4 +77,19 @@ describe("CLI commands", () => {
     expect(report).toHaveProperty("realizableProposals");
     expect(report).toHaveProperty("orphanModules");
   });
+
+  it("updates a card body safely", async () => {
+    const root = await createTempProject();
+    const newBody = "# Updated title\n\n## Responsibility\n\nThis module handles agent card filtering by caller identity.\n";
+    const output = runCli(root, ["update", "agent-tool-registry", "--body", newBody, "--json"]);
+    const result = JSON.parse(output);
+    expect(result.updated).toBe(true);
+    expect(result.changes).toContain("body");
+    // verify frontmatter preserved — show the card
+    const showOutput = runCli(root, ["show", "agent-tool-registry", "--json"]);
+    const card = JSON.parse(showOutput);
+    expect(card.meta.entity_type).toBe("module");
+    expect(card.meta.id).toBe("agent-tool-registry");
+    expect(card.body).toContain("Updated title");
+  });
 });

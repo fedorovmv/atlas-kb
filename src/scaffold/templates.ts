@@ -794,6 +794,7 @@ Show the user:
 - NEVER set \`review_required: false\` for a card with placeholder content.
 - ALWAYS read the code_refs files before writing responsibility/behavior.
 - ALWAYS preserve frontmatter fields set by deterministic bootstrap (code_refs, test_refs, entity_type, id, related_*).
+- ALWAYS use the \`updateCard\` tool to update cards. NEVER use Write tool directly on memory .md files — it corrupts YAML frontmatter. \`updateCard\` preserves frontmatter and only replaces body or sets specific fields.
 - Mark uncertain inferences as \`evidence_level: inferred\`.
 - If code is unreadable, minified, or generated — set \`source_confidence: low\` and add to open-questions.
 `,
@@ -1087,6 +1088,29 @@ export const bootstrap = tool({
     if (args.force) flags.push("--force");
     if (args.dryRun) flags.push("--dry-run");
     return runMemory(["bootstrap", ...flags]);
+  },
+});
+
+export const updateCard = tool({
+  description: "Safely update a memory card body or frontmatter fields by id. Use this instead of Write to avoid corrupting frontmatter.",
+  args: {
+    id: tool.schema.string().describe("Memory entity id to update"),
+    body: tool.schema.string().optional().describe("New body content (replaces existing body). Read code first before writing."),
+    setLastReviewed: tool.schema.string().optional().describe("Set last_reviewed date (YYYY-MM-DD)"),
+    setEvidenceLevel: tool.schema.string().optional().describe("Set evidence_level field"),
+    setSourceConfidence: tool.schema.string().optional().describe("Set source_confidence field"),
+    setStatus: tool.schema.string().optional().describe("Set status field"),
+    setReviewRequired: tool.schema.boolean().optional().describe("Set review_required field"),
+  },
+  async execute(args) {
+    const setArgs: string[] = [];
+    if (args.setLastReviewed) setArgs.push("--set", "last_reviewed=" + args.setLastReviewed);
+    if (args.setEvidenceLevel) setArgs.push("--set", "evidence_level=" + JSON.stringify(args.setEvidenceLevel));
+    if (args.setSourceConfidence) setArgs.push("--set", "source_confidence=" + JSON.stringify(args.setSourceConfidence));
+    if (args.setStatus) setArgs.push("--set", "status=" + JSON.stringify(args.setStatus));
+    if (args.setReviewRequired !== undefined) setArgs.push("--set", "review_required=" + args.setReviewRequired);
+    const bodyArgs = args.body ? ["--body", args.body] : [];
+    return runMemory(["update", args.id, ...bodyArgs, ...setArgs, "--json"]);
   },
 });
 `,

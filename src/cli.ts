@@ -10,6 +10,7 @@ import { discoverMemoryCommand } from "./commands/discover.js";
 import { bootstrapMemoryCommand } from "./commands/bootstrap.js";
 import { ingestSpecCommand } from "./commands/ingestSpec.js";
 import { reconcileMemoryCommand } from "./commands/reconcile.js";
+import { updateMemoryCommand } from "./commands/update.js";
 
 const program = new Command();
 
@@ -120,6 +121,19 @@ program
   .action(async (opts) => {
     const root = program.opts().root;
     await reconcileMemoryCommand({ root, json: opts.json });
+  });
+
+program
+  .command("update")
+  .description("Safely update a memory card body or frontmatter fields by id")
+  .argument("<id>", "memory entity id")
+  .option("--body <text>", "new body content (replaces existing body)")
+  .option("--body-file <path>", "read new body from file")
+  .option("--set <field=value>", "set a frontmatter field (can repeat, value parsed as JSON if possible)", (value: string, previous: string[]) => [...(previous ?? []), value], [])
+  .option("--json", "print JSON", false)
+  .action(async (id, opts) => {
+    const root = program.opts().root;
+    await updateMemoryCommand(id, { root, body: opts.body, bodyFile: opts.bodyFile, set: opts.set, json: opts.json });
   });
 
 try {

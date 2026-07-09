@@ -11,3 +11,4 @@ export * from "./core/discoverProject.js";
 export * from "./core/specClassification.js";
 export * from "./core/bootstrapMemory.js";
 export * from "./core/reconcile.js";
+export * from "./core/updateMemory.js";
