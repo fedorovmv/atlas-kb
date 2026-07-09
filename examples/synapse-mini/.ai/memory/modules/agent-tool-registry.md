@@ -71,6 +71,10 @@ Registry remains a discovery component to avoid mixing metadata storage, target 
 
 - `tests/agent-registry`
 
+## Code evidence
+
+- Registry and filtering at internal/registry/access_filter.go (FilterCardsForCaller)
+
 ## Open questions
 
 - Which checks belong to discovery time and which belong to runtime time?

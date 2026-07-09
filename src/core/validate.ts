@@ -9,6 +9,7 @@ import type { MemoryCard, RepoMemoryOptions, ValidationResult } from "./types.js
 import { findMemoryMarkdownFiles, loadMemoryCards } from "./loadMemory.js";
 import { RELATION_FIELDS } from "./relations.js";
 import { resolveRoot } from "./paths.js";
+import { hasEvidenceSection } from "./evidenceSection.js";
 
 function formatZodError(error: z.ZodError) {
   return error.issues.map((item) => `${item.path.join(".") || "frontmatter"}: ${item.message}`).join("; ");
@@ -90,6 +91,13 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
 
     if (m.evidence_level === "spec_only" && m.knowledge_types.includes("current_behavior")) {
       errors.push(`${card.relativePath}: spec_only evidence cannot claim current_behavior without code/test/contract evidence`);
+    }
+
+    if (m.evidence_level === "code_confirmed" && !hasEvidenceSection(card.body, "Code evidence")) {
+      errors.push(`${card.relativePath}: evidence_level=code_confirmed requires ## Code evidence section with entries`);
+    }
+    if (m.evidence_level === "test_confirmed" && !hasEvidenceSection(card.body, "Test evidence")) {
+      errors.push(`${card.relativePath}: evidence_level=test_confirmed requires ## Test evidence section with entries`);
     }
 
     for (const field of RELATION_FIELDS) {

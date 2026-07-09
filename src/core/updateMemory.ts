@@ -2,6 +2,7 @@ import { writeFile } from "node:fs/promises";
 import yaml from "js-yaml";
 import { loadMemoryCards, findCardById } from "./loadMemory.js";
 import { resolveRoot } from "./paths.js";
+import { hasEvidenceSection } from "./evidenceSection.js";
 import type { RepoMemoryOptions } from "./types.js";
 
 export type UpdateOptions = RepoMemoryOptions & {
@@ -44,6 +45,25 @@ export async function updateMemoryCard(id: string, options: UpdateOptions): Prom
 
   if (changes.length === 0) {
     return { id, path: card.relativePath, updated: false, changes: [] };
+  }
+
+  // Guard: evidence_level code_confirmed/test_confirmed require matching body sections
+  // Only enforce when evidence_level is being set, or when body is being changed on a card that already has the level
+  const setEvidenceLevel = options.fields?.evidence_level as string | undefined;
+  const bodyChanged = options.body !== undefined;
+  const bodyToCheck = bodyChanged ? newBody : card.body;
+  const effectiveLevel = (setEvidenceLevel !== undefined ? setEvidenceLevel : card.meta.evidence_level) as string;
+
+  const checkLevelCode =
+    (setEvidenceLevel === "code_confirmed") || (bodyChanged && effectiveLevel === "code_confirmed");
+  const checkLevelTest =
+    (setEvidenceLevel === "test_confirmed") || (bodyChanged && effectiveLevel === "test_confirmed");
+
+  if (checkLevelCode && !hasEvidenceSection(bodyToCheck, "Code evidence")) {
+    throw new Error("Cannot set evidence_level=code_confirmed: body must contain ## Code evidence section with entries");
+  }
+  if (checkLevelTest && !hasEvidenceSection(bodyToCheck, "Test evidence")) {
+    throw new Error("Cannot set evidence_level=test_confirmed: body must contain ## Test evidence section with entries");
   }
 
   // Reconstruct file: preserve frontmatter structure, replace body

@@ -57,7 +57,7 @@ id: broken-module
 title: Broken Module
 status: current
 authority: reviewed_memory
-evidence_level: code_confirmed
+evidence_level: reviewed_doc
 stability: stable
 source_confidence: high
 last_reviewed: 2026-07-08
@@ -184,11 +184,171 @@ usage_policy:
 ---
 
 # Code Confirmed Current
+
+## Code evidence
+
+- validateMemory function at src/core/validate.ts:17 implements evidence checks
 `,
       "utf8",
     );
     const result = await validateMemory({ root });
     const codeConfirmedErrors = result.errors.filter((e) => e.includes("code-confirmed-current.md"));
     expect(codeConfirmedErrors).toEqual([]);
+  });
+
+  it("errors: code_confirmed without ## Code evidence section", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "missing-evidence.md"),
+      `---
+entity_type: module
+id: missing-evidence
+title: Missing Evidence
+status: current
+authority: reviewed_memory
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Missing Evidence
+
+No evidence section here.
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    expect(result.ok).toBe(false);
+    expect(result.errors.join("\n")).toContain("missing-evidence.md");
+    expect(result.errors.join("\n")).toContain("evidence_level=code_confirmed requires ## Code evidence section with entries");
+  });
+
+  it("passes: code_confirmed with ## Code evidence section", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "has-evidence.md"),
+      `---
+entity_type: module
+id: has-evidence
+title: Has Evidence
+status: current
+authority: reviewed_memory
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Has Evidence
+
+## Code evidence
+
+- FilterCardsForCaller function at internal/registry/access_filter.go
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const evErrors = result.errors.filter((e) => e.includes("has-evidence.md"));
+    expect(evErrors).toEqual([]);
+  });
+
+  it("errors: test_confirmed without ## Test evidence section", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "missing-test-evidence.md"),
+      `---
+entity_type: module
+id: missing-test-evidence
+title: Missing Test Evidence
+status: current
+authority: reviewed_memory
+evidence_level: test_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Missing Test Evidence
+
+No evidence section here.
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    expect(result.ok).toBe(false);
+    expect(result.errors.join("\n")).toContain("missing-test-evidence.md");
+    expect(result.errors.join("\n")).toContain("evidence_level=test_confirmed requires ## Test evidence section with entries");
+  });
+
+  it("passes: reviewed_doc without evidence section", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "reviewed-doc-ok.md"),
+      `---
+entity_type: module
+id: reviewed-doc-ok
+title: Reviewed Doc
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Reviewed Doc
+
+No evidence section needed.
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const rdErrors = result.errors.filter((e) => e.includes("reviewed-doc-ok.md"));
+    expect(rdErrors).toEqual([]);
   });
 });

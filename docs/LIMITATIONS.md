@@ -199,13 +199,12 @@
 
 ### 4.9 OpenCode plugin integration — thin tools, не full plugin
 
-Реализовано: thin tools (context, validate, related, discover, bootstrap) как wrappers над CLI.
+Реализовано: thin tools (context, validate, related, discover, bootstrap) как wrappers над CLI. Evidence-gated `code_confirmed`/`test_confirmed`: validate ERRORS без `## Code evidence`/`## Test evidence` секции; updateCard THROWS при попытке выставить без секции. AGENTS.md scaffolded с advisory pre-task context instruction.
 
 Не реализовано:
 
 - полноценный OpenCode plugin с собственным lifecycle;
-- автоматическое внедрение memory-context перед каждой coding-задачей;
-- enforcement, что agent обязан прочитать memory перед изменением product behavior;
+- автоматическое внедрение memory-context перед каждой coding-задачей (advisory через AGENTS.md, не enforced);
 - UI-навигация по memory bank;
 - интерактивное подтверждение memory diff внутри OpenCode.
 
@@ -316,7 +315,7 @@
 
 Bootstrap создаёт аккуратные Markdown-файлы, которые выглядят убедительно, но содержат предварительные выводы.
 
-Митигация: `source_confidence: low|medium`, `review_required: true`, не ставить `code_confirmed` без реального evidence, human/LLM review.
+Митигация: `source_confidence: low|medium`, `review_required: true`, evidence-gated `code_confirmed` (validate ERRORS + updateCard THROWS без `## Code evidence` секции), human/LLM review.
 
 ### 7.2 Смешивание current/proposed/historical
 

@@ -254,6 +254,10 @@ Registry remains a discovery component to avoid mixing metadata storage, target 
 
 - \`tests/agent-registry\`
 
+## Code evidence
+
+- Example entry showing required format: - Description at file:line (symbol_name). Replace with actual verified symbols.
+
 ## Open questions
 
 - Which checks belong to discovery time and which belong to runtime time?
@@ -795,6 +799,7 @@ Show the user:
 - ALWAYS read the code_refs files before writing responsibility/behavior.
 - ALWAYS preserve frontmatter fields set by deterministic bootstrap (code_refs, test_refs, entity_type, id, related_*).
 - ALWAYS use the \`updateCard\` tool to update cards. NEVER use Write tool directly on memory .md files — it corrupts YAML frontmatter. \`updateCard\` preserves frontmatter and only replaces body or sets specific fields.
+- Evidence format: \`## Code evidence\` entries MUST include file path + line number. CLI rejects code_confirmed without properly formatted section.
 - Mark uncertain inferences as \`evidence_level: inferred\`.
 - If code is unreadable, minified, or generated — set \`source_confidence: low\` and add to open-questions.
 `,
@@ -941,9 +946,15 @@ When given a memory card path (after memory-extractor has filled content):
 1. Read the card file.
 2. Read the \`code_refs\` files — verify the functions/types/behaviors described in the card body actually exist in the referenced code.
 3. Read the \`test_refs\` files — verify tests cover the behaviors described.
-4. Add evidence sections:
-   - \`## Code evidence\` — specific symbols found: "Function \`FilterCardsForCaller\` at \`internal/registry/access_filter.go:12\` confirms caller-based filtering."
-   - \`## Test evidence\` — specific test coverage: "Test \`TestFilterCardsForCaller\` at \`internal/registry/access_filter_test.go:8\` covers the filtering behavior."
+4. Add evidence sections — REQUIRED format (one bullet per verified symbol):
+    - \`## Code evidence\` — REQUIRED format:
+      - <description> at <file>:<line> (<symbol_name>)
+      Example:
+      - Caller-based filtering at internal/registry/access_filter.go:12 (FilterCardsForCaller)
+    - \`## Test evidence\` — REQUIRED format:
+      - Test <test_name> at <file>:<line> covers <behavior>
+      Example:
+      - Test TestFilterCardsForCaller at tests/registry/access_filter_test.go:8 covers caller-based filtering
 5. Update frontmatter:
    - \`evidence_level\`: \`code_confirmed\` if you verified specific symbols in code that match the card's claims.
    - \`evidence_level\`: \`test_confirmed\` if tests cover the behavior but code is not directly readable.
@@ -960,6 +971,9 @@ When given a memory card path (after memory-extractor has filled content):
 - ALWAYS read the actual code files. Do NOT trust the card content without verification.
 - Be specific: cite function names, type names, line numbers when possible.
 - \`code_confirmed\` means YOU read the code and the symbol exists and does what the card says. Not "the file exists".
+- You MUST output \`## Code evidence\` section with specific entries (file:line + symbol) before setting evidence_level=code_confirmed. The CLI will REJECT the update without it.
+- You MUST output \`## Test evidence\` section before setting evidence_level=test_confirmed.
+- Each evidence entry MUST include a file path and line number. "The file exists" is NOT sufficient.
 - If tests are missing for claimed behavior — note in \`## Test evidence\` as "No tests found for X".
 - Do NOT set \`status: current\` — only memory-reviewer can promote.
 - Do NOT change \`## Responsibility\` or \`## Current behavior\` — that's memory-extractor's job. Only add evidence sections.
@@ -982,10 +996,12 @@ After memory-extractor and memory-coder have processed cards:
 
 1. Read all enriched cards in \`.ai/memory/modules/\`, \`.ai/memory/scenarios/\`, \`.ai/memory/decisions/\`.
 2. For each card, check:
-   - \`## Responsibility\` is filled (not placeholder "Preliminary responsibility" or "Needs review").
-   - \`## Current behavior\` is specific and factual (not "Needs review").
-   - \`evidence_level\` is \`code_confirmed\` or \`test_confirmed\` if \`status\` should be \`current\`.
-   - \`usage_policy\` is safe: \`proposal\`/\`historical\` must have \`can_answer_current_behavior: false\`; \`decision\` must have \`can_generate_code_from: false\`.
+    - \`## Responsibility\` is filled (not placeholder "Preliminary responsibility" or "Needs review").
+    - \`## Current behavior\` is specific and factual (not "Needs review").
+    - \`evidence_level\` is \`code_confirmed\` or \`test_confirmed\` if \`status\` should be \`current\`.
+    - For each card with \`evidence_level=code_confirmed\`: verify \`## Code evidence\` section exists and contains ≥1 entry with file:line reference. If missing or has no file:line → keep \`needs_review\`, do NOT promote to \`current\`.
+    - For each card with \`evidence_level=test_confirmed\`: verify \`## Test evidence\` section exists with ≥1 entry.
+    - \`usage_policy\` is safe: \`proposal\`/\`historical\` must have \`can_answer_current_behavior: false\`; \`decision\` must have \`can_generate_code_from: false\`.
 3. If a card passes all checks:
    - Set \`status: current\` (promote from \`needs_review\`).
    - Set \`review_required: false\`.
@@ -1113,6 +1129,30 @@ export const updateCard = tool({
     return runMemory(["update", args.id, ...bodyArgs, ...setArgs, "--json"]);
   },
 });
+`,
+  },
+  {
+    path: "AGENTS.md",
+    content: `# Project Instructions
+
+## Memory-First Development
+
+Before coding tasks involving product behavior or architecture:
+1. Run /memory-context to load relevant memory cards.
+2. Read the module/scenario/decision cards related to your task.
+3. Check code_refs and test_refs in those cards for the actual source files.
+
+Before changing product behavior:
+1. Read the relevant memory module card(s).
+2. If a card has evidence_level=code_confirmed, verify the ## Code evidence section matches reality before relying on it.
+3. After your change, update the memory card if behavior changed.
+
+## Evidence Integrity
+
+- evidence_level=code_confirmed requires ## Code evidence section with specific file:line references.
+- evidence_level=test_confirmed requires ## Test evidence section.
+- The CLI validates this — invalid evidence_level will be rejected.
+- Never set code_confirmed without actually reading the code and citing specific symbols.
 `,
   },
 ];
