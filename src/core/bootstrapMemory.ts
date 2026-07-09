@@ -121,11 +121,26 @@ function renderModuleCard(mod: CandidateModule, status: string, evidenceLevel: s
     `## Non-responsibilities`,
     "Needs review — not yet determined.",
     "",
+    `## Current behavior`,
+    "Needs review — read code_refs to fill this section.",
+    "",
+    `## Known risks`,
+    "Needs review — scan code for TODO/FIXME/deprecated/unsafe patterns.",
+    "",
+    `## Code evidence`,
+    "Not yet verified — memory-coder must read code_refs and confirm specific symbols.",
+    "",
+    `## Test evidence`,
+    "Not yet verified — memory-coder must read test_refs and confirm test coverage.",
+    "",
     `## Related`,
     `- Code files: ${mod.codeFiles.length}`,
     `- Test files: ${mod.testFiles.length}`,
     `- Doc files: ${mod.docFiles.length}`,
     `- Demo files: ${mod.demoFiles.length} (NOT production evidence)`,
+    "",
+    `## Open questions`,
+    "Needs review — add questions that cannot be answered from code alone.",
   ].join("\n");
   return `---\n${fm}\n---\n\n${body}\n`;
 }
@@ -153,7 +168,7 @@ function renderScenarioCard(s: { id: string; title: string; topics: string[]; so
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${s.title}\n\n## Goal\nInferred from: ${s.topics.join(", ")}\n\n## Flow\nNeeds review.\n`;
+  return `---\n${fm}\n---\n\n# ${s.title}\n\n## Goal\nInferred from: ${s.topics.join(", ")}\n\n## Actors\nNeeds review — identify actors from code/tests/docs.\n\n## Flow\nNeeds review — read source_refs and code to describe the flow.\n\n## Constraints\nNeeds review — identify constraints, limits, error conditions.\n\n## Failure cases\nNeeds review — identify known failure scenarios.\n\n## Code evidence\nNot yet verified — memory-coder must confirm flow against code.\n\n## Test evidence\nNot yet verified — memory-coder must confirm test coverage for this scenario.\n\n## Rationale\nNeeds review — why does this scenario exist and not another?\n`;
 }
 
 function renderDecisionCard(d: { id: string; title: string; rationale: string; sourceFile: string }): string {
@@ -178,7 +193,7 @@ function renderDecisionCard(d: { id: string; title: string; rationale: string; s
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Rationale\n${d.rationale}\n`;
+  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Context\nNeeds review — what problem triggered this decision?\n\n## Problem\nNeeds review — what specific problem was solved?\n\n## Decision\nNeeds review — what was decided?\n\n## Rationale\n${d.rationale}\n\n## Alternatives considered\nNeeds review — what alternatives were evaluated?\n\n## Rejected alternatives\nNeeds review — what was rejected and why?\n\n## Consequences/trade-offs\nNeeds review — what trade-offs were accepted?\n\n## Current behavior evidence\nNeeds review — does the decision still hold against current code?\n`;
 }
 
 function renderHistoricalCard(file: FileRecord, id: string): string {
@@ -203,7 +218,7 @@ function renderHistoricalCard(file: FileRecord, id: string): string {
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${file.basename} (historical)\n\n## Prior approach\nLegacy spec preserved for rationale context. Not an implementation guide.\n`;
+  return `---\n${fm}\n---\n\n# ${file.basename} (historical)\n\n## Problems attempted\nNeeds review — what problem did this approach try to solve?\n\n## Prior approach\nLegacy spec preserved for rationale context. Not an implementation guide.\n\n## Rationale still useful\nNeeds review — which parts of the rationale remain relevant?\n\n## Obsolete/unconfirmed ideas\nNeeds review — what is no longer applicable?\n\n## Decisions that survived\nNeeds review — which decisions from this spec carried forward?\n\n## Links to current decisions\nNeeds review — link to current decision cards that supersede this.\n`;
 }
 
 function renderProposalCard(file: FileRecord, id: string): string {
@@ -228,7 +243,7 @@ function renderProposalCard(file: FileRecord, id: string): string {
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${file.basename} (proposal)\n\n## Proposed behavior\nUnconfirmed spec — requires code/test evidence before becoming current behavior.\n`;
+  return `---\n${fm}\n---\n\n# ${file.basename} (proposal)\n\n## Source spec\n${file.path}\n\n## Proposed behavior\nUnconfirmed spec — requires code/test evidence before becoming current behavior.\n\n## Rationale from spec\nNeeds review — extract rationale from the source spec.\n\n## Affected modules\nNeeds review — which modules would this proposal change?\n\n## Affected scenarios\nNeeds review — which scenarios would this proposal change?\n\n## Current code check\nNeeds review — memory-coder must check if proposal is already partially implemented.\n\n## Confirmed/not found/conflicting claims\nNeeds review — classify each claim from the spec.\n\n## Suggested memory updates\nNeeds review — what should change in current memory if this proposal is accepted?\n\n## Review decision\nNeeds review — memory-reviewer decides: accept, reject, or needs more evidence.\n`;
 }
 
 // --- Extractors ---
