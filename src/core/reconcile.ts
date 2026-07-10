@@ -6,6 +6,7 @@ import { resolveRoot } from "./paths.js";
 import type { RepoMemoryOptions } from "./types.js";
 import type { Claim } from "../schemas/claim.js";
 import { checkEvidence } from "./specClassification.js";
+import { findCrossCardDuplicates } from "./claimDedup.js";
 
 export type ReconcileReport = {
   staleRefs: string[];
@@ -18,6 +19,7 @@ export type ReconcileReport = {
   staleProposals?: { cardId: string; lastReviewed: string; daysSinceReview: number }[];
   changedClaimEvidence?: { cardId: string; claimId: string; oldStatus: string; newStatus: string }[];
   brokenRelations?: { cardId: string; field: string; targetId: string }[];
+  duplicateClaims?: { cardIdA: string; claimIdA: string; cardIdB: string; claimIdB: string; canonicalText: string }[];
 };
 
 export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<ReconcileReport> {
@@ -114,7 +116,9 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
     }
   }
 
-  return { staleRefs, weakCurrentClaims, realizableProposals, orphanModules, staleRefsDetailed, weakCurrentClaimsDetailed, realizableProposalsDetailed, staleProposals, changedClaimEvidence, brokenRelations };
+  const duplicateClaims = findCrossCardDuplicates(cards);
+
+  return { staleRefs, weakCurrentClaims, realizableProposals, orphanModules, staleRefsDetailed, weakCurrentClaimsDetailed, realizableProposalsDetailed, staleProposals, changedClaimEvidence, brokenRelations, duplicateClaims };
 }
 
 function parseDate(dateStr: string): Date | null {

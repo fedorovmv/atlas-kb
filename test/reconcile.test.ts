@@ -280,4 +280,157 @@ Description of beta.
 
     await rm(dest, { recursive: true, force: true });
   });
+
+  it("reconcile detects cross-card duplicate claims", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-dup-"));
+    await initMemory({ root: dest });
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Card A with a claim
+    const cardA = `---
+entity_type: module
+id: mod-alpha
+title: Module Alpha
+status: current
+authority: source_of_truth
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: ${today}
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: false
+claims:
+  - id: claim-001
+    text: "The registry MUST filter cards by caller service identity"
+    type: current_behavior
+    evidence_required: true
+---
+
+# Module Alpha
+
+Description of alpha.
+`;
+    // Card B with same canonical claim text
+    const cardB = `---
+entity_type: module
+id: mod-beta
+title: Module Beta
+status: current
+authority: source_of_truth
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: ${today}
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: false
+claims:
+  - id: claim-001
+    text: "Registry must filter cards by caller service identity"
+    type: current_behavior
+    evidence_required: true
+---
+
+# Module Beta
+
+Description of beta.
+`;
+    await mkdir(path.join(dest, ".ai/memory/modules"), { recursive: true });
+    await writeFile(path.join(dest, ".ai/memory/modules/alpha.md"), cardA, "utf8");
+    await writeFile(path.join(dest, ".ai/memory/modules/beta.md"), cardB, "utf8");
+
+    const report = await reconcileMemory({ root: dest });
+    expect(report.duplicateClaims).toBeDefined();
+    expect(report.duplicateClaims!.length).toBeGreaterThan(0);
+    const dup = report.duplicateClaims![0];
+    expect(dup.canonicalText).toBe("registry filter cards caller service identity");
+    expect([dup.cardIdA, dup.cardIdB]).toContain("mod-alpha");
+    expect([dup.cardIdA, dup.cardIdB]).toContain("mod-beta");
+
+    await rm(dest, { recursive: true, force: true });
+  });
+
+  it("reconcile no duplicates when claims differ", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-unique-"));
+    await mkdir(path.join(dest, ".ai/memory/modules"), { recursive: true });
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Card A with a unique claim
+    const cardA = `---
+entity_type: module
+id: mod-unique-a
+title: Module Unique A
+status: current
+authority: source_of_truth
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: ${today}
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: false
+claims:
+  - id: claim-001
+    text: "The authentication layer validates JWT tokens"
+    type: current_behavior
+    evidence_required: true
+---
+
+# Module Unique A
+`;
+    // Card B with a different claim (completely different semantics)
+    const cardB = `---
+entity_type: module
+id: mod-unique-b
+title: Module Unique B
+status: current
+authority: source_of_truth
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: ${today}
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: false
+claims:
+  - id: claim-001
+    text: "The load balancer distributes requests round robin"
+    type: current_behavior
+    evidence_required: true
+---
+
+# Module Unique B
+`;
+    await writeFile(path.join(dest, ".ai/memory/modules/unique-a.md"), cardA, "utf8");
+    await writeFile(path.join(dest, ".ai/memory/modules/unique-b.md"), cardB, "utf8");
+
+    const report = await reconcileMemory({ root: dest });
+    expect(report.duplicateClaims).toBeDefined();
+    expect(report.duplicateClaims!.length).toBe(0);
+
+    await rm(dest, { recursive: true, force: true });
+  });
 });

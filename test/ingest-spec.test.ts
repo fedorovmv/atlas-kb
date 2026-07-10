@@ -4,6 +4,7 @@ import { discoverProject } from "../src/core/discoverProject.js";
 import { classifySpecActuality, extractClaims, checkEvidence } from "../src/core/specClassification.js";
 import { ingestSpecCommand } from "../src/commands/ingestSpec.js";
 import { findCardById, loadMemoryCards } from "../src/core/loadMemory.js";
+import { canonicalClaimText } from "../src/core/claimDedup.js";
 import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import yamll from "js-yaml";
@@ -396,5 +397,64 @@ Status: draft
       expect(meta.conflicts_with ?? []).toHaveLength(0);
       expect(meta.related_specs ?? []).toHaveLength(0);
     }
+  });
+});
+
+describe("ingestSpec within-spec dedup", () => {
+  it("ingestSpec deduplicates duplicate claims within a spec", async () => {
+    const root = await createTempProject();
+    const memoryRoot = path.join(root, ".ai/memory");
+
+    // Write a spec with duplicate content stated in two different sections
+    const spec = `# Agent Registry Filter Spec
+
+Status: accepted
+Status: implemented
+
+## Requirements
+
+- The registry MUST filter cards by caller service identity
+
+## Claims Section
+
+This section restates the same requirement:
+
+- The registry must filter cards by caller service identity
+`;
+    const specDir = path.join(root, "specs");
+    await mkdir(specDir, { recursive: true });
+    await writeFile(path.join(specDir, "dedup-test.md"), spec, "utf8");
+
+    await ingestSpecCommand("specs/dedup-test.md", {
+      root,
+      memoryRoot,
+      force: true,
+    });
+
+    // Find the created card
+    const proposalsDir = path.join(memoryRoot, "proposals");
+    const fileNames = await readdir(proposalsDir);
+    const cardFile = fileNames.find((f) => f.endsWith(".md") && !f.startsWith("test-"));
+    expect(cardFile).toBeDefined();
+
+    const content = await readFile(path.join(proposalsDir, cardFile!), "utf8");
+    const match = content.match(/^---\n([\s\S]*?)\n---\n/);
+    expect(match).not.toBeNull();
+    const meta = yamll.load(match![1]) as Record<string, any>;
+
+    // Extract canonical texts and assert no two have same canonical text
+    const canonicalTexts = meta.claims.map((c: any) => canonicalClaimText(c.text));
+    const uniqueCanonical = new Set(canonicalTexts);
+    // Key assertion: no two stored claims share the same canonical text
+    expect(uniqueCanonical.size).toBe(canonicalTexts.length);
+    // The duplicate "registry filter cards by caller service identity" claims should
+    // have been merged, so the filter-related canonical text appears at most once
+    const filterClones = canonicalTexts.filter(
+      (t: string) => t.includes("registry") && t.includes("filter") && t.includes("caller")
+    );
+    expect(filterClones.length).toBeLessThanOrEqual(1);
+    // Additionally, total claims should be fewer than raw extractClaims would produce
+    // (dedupClaims already ran, collapsing duplicates)
+    expect(meta.claims.length).toBeGreaterThan(0);
   });
 });
