@@ -150,18 +150,21 @@
 - semantic conflict detection — NLP, понимание "A says X MUST, B says X MUST NOT" (v0.4+);
 - relation types `proposes`, `motivates`, `implements`, `tests` (требуют semantic understanding).
 
-### 4.6 Глубокое извлечение design rationale — не реализовано
+### 4.6 Глубокое извлечение design rationale — частично реализовано
 
-Реализовано: bootstrap создаёт decision cards только если file signals содержат rationale/decision/why/alternative/constraint (signal-based, не content parsing).
+Реализовано:
+- bootstrap создаёт decision cards при обнаружении rationale/decision/problem topics в файлах (content-based, не только signal-based);
+- `extractClaims` извлекает design_rationale из ## Problem, ## Constraints, ## Consequences, ## Trade-offs, ## Non-goals, ## Value headings (не только Rationale/Why/Decision/Alternatives);
+- извлечение rejected alternatives (### subheading + `Status: rejected` + `Reason:` → claim);
+- paragraph extraction для rationale sections (не только headings + bullets);
+- `ingestSpec` создаёт decision cards для спек с rationale content (Problem + Decision + Rationale);
+- decision card body заполняется из spec content (## Problem, ## Decision, ## Rationale, ## Alternatives, ## Consequences).
 
 Не реализовано:
 
-- извлечение problem/value/constraints из content спек;
-- извлечение rejected alternatives;
-- различение явно указанного rationale и inferred rationale (schema имеет `evidence_level: inferred`, но extraction не классифицирует);
-- связывание rationale с current decisions;
-- проверка, что rationale не используется как direct code generation source (validate ловит `can_generate_code_from`, но не semantic usage);
-- обновление decision card при появлении новой спеки.
+- различение явно указанного rationale и inferred rationale (schema имеет `evidence_level: inferred`, но extraction не классифицирует — LLM v0.4+);
+- связывание rationale с current decisions (semantic matching — v0.4+);
+- обновление decision card при появлении новой спеки (v0.4+).
 
 ### 4.7 Reconcile — частично реализован
 

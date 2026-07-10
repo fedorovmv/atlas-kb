@@ -60,10 +60,22 @@ export function extractClaims(specContent: string, specPath: string): Claim[] {
   const lines = specContent.split("\n");
   let claimNum = 0;
   let currentSection = "";
+  let currentAlternative: string | null = null;
+  const rationalePattern = /rationale|why|decision|alternative|problem|constraint|consequence|trade.?off|non.?goal|value/i;
 
-  for (const line of lines) {
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+
     const headingMatch = line.match(/^##+\s+(.+)$/);
     if (headingMatch) {
+      const isSubheading = line.startsWith("###");
+      if (isSubheading && currentSection.includes("alternative")) {
+        currentAlternative = headingMatch[1];
+        claimNum++;
+        claims.push(makeClaim(claimNum, headingMatch[1], "design_rationale", specPath));
+        continue;
+      }
+      currentAlternative = null;
       currentSection = headingMatch[1].toLowerCase();
       claimNum++;
       const type = inferClaimTypeFromSection(currentSection, headingMatch[1]);
@@ -73,14 +85,32 @@ export function extractClaims(specContent: string, specPath: string): Claim[] {
       continue;
     }
 
+    // Rejected alternatives detection
+    if (currentAlternative && /status\s*:\s*rejected/i.test(line)) {
+      const reasonLine = lines.slice(li + 1).find((l) => /reason\s*:/i.test(l));
+      const reason = reasonLine ? reasonLine.replace(/.*reason\s*:\s*/i, "").trim() : "rejected";
+      claimNum++;
+      claims.push(makeClaim(claimNum, `${currentAlternative} — rejected: ${reason}`, "design_rationale", specPath));
+      continue;
+    }
+
     const bulletMatch = line.match(/^\s*[-*]\s+(.+)/);
     if (bulletMatch && /must|shall|should|will|does|is|filters|returns|accepts|rejects/i.test(bulletMatch[1])) {
       claimNum++;
-      const type = currentSection.includes("rationale") || currentSection.includes("why") || currentSection.includes("decision")
+      const type = rationalePattern.test(currentSection)
         ? "design_rationale"
         : "current_behavior";
       claims.push(makeClaim(claimNum, bulletMatch[1].trim(), type, specPath));
       continue;
+    }
+
+    // Paragraph extraction for rationale sections
+    if (line.trim().length > 20 && !line.trim().startsWith("---") && !line.trim().startsWith("|") && !line.trim().startsWith("```")) {
+      if (rationalePattern.test(currentSection)) {
+        claimNum++;
+        claims.push(makeClaim(claimNum, line.trim(), "design_rationale", specPath));
+        continue;
+      }
     }
 
     const codeRefMatch = line.match(/`([a-z0-9_\-/.]+\.(?:go|ts|js|py|java))`/i);
@@ -97,7 +127,7 @@ export function extractClaims(specContent: string, specPath: string): Claim[] {
 }
 
 function inferClaimTypeFromSection(section: string, _heading: string): Claim["type"] | null {
-  if (/rationale|why|decision|alternatives/.test(section)) return "design_rationale";
+  if (/rationale|why|decision|alternatives|problem|constraint|consequence|trade.?off|non.?goal|value/.test(section)) return "design_rationale";
   if (/background|context|prior/.test(section)) return "historical_context";
   if (/requirement|claim|behavior|overview/.test(section)) return "current_behavior";
   if (/open question|unknown|tbd/.test(section)) return "open_question";

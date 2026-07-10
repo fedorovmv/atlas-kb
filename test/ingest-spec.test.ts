@@ -458,3 +458,80 @@ This section restates the same requirement:
     expect(meta.claims.length).toBeGreaterThan(0);
   });
 });
+
+describe("rationale extraction", () => {
+  it("detects design_rationale from ## Problem heading", () => {
+    const claims = extractClaims("# Spec\n## Problem\nThe registry must not be an orchestrator\n", "test.md");
+    const rationale = claims.find((c) => c.type === "design_rationale");
+    expect(rationale).toBeDefined();
+    expect(rationale!.text).toMatch(/problem/i);
+  });
+
+  it("detects design_rationale from ## Constraints", () => {
+    const claims = extractClaims("# Spec\n## Constraints\n- Must not cache results\n", "test.md");
+    const rationale = claims.filter((c) => c.type === "design_rationale");
+    expect(rationale.length).toBeGreaterThan(0);
+  });
+
+  it("extracts rationale from paragraphs in ## Rationale section", () => {
+    const claims = extractClaims("# Spec\n## Rationale\nThis boundary keeps the component simple because it separates concerns.\n", "test.md");
+    const para = claims.find((c) => c.text.includes("boundary"));
+    expect(para).toBeDefined();
+    expect(para!.type).toBe("design_rationale");
+  });
+
+  it("extracts rejected alternatives", () => {
+    const content = "# Spec\n## Alternatives\n### Option A\nStatus: rejected\nReason: too complex\n### Option B\nStatus: accepted\n";
+    const claims = extractClaims(content, "test.md");
+    const rejected = claims.find((c) => c.text.includes("Option A") && c.text.includes("rejected"));
+    expect(rejected).toBeDefined();
+    expect(rejected!.type).toBe("design_rationale");
+  });
+
+  it("ingestSpec creates decision card from spec with rationale", async () => {
+    const root = await createTempProject();
+    const memoryRoot = path.join(root, ".ai/memory");
+    const specDir = path.join(root, "specs");
+    await mkdir(specDir, { recursive: true });
+    await writeFile(path.join(specDir, "design-decision.md"),
+      "# Design Decision\n\nStatus: accepted\n\n## Problem\nThe registry must not be an orchestrator.\n\n## Decision\nRegistry is discovery only.\n\n## Rationale\nKeeps component simple.\n", "utf8");
+
+    await ingestSpecCommand("specs/*.md", { root, memoryRoot, force: true });
+
+    const decisionsDir = path.join(memoryRoot, "decisions");
+    const files = await readdir(decisionsDir);
+    const decisionFile = files.find((f) => f.endsWith(".md") && f !== ".gitkeep" && f.includes("design-decision"));
+    expect(decisionFile).toBeDefined();
+
+    const cardContent = await readFile(path.join(decisionsDir, decisionFile!), "utf8");
+    const meta = await extractFrontmatter(path.join(decisionsDir, decisionFile!));
+    expect(meta.entity_type).toBe("decision");
+    expect(meta.usage_policy.can_generate_code_from).toBe(false);
+    expect(cardContent).toContain("## Problem");
+    expect(cardContent).toContain("The registry must not be an orchestrator");
+  });
+
+  it("ingestSpec does not create decision card for historical spec", async () => {
+    const root = await createTempProject();
+    const memoryRoot = path.join(root, ".ai/memory");
+    const specDir = path.join(root, "specs");
+    await mkdir(path.join(specDir, "legacy"), { recursive: true });
+    await writeFile(path.join(specDir, "legacy", "old-design.md"),
+      "# Old Design\n\nStatus: deprecated\n\n## Problem\nOld problem.\n\n## Decision\nOld decision.\n\n## Rationale\nOld rationale.\n", "utf8");
+
+    await ingestSpecCommand("specs/legacy/*.md", { root, memoryRoot, force: true });
+
+    const decisionsDir = path.join(memoryRoot, "decisions");
+    const files = await readdir(decisionsDir);
+    // Fixture has registry-is-discovery card; no new decision card for old-design
+    const newDecision = files.find((f) => f.includes("old-design"));
+    expect(newDecision).toBeUndefined();
+  });
+});
+
+async function extractFrontmatter(filePath: string): Promise<Record<string, any>> {
+  const content = await readFile(filePath, "utf8");
+  const match = content.match(/^---\n([\s\S]*?)\n---\n/);
+  expect(match).not.toBeNull();
+  return yamll.load(match![1]) as Record<string, any>;
+}

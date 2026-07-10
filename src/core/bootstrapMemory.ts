@@ -298,7 +298,7 @@ function extractDecisions(report: DiscoveryReport): { id: string; title: string;
   const decisions: { id: string; title: string; rationale: string; sourceFile: string }[] = [];
   const seen = new Set<string>();
   for (const file of report.files.filter((f) => f.kind === "doc")) {
-    if (file.signals.some((s) => /rationale|decision|why|alternative|constraint/i.test(s))) {
+    if (file.topics.some((t) => /rationale|decision|why|alternative|constraint|problem/i.test(t))) {
       const id = slugifyPath(file.path);
       if (seen.has(id)) continue;
       seen.add(id);

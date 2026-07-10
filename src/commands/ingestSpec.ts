@@ -21,6 +21,13 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function extractSection(content: string, sectionName: string): string | null {
+  const pattern = new RegExp(`^##\\s+${sectionName}\\s*\\n([\\s\\S]*?)(?=\\n##\\s|$)`, "im");
+  const match = content.match(pattern);
+  if (!match) return null;
+  return match[1].trim();
+}
+
 async function readFileIfExists(filePath: string): Promise<string> {
   try {
     return await readFile(filePath, "utf8");
@@ -86,6 +93,18 @@ export async function ingestSpecCommand(
       cardWritten = true;
     }
     results.push({ spec: specRel, actuality, claims: claims.length, cardWritten });
+
+    // Create decision card if spec has rationale content (Problem/Decision/Rationale headings)
+    const hasRationale = /##\s+(problem|decision|rationale)\b/im.test(content);
+    const hasRequirements = /##\s+(requirements?|claims?)\b/im.test(content);
+    if (hasRationale && actuality !== "historical_context" && !options.dryRun) {
+      const rationaleClaims = dedupedClaims.filter((c) => c.type === "design_rationale");
+      const decisionCard = `---\n${frontmatterYaml({ entity_type: "decision", id: `decision-${slug}`, title: path.basename(specRel), status: "current", authority: "reviewed_memory", evidence_level: "reviewed_doc", stability: "stable", source_confidence: "medium", last_reviewed: today(), review_required: true, knowledge_types: ["design_rationale"], source_refs: [{ path: specRel, role: "rationale" }], claims: rationaleClaims, usage_policy: { can_answer_current_behavior: false, can_generate_code_from: false, can_use_as_rationale: true, requires_code_check_before_change: true } })}\n---\n\n# ${path.basename(specRel)} (decision)\n\n## Context\nExtracted from spec. Review for completeness.\n\n## Problem\n${extractSection(content, "Problem") || "Needs review"}\n\n## Decision\n${extractSection(content, "Decision") || "Needs review"}\n\n## Rationale\n${extractSection(content, "Rationale") || "Needs review"}\n\n## Alternatives considered\n${extractSection(content, "Alternatives") || "Needs review"}\n\n## Consequences\n${extractSection(content, "Consequences") || "Needs review"}\n`;
+      const decisionWritten = (await writeCard(memoryRoot, `decisions/${slug}.md`, decisionCard, options.force ?? false, false)) === "written";
+      if (decisionWritten && !hasRequirements) {
+        // Spec was only rationale — mark decision as primary card
+      }
+    }
   }
 
   // Post-comparison pass: detect and apply cross-spec relations

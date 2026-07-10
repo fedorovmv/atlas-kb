@@ -83,4 +83,18 @@ describe("bootstrap", () => {
 
     await rm(dest, { recursive: true, force: true });
   });
+
+  it("creates decision card from doc with rationale topic", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "bootstrap-decision-"));
+    await mkdir(path.join(dest, "docs"), { recursive: true });
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(path.join(dest, "internal/registry/access_filter.go"), "package registry\n\nfunc Filter() {}\n", "utf8");
+    await writeFile(path.join(dest, "docs/rationale.md"), "# Decision\n## Rationale\nWe chose this approach because it is simple.\n## Alternatives\n### Option A\nStatus: rejected\nReason: too complex\n", "utf8");
+
+    const result = await bootstrapMemory({ root: dest });
+    const decisionCard = result.written.find((p) => p.includes("decisions/"));
+    expect(decisionCard).toBeDefined();
+
+    await rm(dest, { recursive: true, force: true });
+  });
 });
