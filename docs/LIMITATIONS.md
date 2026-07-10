@@ -201,14 +201,12 @@
 - не управляет фактическим выбором модели из CLI;
 - распределение задач между моделями выполняется OpenCode на основе agents/commands/skills, не CLI.
 
-### 4.9 OpenCode plugin integration — thin tools, не full plugin
+### 4.9 OpenCode plugin integration — memory-guard plugin + thin tools
 
-Реализовано: thin tools (context, validate, related, discover, bootstrap) как wrappers над CLI. Evidence-gated `code_confirmed`/`test_confirmed`: validate ERRORS без `## Code evidence`/`## Test evidence` секции; updateCard THROWS при попытке выставить без секции. AGENTS.md scaffolded с advisory pre-task context instruction.
+Реализовано: thin tools (context, validate, related, discover, bootstrap) как wrappers над CLI. Evidence-gated `code_confirmed`/`test_confirmed`: validate ERRORS без `## Code evidence`/`## Test evidence` секции; updateCard THROWS при попытке выставить без секции. AGENTS.md scaffolded с advisory pre-task context instruction. memory-guard plugin (.opencode/plugins/memory-guard.js): tool.execute.before/after hooks, chat.message auto-context injection, session state tracking. Полноценный OpenCode plugin с собственным lifecycle. Автоматическое внедрение memory-context перед coding-задачей (plugin chat.message hook).
 
 Не реализовано:
 
-- полноценный OpenCode plugin с собственным lifecycle;
-- автоматическое внедрение memory-context перед каждой coding-задачей (advisory через AGENTS.md, не enforced);
 - UI-навигация по memory bank;
 - интерактивное подтверждение memory diff внутри OpenCode.
 
@@ -301,8 +299,8 @@
 
 ### v0.4 — OpenCode integration
 
-- полноценный plugin lifecycle;
-- automatic pre-task memory context injection;
+- ✅ полноценный plugin lifecycle (memory-guard plugin);
+- ✅ automatic pre-task memory context injection (chat.message hook);
 - interactive review memory diff;
 - enforcement для product/architecture tasks;
 - optional graph export.
