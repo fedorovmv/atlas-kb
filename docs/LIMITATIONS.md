@@ -100,16 +100,18 @@
 Реализовано:
 
 - `checkEvidence` — matching claim text против discovery file basenames/topics;
-- статусы: `confirmed_by_code`, `confirmed_by_test`, `documented_only`, `not_found`.
+- статусы: `confirmed_by_code`, `confirmed_by_test`, `documented_only`, `not_found`;
+- LLM semantic verification (memory-coder): читает function body, сравнивает behavior с claim intent, не просто symbol existence;
+- `conflicts_with_code` (LLM): symbol существует, но behavior не соответствует claim → ## Conflicts section + conflicts.md;
+- partial implementation detection (LLM: memory-analyst): claim частично реализован — некоторые aspects в коде, некоторые missing;
+- evidence report по каждому claim с reason (LLM: semantic verification format).
 
 Не реализовано:
 
-- автоматический code symbol analysis (поиск функций/классов/методов, подтверждающих claim);
-- semantic check (понимание, что функция действительно делает то, что утверждает claim);
-- различение `confirmed_by_code` от `confirmed_by_test` от `conflicts_with_code` на основе анализа кода;
-- evidence report по каждому claim с reason.
+- CLI-side AST symbol analysis (by design — LLM делает semantic, не CLI keyword match);
+- automated semantic check без LLM (требует semantic understanding).
 
-Текущая реализация: если claim text содержит слово "registry" и есть файл `access_filter.go` с basename содержащим "access_filter" → `confirmed_by_code`. Это keyword match, не semantic proof.
+Текущая реализация CLI: keyword match (basename tokens). LLM (memory-coder): semantic verification — читает function body, проверяет behavior vs claim intent.
 
 ### 4.4 Spec actuality — частично реализована
 
@@ -119,16 +121,14 @@
 - path markers (legacy/archive/deprecated → historical);
 - content signals (Status: accepted/implemented/draft/deprecated);
 - evidence count (confirmed_by_code/test → current_confirmed/partially_confirmed);
-- conflict detection (conflicts_with_code evidence OR memory conflict card).
+- conflict detection (conflicts_with_code evidence OR memory conflict card);
+- LLM semantic verification (memory-coder): выявление конфликтов спеки с кодом по смыслу;
+- LLM partial implementation detection (memory-analyst): выявление частично реализованной спеки (не binary).
 
 Не реализовано:
 
-- анализ связей спеки с PR/Jira/commit;
-- проверка, реализованы ли требования спеки в коде (только keyword match);
-- сравнение спеки с текущими module/scenario/decision cards по смыслу;
-- выявление спеки, которая частично реализована (binary: confirmed/not_found);
-- выявление спеки, которая конфликтует с текущим кодом (только evidence status);
-- автоматическое присвоение статуса на основе claim/evidence (используется evidence count, не per-claim analysis).
+- анализ связей спеки с PR/Jira/commit (integration, v0.5+);
+- CLI-side per-claim semantic analysis (by design — LLM делает semantic).
 
 ### 4.5 Сверка документов между собой — частично реализована
 

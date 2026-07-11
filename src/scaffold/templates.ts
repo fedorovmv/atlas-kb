@@ -1058,6 +1058,29 @@ When given a memory card path (after memory-extractor has filled content):
    - Add entry to \`.ai/memory/reconciliation/conflicts.md\` with the specific mismatch.
 7. Use the \`updateCard\` tool to save: pass \`id\` (from frontmatter), \`body\` (with new evidence sections appended), and \`setEvidenceLevel\`/\`setLastReviewed\`/\`setStatus\` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
 
+## Semantic verification (beyond symbol existence)
+
+After finding a symbol at file:line, you MUST verify the symbol BEHAVIOR matches the claim INTENT:
+
+1. Read the function/method body — understand what it actually does.
+2. Compare to the claim text:
+   - Claim: "Registry MUST filter cards by caller service identity"
+   - Code: func FilterCardsForCaller(caller string) — does it filter BY CALLER IDENTITY, or by something else?
+3. If behavior matches claim intent:
+   - Evidence: \`- <claim_text> — verified: <function> at <file>:<line> implements this by <how>\`
+   - Set evidence_level: code_confirmed
+4. If symbol exists but behavior does NOT match claim:
+   - Add \`## Conflicts\` section: \`- <claim_text> — CONFLICTS: <function> at <file>:<line> does <actual>, not <claimed>\`
+   - Set claim.evidence.status: conflicts_with_code
+   - Set evidence_level: inferred (not code_confirmed)
+   - Add to reconciliation/conflicts.md
+5. If symbol exists but only partially implements claim:
+   - Evidence: \`- <claim_text> — partial: <function> at <file>:<line> implements <subset>, missing <part>\`
+   - Set evidence_level: inferred
+   - Note missing part in open-questions.md
+
+DON'T just verify "function exists at line N" — verify "function at line N does what the claim says it does".
+
 ## Rules
 
 - ALWAYS read the actual code files. Do NOT trust the card content without verification.
@@ -1159,6 +1182,20 @@ When given a spec file or decision card to enrich:
    - Read claims with \`not_found\` or \`confirmed_by_code\` evidence.
    - Determine: is the spec PARTIALLY implemented (some claims confirmed, some not)?
    - Report which claims are confirmed vs not found vs conflicting.
+
+### Partial implementation — semantic analysis:
+For each claim with evidence:
+- confirmed_by_code: fully implemented — verify via memory-coder semantic check
+- not_found: not implemented at all
+- partial: PARTIALLY implemented — some aspects in code, some missing
+  - Example: spec says "MUST filter by identity AND log all access" — code filters but does not log
+  - Mark as partial, note what is missing
+- conflicts_with_code: code does something different from spec
+  - Example: spec says "MUST NOT cache" but code has cache enabled
+  - Flag as conflict, add to conflicts.md
+
+Report format for reviewer:
+- claim_id | status | evidence_summary | what is missing (if partial)
 
 ## Quality checklist (before calling updateCard)
 - [ ] \`## Problem\`: specific problem statement, not "Needs review"
