@@ -321,7 +321,7 @@ Registry remains a discovery component to avoid mixing metadata storage, target 
 
 ## Code evidence
 
-- Example entry showing required format: - Description at file:line (symbol_name). Replace with actual verified symbols.
+- FilterCardsForCaller function at internal/registry/access_filter.go:5 (FilterCardsForCaller)
 
 ## Open questions
 
@@ -982,6 +982,25 @@ When given a memory card path with \`needs_review\` status:
    - \`evidence_level\`: keep as-is unless you have strong reason to change. Do NOT set \`code_confirmed\` — that's memory-coder's job after evidence verification.
    - \`last_reviewed\`: today's date.
 6. Use the \`updateCard\` tool to save: pass \`id\` (from frontmatter), \`body\` (new body content), and \`setLastReviewed\`/\`setSourceConfidence\` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
+
+## Quality checklist (before calling updateCard)
+- [ ] ## Responsibility: 2-4 sentences, cites ≥1 function/type name from code_refs
+- [ ] ## Non-responsibilities: ≥1 specific item (not "None identified")
+- [ ] ## Current behavior: references ≥1 specific function/type/method from code
+- [ ] ## Known risks: only if TODO/FIXME/deprecated found; otherwise omit section
+
+## Anti-patterns — DON'T write:
+- "This module handles functionality" — too vague
+- "Provides robust solutions for..." — marketing language
+- "Leverages industry best practices" — meaningless
+- "Implements core logic" — doesn't say WHAT
+- "Handles data processing" — generic
+Instead write: "Filters agent cards by caller service identity at internal/registry/access_filter.go (FilterCardsForCaller)"
+
+## Good examples:
+- Responsibility: "Registry stores agent/tool metadata and filters cards by caller service identity. Exposes query API, not runtime orchestration."
+- Non-responsibilities: "Does NOT choose target agents. Does NOT transform request payloads. Does NOT cache results."
+- Current behavior: "FilterCardsForCaller(caller string) returns []string of visible card IDs. AccessFilter struct holds policy map."
 
 ## Rules
 

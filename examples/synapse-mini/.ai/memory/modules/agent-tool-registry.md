@@ -73,7 +73,7 @@ Registry remains a discovery component to avoid mixing metadata storage, target 
 
 ## Code evidence
 
-- Registry and filtering at internal/registry/access_filter.go (FilterCardsForCaller)
+- Registry and filtering at internal/registry/access_filter.go:42 (FilterCardsForCaller)
 
 ## Open questions
 

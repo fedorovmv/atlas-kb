@@ -203,7 +203,7 @@
 
 ### 4.9 OpenCode plugin integration — memory-guard plugin + thin tools
 
-Реализовано: thin tools (context, validate, related, discover, bootstrap) как wrappers над CLI. Evidence-gated `code_confirmed`/`test_confirmed`: validate ERRORS без `## Code evidence`/`## Test evidence` секции; updateCard THROWS при попытке выставить без секции. AGENTS.md scaffolded с advisory pre-task context instruction. memory-guard plugin (.opencode/plugins/memory-guard.js): tool.execute.before/after hooks, chat.message auto-context injection, session state tracking. Полноценный OpenCode plugin с собственным lifecycle. Автоматическое внедрение memory-context перед coding-задачей (plugin chat.message hook).
+Реализовано: thin tools (context, validate, related, discover, bootstrap) как wrappers над CLI. Evidence-gated `code_confirmed`/`test_confirmed`: validate ERRORS без `## Code evidence`/`## Test evidence` секции с форматом `at <path>:<line> (symbol)`; updateCard THROWS при попытке выставить без секции. AGENTS.md scaffolded с advisory pre-task context instruction. memory-guard plugin: lifecycle hooks + auto-context injection. Content quality enforcement: agent instructions включают quality rubric (checklist + anti-patterns + good examples), reviewer re-reads code_refs для verification, bootstrap placeholders содержат EXAMPLE good output.
 
 Не реализовано:
 

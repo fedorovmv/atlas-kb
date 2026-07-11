@@ -232,7 +232,7 @@ No evidence section here.
     const result = await validateMemory({ root });
     expect(result.ok).toBe(false);
     expect(result.errors.join("\n")).toContain("missing-evidence.md");
-    expect(result.errors.join("\n")).toContain("evidence_level=code_confirmed requires ## Code evidence section with entries");
+    expect(result.errors.join("\n")).toContain("evidence_level=code_confirmed requires ## Code evidence section with entries in format");
   });
 
   it("passes: code_confirmed with ## Code evidence section", async () => {
@@ -266,7 +266,7 @@ usage_policy:
 
 ## Code evidence
 
-- FilterCardsForCaller function at internal/registry/access_filter.go
+- FilterCardsForCaller function at internal/registry/access_filter.go:12
 `,
       "utf8",
     );
@@ -311,7 +311,7 @@ No evidence section here.
     const result = await validateMemory({ root });
     expect(result.ok).toBe(false);
     expect(result.errors.join("\n")).toContain("missing-test-evidence.md");
-    expect(result.errors.join("\n")).toContain("evidence_level=test_confirmed requires ## Test evidence section with entries");
+    expect(result.errors.join("\n")).toContain("evidence_level=test_confirmed requires ## Test evidence section with entries in format");
   });
 
   it("passes: reviewed_doc without evidence section", async () => {
@@ -350,5 +350,208 @@ No evidence section needed.
     const result = await validateMemory({ root });
     const rdErrors = result.errors.filter((e) => e.includes("reviewed-doc-ok.md"));
     expect(rdErrors).toEqual([]);
+  });
+
+  it("validate errors: evidence bullet without file:line pattern", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "bad-evidence-bullet.md"),
+      `---
+entity_type: module
+id: bad-evidence-bullet
+title: Bad Evidence Bullet
+status: current
+authority: reviewed_memory
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Bad Evidence Bullet
+
+## Code evidence
+
+- TODO
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    expect(result.ok).toBe(false);
+    expect(result.errors.join("\n")).toContain("bad-evidence-bullet.md");
+    expect(result.errors.join("\n")).toContain("in format 'description at");
+  });
+
+  it("validate errors: evidence bullet generic content", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "generic-evidence.md"),
+      `---
+entity_type: module
+id: generic-evidence
+title: Generic Evidence
+status: current
+authority: reviewed_memory
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Generic Evidence
+
+## Code evidence
+
+- checked
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    expect(result.ok).toBe(false);
+    expect(result.errors.join("\n")).toContain("generic-evidence.md");
+    expect(result.errors.join("\n")).toContain("in format 'description at");
+  });
+
+  it("validate passes: proper evidence entry", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "proper-evidence.md"),
+      `---
+entity_type: module
+id: proper-evidence
+title: Proper Evidence
+status: current
+authority: reviewed_memory
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Proper Evidence
+
+## Code evidence
+
+- Filter at internal/registry/access_filter.go:12 (FilterCardsForCaller)
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const evErrors = result.errors.filter((e) => e.includes("proper-evidence.md"));
+    expect(evErrors).toEqual([]);
+  });
+
+  it("validate errors: test evidence without file:line", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "bad-test-evidence.md"),
+      `---
+entity_type: module
+id: bad-test-evidence
+title: Bad Test Evidence
+status: current
+authority: reviewed_memory
+evidence_level: test_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Bad Test Evidence
+
+## Test evidence
+
+- checked
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    expect(result.ok).toBe(false);
+    expect(result.errors.join("\n")).toContain("bad-test-evidence.md");
+    expect(result.errors.join("\n")).toContain("in format 'description at");
+  });
+
+  it("validate passes: proper test evidence", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "proper-test-evidence.md"),
+      `---
+entity_type: module
+id: proper-test-evidence
+title: Proper Test Evidence
+status: current
+authority: reviewed_memory
+evidence_level: test_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Proper Test Evidence
+
+## Test evidence
+
+- Test TestFilter at tests/registry/filter_test.go:8 covers filtering
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const evErrors = result.errors.filter((e) => e.includes("proper-test-evidence.md"));
+    expect(evErrors).toEqual([]);
   });
 });
