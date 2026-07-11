@@ -529,6 +529,28 @@ describe("rationale extraction", () => {
   });
 });
 
+describe("ingestSpec claim linking", () => {
+  it("links claims to existing module cards", async () => {
+    const root = await createTempProject();
+    const memoryRoot = path.join(root, ".ai/memory");
+    const specDir = path.join(root, "specs");
+    await mkdir(specDir, { recursive: true });
+    await writeFile(path.join(specDir, "registry-spec.md"),
+      "# Registry Spec\n\nStatus: accepted\n\n## Requirements\n\n- The Agent & Tool Registry MUST filter cards by caller identity\n", "utf8");
+
+    await ingestSpecCommand("specs/*.md", { root, memoryRoot, force: true });
+
+    const proposalsDir = path.join(memoryRoot, "proposals");
+    const files = await readdir(proposalsDir);
+    const cardFile = files.find((f) => f.includes("registry-spec"));
+    expect(cardFile).toBeDefined();
+    const meta = await extractFrontmatter(path.join(proposalsDir, cardFile!));
+    expect(meta.claims).toBeDefined();
+    const linkedClaim = meta.claims.find((c: any) => c.module || c.scenario || c.decision);
+    expect(linkedClaim).toBeDefined();
+  });
+});
+
 async function extractFrontmatter(filePath: string): Promise<Record<string, any>> {
   const content = await readFile(filePath, "utf8");
   const match = content.match(/^---\n([\s\S]*?)\n---\n/);

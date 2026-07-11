@@ -433,4 +433,57 @@ claims:
 
     await rm(dest, { recursive: true, force: true });
   });
+
+  it("reconcile detects broken claim links", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-claim-link-"));
+    await mkdir(path.join(dest, "internal/registry"), { recursive: true });
+    await writeFile(path.join(dest, "internal/registry/access_filter.go"), "package registry\nfunc Filter() {}\n", "utf8");
+    await bootstrapMemory({ root: dest });
+
+    // Create a card with claim containing broken module link
+    const brokenCard = `---
+entity_type: module
+id: test-broken-links
+title: Test Broken Links
+status: needs_review
+authority: reviewed_memory
+evidence_level: unknown
+stability: evolving
+source_confidence: low
+last_reviewed: '2026-07-09'
+review_required: true
+knowledge_types:
+  - current_behavior
+claims:
+  - id: claim-001
+    text: Test claim
+    type: current_behavior
+    evidence_required: true
+    module: nonexistent-module-id
+    evidence:
+      claim_id: claim-001
+      status: not_checked
+      confidence: unknown
+      files: []
+      notes: []
+    last_checked: '2026-07-09'
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Test Broken Links
+`;
+    await writeFile(path.join(dest, ".ai/memory/modules/test-broken.md"), brokenCard, "utf8");
+
+    const report = await reconcileMemory({ root: dest });
+    expect(report.brokenClaimLinks).toBeDefined();
+    expect(report.brokenClaimLinks!.length).toBeGreaterThan(0);
+    expect(report.brokenClaimLinks![0].targetId).toBe("nonexistent-module-id");
+    expect(report.brokenClaimLinks![0].field).toBe("module");
+
+    await rm(dest, { recursive: true, force: true });
+  });
 });

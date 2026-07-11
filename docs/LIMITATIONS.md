@@ -92,12 +92,12 @@
 - повторная проверка claims при reconcile (reconcile re-runs checkEvidence, `--fix` обновляет stored evidence);
 - claim evidence storage в frontmatter (StoredClaim с embedded evidence + last_checked);
 - дедупликация claims (within-spec при ingest + cross-card detection при reconcile, first-wins + evidence merge);
-- нормализация claims (canonical form — deterministic: lowercase, strip punctuation, remove stopwords).
+- нормализация claims (canonical form — deterministic: lowercase, strip punctuation, remove stopwords);
+- связь claim → module/scenario/decision (auto-linking при ingestSpec по title/source_path match; reconcile проверяет broken claim links).
 
 Не реализовано:
 
-- semantic deduplication (понимание "MUST filter" = "shall filter" — LLM v0.4+);
-- связь claim → module/scenario/decision (source_path присутствует; optional module/scenario/decision поля есть, но не автозаполняются).
+- semantic deduplication (понимание "MUST filter" = "shall filter" — LLM v0.4+).
 
 ### 4.3 Code evidence check — keyword-based, не symbol analysis
 

@@ -19,6 +19,7 @@ export type ReconcileReport = {
   staleProposals?: { cardId: string; lastReviewed: string; daysSinceReview: number }[];
   changedClaimEvidence?: { cardId: string; claimId: string; oldStatus: string; newStatus: string }[];
   brokenRelations?: { cardId: string; field: string; targetId: string }[];
+  brokenClaimLinks?: { cardId: string; claimId: string; field: string; targetId: string }[];
   duplicateClaims?: { cardIdA: string; claimIdA: string; cardIdB: string; claimIdB: string; canonicalText: string }[];
 };
 
@@ -118,7 +119,21 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
 
   const duplicateClaims = findCrossCardDuplicates(cards);
 
-  return { staleRefs, weakCurrentClaims, realizableProposals, orphanModules, staleRefsDetailed, weakCurrentClaimsDetailed, realizableProposalsDetailed, staleProposals, changedClaimEvidence, brokenRelations, duplicateClaims };
+  // Broken claim links — claim.module/scenario/decision points to non-existent card
+  const brokenClaimLinks: { cardId: string; claimId: string; field: string; targetId: string }[] = [];
+  for (const card of cards) {
+    if (!card.meta.claims || card.meta.claims.length === 0) continue;
+    for (const claim of card.meta.claims) {
+      for (const field of ["module", "scenario", "decision"] as const) {
+        const targetId = (claim as any)[field] as string | undefined;
+        if (targetId && !allIds.has(targetId)) {
+          brokenClaimLinks.push({ cardId: card.meta.id, claimId: claim.id, field, targetId });
+        }
+      }
+    }
+  }
+
+  return { staleRefs, weakCurrentClaims, realizableProposals, orphanModules, staleRefsDetailed, weakCurrentClaimsDetailed, realizableProposalsDetailed, staleProposals, changedClaimEvidence, brokenRelations, duplicateClaims, brokenClaimLinks };
 }
 
 function parseDate(dateStr: string): Date | null {

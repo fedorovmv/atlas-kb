@@ -31,6 +31,8 @@ export async function reconcileMemoryCommand(options: RepoMemoryOptions & { json
   if (report.orphanModules.length) for (const m of report.orphanModules) console.log(`- ${m}`); else console.log("- none");
   console.log(`\n## Duplicate claims (${report.duplicateClaims?.length ?? 0})`);
   if (report.duplicateClaims?.length) for (const d of report.duplicateClaims) console.log(`- ${d.cardIdA}/${d.claimIdA} == ${d.cardIdB}/${d.claimIdB}: "${d.canonicalText.slice(0, 50)}"`); else console.log("- none");
+  console.log(`\n## Broken claim links (${report.brokenClaimLinks?.length ?? 0})`);
+  if (report.brokenClaimLinks?.length) for (const l of report.brokenClaimLinks) console.log(`- ${l.cardId}/${l.claimId} ${l.field} → ${l.targetId}`); else console.log("- none");
 
   if (appliedFixes !== undefined) {
     const total = appliedFixes.conflictsAppended.length + appliedFixes.openQuestionsAppended.length + appliedFixes.proposalCardsUpdated.length;
