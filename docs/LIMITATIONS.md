@@ -62,23 +62,19 @@
 Целевая команда должна автоматически:
 
 1. классифицировать спеку — ✅ реализовано (`classifySpecActuality`);
-2. извлекать proposed behavior — ✅ частично (`extractClaims` из headings/bullets);
-3. извлекать rationale, constraints, alternatives, risks — ❌ НЕ реализовано (только headings → design_rationale type);
+2. извлекать proposed behavior — ✅ реализовано (`extractClaims` из headings/bullets/paragraphs);
+3. извлекать rationale, constraints, alternatives, risks — ✅ реализовано (CLI: headings + paragraph extraction; LLM: memory-analyst deep rationale extraction);
 4. разбивать содержание на claims — ✅ реализовано (`extractClaims`);
-5. сопоставлять claims с текущей memory — ⚠️ частично (keyword match, не semantic);
-6. искать evidence в коде, тестах, контрактах — ✅ реализовано (`checkEvidence`, keyword-based);
+5. сопоставлять claims с текущей memory — ✅ реализовано (CLI: keyword match + canonical dedup; LLM: memory-analyst semantic matching);
+6. искать evidence в коде, тестах, контрактах — ✅ реализовано (`checkEvidence`, keyword-based; LLM: memory-coder symbol verification);
 7. определять actuality спеки — ✅ реализовано (`classifySpecActuality`);
-8. создавать proposal/historical/conflict updates — ✅ реализовано;
+8. создавать proposal/historical/conflict/decision updates — ✅ реализовано;
 9. обновлять current-секции только при evidence — ✅ реализовано (validate rejects spec_only+current_behavior).
 
-Не реализовано:
+Не реализовано (LLM v0.4+ — требует external integration):
 
-- глубокое извлечение rationale, constraints, alternatives, risks из content спеки;
-- semantic matching claims ↔ memory (только keyword);
-- анализ связей спеки с PR/Jira/commit;
-- проверка, реализованы ли требования спеки в коде (только basename match);
-- сравнение спеки с текущими module/scenario/decision cards по смыслу;
-- выявление частично реализованной спеки (только confirmed/not_found бинарно).
+- анализ связей спеки с PR/Jira/commit (integration, v0.5+);
+- semantic проверка реализации требований в коде (LLM: memory-coder делает symbol verification, но не semantic "does this function actually implement the spec's intent").
 
 ### 4.2 Claim model — частично реализована
 
@@ -284,11 +280,12 @@
 
 Не выполнено (перенесено в v0.2+):
 
-- глубокий LLM-assisted claim extraction (semantic, не keyword);
 - ✅ claim storage в memory-файлах;
 - ✅ claim re-check при reconcile;
-- semantic code evidence (symbol analysis);
-- ✅ cross-document comparison (detectSpecRelations, relation building, conflicts.md append, broken-relation reconcile).
+- ✅ cross-document comparison (detectSpecRelations, relation building, conflicts.md append, broken-relation reconcile);
+- ✅ LLM-assisted rationale extraction (memory-analyst, deepseek-v4-flash);
+- ✅ semantic claim matching (memory-analyst);
+- semantic code evidence — LLM: memory-coder делает symbol verification, но не semantic "does code implement spec intent" (v0.4+).
 
 ### v0.3 (текущая) — выполнен
 
