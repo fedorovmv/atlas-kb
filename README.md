@@ -1,127 +1,195 @@
 # Repo Memory OpenCode Kit
 
-Локальный набор для repository-native memory bank: Markdown + YAML frontmatter + TypeScript CLI + OpenCode skills/commands/agents/tools.
+## Что это
 
-Задача набора — помочь coding agent перед изменением кода быстро найти:
+Инструмент для создания и поддержки **memory bank** — структурированных Markdown-файлов с YAML frontmatter, которые помогают coding agent понять существующий продукт перед изменениями.
 
-- актуальные module/scenario/decision карточки;
-- почему решение устроено именно так;
-- что является current/proposed/historical;
-- где искать подтверждение в коде и тестах;
-- какие конфликты и open questions нельзя замалчивать.
+Memory bank живёт в репозитории рядом с кодом (`.ai/memory/`), не во внешней базе. Source of truth — Markdown, не RAG, не embeddings, не graph database.
 
-## Что внутри
+## Какую проблему решает
 
-```text
-src/                    TypeScript core library and CLI
-src/schemas/            Zod-схемы frontmatter и claim/evidence
-src/core/               загрузка memory, связи, context pack, validate
-src/commands/           CLI-команды
-src/scaffold/           шаблоны .ai/memory и .opencode
-.opencode/              создаётся командой init в целевом проекте
-.ai/memory/             создаётся командой init в целевом проекте
-test/                   Vitest-тесты постановки, команд и инвариантов
-examples/synapse-mini/  мини-пример проекта после init
+Coding agent (LLM) перед изменением продукта сталкивается с тремя проблемами:
+
+1. **Не знает архитектуру.** Что делает модуль `registry`? Почему registry не выбирает агента? Что было до текущего подхода?
+2. **Не различает current / proposed / historical.** Спека 2025 года говорит "централизованный роутер" — но код уже работает по-другому. На что опираться?
+3. **Не имеет evidence.** Документация утверждает "фильтрация по caller identity" — но действительно ли код это делает? Или это только proposal?
+
+Без memory bank agent либо читает весь код (дорого), либо галлюцинирует (опасно), либо игнорирует контекст (неправильно).
+
+Memory bank решает это: **детерминированный CLI** создаёт структурированный skeleton, **LLM-агенты** заполняют content с evidence verification, **validator** блокирует ложную уверенность.
+
+## Разделение труда: CLI vs LLM
+
+| CLI делает (deterministic) | LLM делает (semantic) |
+|---|---|
+| Инвентаризация файлов, классификация, topics | Чтение кода, понимание что функция делает |
+| Skeleton cards с code_refs/test_refs | Заполнение Responsibility, Current behavior |
+| Claim extraction из markdown headings/bullets | Semantic rationale extraction из prose |
+| Keyword evidence match (basename tokens) | Symbol-level verification: "Function X at file:line" |
+| Cross-doc Jaccard topic overlap | Semantic spec comparison: "spec A supersedes B потому что..." |
+| Validate: frontmatter, relations, evidence format | Quality rubric: scoring content specificity |
+| Reconcile: stale refs, broken links, duplicates | Re-read code, verify cited symbols exist |
+
+CLI не парсит код, не понимает семантику. LLM не пишет frontmatter напрямую (через `updateCard` tool). CLI enforcement: `code_confirmed` без `## Code evidence` секции с `file:line` → ERROR.
+
+## Memory card — структура
+
+```yaml
+---
+entity_type: module          # module|scenario|decision|proposal|historical|conflict|open_question
+id: agent-tool-registry
+title: Agent & Tool Registry
+status: current              # current|proposed|historical|deprecated|needs_review|conflict
+evidence_level: code_confirmed  # code_confirmed|test_confirmed|reviewed_doc|spec_only|inferred|unknown
+review_required: false
+claims:                      # извлечённые claims с evidence
+  - id: claim-001
+    text: "Registry filters cards by caller identity"
+    type: current_behavior
+    module: agent-tool-registry   # auto-linked к card
+    evidence:
+      status: confirmed_by_code
+      files: ["internal/registry/access_filter.go"]
+    last_checked: "2026-07-11"
+supersedes: ["historical-2025-agent-routing"]  # cross-doc relations
+code_refs: [{ path: "internal/registry/access_filter.go", kind: "production" }]
+test_refs: [{ path: "tests/registry/access_filter_test.go", kind: "unit" }]
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Agent & Tool Registry
+
+## Responsibility
+Registry stores agent/tool metadata and filters cards by caller service identity.
+Exposes query API, not runtime orchestration.
+
+## Current behavior
+FilterCardsForCaller(caller string) returns []string of visible card IDs.
+
+## Code evidence
+- Caller-based filtering at internal/registry/access_filter.go:12 (FilterCardsForCaller)
+
+## Test evidence
+- Test TestFilterCardsForCaller at tests/registry/access_filter_test.go:8 covers caller-based filtering
 ```
 
-## Быстрый запуск в архиве
+## Lifecycle
 
-```bash
-npm install
-npm run check
+```
+1. init          → CLI scaffold: .ai/memory/ + .opencode/ (agents, skills, tools, plugin)
+2. bootstrap     → CLI: skeleton cards (placeholder body, code_refs filled)
+3. /memory-bootstrap → OpenCode dispatch:
+   3a. memory-extractor (qwen-27b)    → LLM: читает код, заполняет Responsibility/Behavior
+   3b. memory-coder (qwen-coder)      → LLM: verifies symbols, добавляет ## Code evidence
+   3c. memory-reviewer (qwen-thinking)→ LLM: quality gate, promotes to current
+4. validate      → CLI: проверяет инварианты (блокирует code_confirmed без evidence)
+5. ingest-spec   → CLI: claims → evidence → classify → cards + cross-spec relations
+6. reconcile     → CLI: stale refs, changed evidence, broken links, duplicates
+7. reconcile --fix → CLI: patches (idempotent)
 ```
 
-## Установка в проект локально
+## 4 агента + модели
 
-Вариант для проверки без публикации пакета:
+| Агент | Модель | Назначение |
+|-------|-------|-----------|
+| memory-extractor | qwen-3.6-27b | Читает **код**, заполняет module/scenario cards (Responsibility, Current behavior) |
+| memory-analyst | deepseek-v4-flash | Читает **спеки**, извлекает rationale/semantic claims, заполняет decision cards |
+| memory-coder | qwen-coder-next | Верифицирует evidence: открывает code_refs, ищет symbols, добавляет `## Code evidence` |
+| memory-reviewer | qwen-thinking-large | Финальный quality gate: rubric scoring, re-read verification, promotes to current |
 
-```bash
-# из директории этого kit-а
-npm install
-npm run build
+**Workflow:** extractor → coder → reviewer (bootstrap); analyst → coder → reviewer (ingest-spec).
 
-# 1. создать memory/openCode scaffold в вашем проекте
-npm run memory -- --root /path/to/your/repo init
-
-# 2. автоматически исследовать проект и наполнить memory bank
-npm run memory -- --root /path/to/your/repo bootstrap
-
-# 3. проверить frontmatter, политики и связи
-npm run memory -- --root /path/to/your/repo validate
-
-# 4. собрать context pack под задачу
-npm run memory -- --root /path/to/your/repo context "изменить фильтрацию agent cards"
-```
-
-`bootstrap` запускает `discover` автоматически — отдельно вызывать `discover` не обязательно для первичного наполнения. Но можно вызвать отдельно, чтобы увидеть карту проекта без записи memory.
-
-Можно также скопировать kit в репозиторий в `.ai/memory-tool` и добавить root script:
-
-```json
-{
-  "scripts": {
-    "memory": "tsx .ai/memory-tool/src/cli.ts"
-  }
-}
-```
-
-Тогда команды будут короче:
-
-```bash
-npm run memory -- bootstrap
-npm run memory -- validate
-npm run memory -- context "почему registry не должен выбирать агента"
-```
-
-## CLI-команды
+## CLI команды
 
 ```bash
 repo-memory init                    # создать .ai/memory + .opencode scaffold
-repo-memory discover [--json]      # исследовать проект: файлы, классификация, candidate modules
-repo-memory bootstrap [--force] [--dry-run]  # автоматически наполнить memory bank из discover
-repo-memory ingest-spec <path>      # обработать спеку → proposal/historical/conflict
-repo-memory reconcile [--json]     # сверить memory с текущим кодом (read-only)
-repo-memory reconcile --fix        # сверить и применить безопасные патчи (stale→needs_review, update conflicts/open-questions)
+repo-memory discover [--json]       # инвентаризация: файлы, классификация, candidate modules
+repo-memory bootstrap [--force]     # skeleton cards из discovery
+repo-memory ingest-spec <glob>      # спека → claims → evidence → card + cross-spec relations
+repo-memory reconcile [--json]      # сверка с кодом (read-only report)
+repo-memory reconcile --fix         # применить безопасные патчи (idempotent)
+repo-memory validate [--strict-warnings]
 repo-memory ls [--type module] [--status current]
 repo-memory show <id>
 repo-memory related <id>
-repo-memory context <query>
-repo-memory validate [--strict-warnings]
+repo-memory context <query>         # context pack для задачи
+repo-memory update <id> [--body <text>] [--set field=value]  # safe card update
 ```
 
 Через npm:
-
 ```bash
-npm run memory -- discover --json
-npm run memory -- bootstrap --force
-npm run memory -- ingest-spec docs/specs/new-cr.md
-npm run memory -- reconcile --json
-npm run memory -- context "изменить Agent & Tool Registry"
+npm run memory -- bootstrap
+npm run memory -- ingest-spec "specs/**/*.md"
+npm run memory -- reconcile --fix --json
+npm run memory -- context "изменить фильтрацию agent cards"
 npm run memory -- validate
 ```
 
-## OpenCode-артефакты
+## Enforcement слои
 
-`init` создаёт:
+| Слой | Что блокирует |
+|------|--------------|
+| validate ERROR | `code_confirmed` без `## Code evidence` секции с `at <path>:<line>` форматом |
+| validate ERROR | `test_confirmed` без `## Test evidence` секции |
+| validate ERROR | `spec_only + current_behavior` — спека не может быть current behavior |
+| validate ERROR | `decision + can_generate_code_from: true` — rationale не для code gen |
+| validate ERROR | broken relations, broken claim links, duplicate ids |
+| updateCard THROW | попытка выставить `code_confirmed` без evidence section |
+| memory-guard plugin | `tool.execute.before` — advisory warning если Write без memory read |
+| AGENTS.md | "Run /memory-context before product behavior tasks" |
 
-```text
-.opencode/skills/memory-bank/SKILL.md
-.opencode/skills/memory-bootstrap/SKILL.md
-.opencode/skills/memory-ingest-spec/SKILL.md
-.opencode/skills/memory-reconcile/SKILL.md
-.opencode/commands/memory-bootstrap.md
-.opencode/commands/memory-context.md
-.opencode/commands/memory-ingest-spec.md
-.opencode/commands/memory-reconcile.md
-.opencode/agents/memory-extractor.md
-.opencode/agents/memory-coder.md
-.opencode/agents/memory-reviewer.md
-.opencode/tools/memory.ts
-```
+## Что умеет
 
-OpenCode ищет project skills в `.opencode/skills/<name>/SKILL.md`, commands в `.opencode/commands/`, agents в `.opencode/agents/`, custom tools в `.opencode/tools/`.
+### Discovery + Bootstrap
+- Автоматическая классификация файлов: code/test/doc/spec/demo/legacy/config/contract
+- Topics из path segments + markdown headings
+- Candidate modules по path prefix + code/test co-location
+- Skeleton cards с code_refs/test_refs/source_refs
+- Smart skip: enriched cards (review_required=false, evidence confirmed) не перезаписываются
 
-Команды после установки в проекте:
+### Claims pipeline
+- `extractClaims` — headings + keyword-gated bullets + paragraphs + code refs + rejected alternatives
+- `dedupClaims` — canonical form (lowercase, strip punctuation, remove stopwords), first-wins + evidence merge
+- `checkEvidence` — keyword match против discovery basenames
+- `linkClaimsToCards` — auto-linking claims к module/scenario/decision cards (title/source_path matching)
+- Cross-card duplicate detection при reconcile
+
+### Spec ingestion
+- `classifySpecActuality` — 6 статусов (current_confirmed, partially_confirmed, proposed_unconfirmed, historical_context, conflicting, unknown_needs_review)
+- Decision card creation для спек с rationale content (## Problem, ## Decision, ## Rationale)
+- Cross-spec relations: `supersedes`, `superseded_by`, `conflicts_with`, `related_specs` (Jaccard topic overlap + "replaces" keyword)
+- Claims stored в frontmatter с embedded evidence + last_checked
+- LLM memory-analyst: semantic rationale extraction, semantic claim matching, partial implementation detection
+
+### Reconcile
+- Stale refs (code_refs/test_refs paths не существуют)
+- Weak current claims (current + spec_only/inferred/unknown)
+- Stale proposals (90 дней, weak evidence → needs_review)
+- Changed claim evidence (re-run checkEvidence, сравнить со stored)
+- Broken relations (card → non-existent ID)
+- Broken claim links (claim.module/scenario/decision → non-existent card)
+- Duplicate claims (cross-card canonical)
+- `--fix` mode: append stale refs → open-questions.md, weak claims → conflicts.md, mark stale proposals, update stored evidence (idempotent)
+
+### Content quality
+- Agent instructions включают quality checklist, anti-patterns, good examples
+- memory-reviewer: rubric scoring (0-2 per section, ≥4/6 для promotion), re-read code verification
+- Bootstrap placeholders содержат EXAMPLE good output (не просто "Needs review")
+- validate проверяет evidence bullet format: `at <path>:<line>` pattern, не любой `- text`
+
+### OpenCode integration
+- 4 agent definitions (extractor, analyst, coder, reviewer)
+- 4 skills (memory-bank, memory-bootstrap, memory-ingest-spec, memory-reconcile)
+- 4 commands (slash commands для workflow)
+- 6 tools (context, validate, related, discover, bootstrap, updateCard)
+- memory-guard plugin: lifecycle hooks (auto-context injection, write enforcement, session tracking)
+- AGENTS.md: project-level instructions
+
+## OpenCode команды
 
 ```text
 /memory-bootstrap                              # автоматически наполнить memory bank
@@ -130,68 +198,52 @@ OpenCode ищет project skills в `.opencode/skills/<name>/SKILL.md`, commands
 /memory-reconcile                              # сверить memory с кодом
 ```
 
-## Важные инварианты валидатора
+## Установка
 
-Валидатор ловит опасные состояния:
+```bash
+# из директории kit-а
+npm install
+npm run build
 
-- memory-файл без frontmatter;
-- дублирующиеся `id`;
-- битые `related_*` связи;
-- `proposal`/`historical` с `can_generate_code_from: true`;
-- `proposal` с `can_answer_current_behavior: true`;
-- `decision` с `can_generate_code_from: true`;
-- `current` файл с `proposed_behavior` в `knowledge_types`;
-- `spec_only` evidence + `current_behavior` knowledge_type (без code/test/contract evidence);
-- несуществующие `code_refs`/`test_refs` как предупреждения;
-- `current` с слабым `evidence_level` (spec_only/inferred/unknown) как предупреждение.
+# 1. создать memory/openCode scaffold в проекте
+npm run memory -- --root /path/to/your/repo init
 
-## Frontmatter MVP
+# 2. автоматически исследовать и наполнить
+npm run memory -- --root /path/to/your/repo bootstrap
 
-```yaml
-entity_type: module
-id: agent-tool-registry
-title: Agent & Tool Registry
-status: current
-authority: reviewed_memory
-evidence_level: code_confirmed
-stability: evolving
-source_confidence: medium
-last_reviewed: 2026-07-08
-review_required: false
-knowledge_types:
-  - current_behavior
-  - design_rationale
-related_modules: []
-related_scenarios: []
-related_decisions: []
-code_refs: []
-test_refs: []
-usage_policy:
-  can_answer_current_behavior: true
-  can_generate_code_from: true
-  can_use_as_rationale: true
-  can_use_as_example: false
-  requires_code_check_before_change: true
+# 3. проверить
+npm run memory -- --root /path/to/your/repo validate
+
+# 4. context pack под задачу
+npm run memory -- --root /path/to/your/repo context "изменить фильтрацию agent cards"
 ```
 
-## Что реализовано
+Или скопировать kit в `.ai/memory-tool` и добавить script в package.json:
+```json
+{
+  "scripts": {
+    "memory": "tsx .ai/memory-tool/src/cli.ts"
+  }
+}
+```
 
-Полный v0.1+v0.2 roadmap из REQUIREMENTS.md + IMPLEMENTATION_DESIGN.md:
+## Структура репозитория
 
-- **Discovery pipeline** — автоматически исследует проект: файлы, классификация (code/test/doc/spec/demo/legacy/config/contract), topics, candidate modules с confidence.
-- **Bootstrap** — автоматически наполнить memory bank из discovery: module/scenario/decision/historical/proposal cards. Не перезаписывает существующее без `--force`.
-- **Spec classification + claim extraction** — `classifySpecActuality` определяет статус спеки (current_confirmed / partially_confirmed / proposed_unconfirmed / historical_context / conflicting / unknown_needs_review). `extractClaims` извлекает атомарные claims. `checkEvidence` сверяет claims с кодом/тестами.
-- **Ingest-spec** — обрабатывает спеку и создаёт proposal/historical/conflict card в зависимости от классификации.
-- **Reconcile** — сверяет memory с текущим кодом: stale refs, weak current claims, realizable proposals, orphan modules, stale proposal detection (`--fix`). Read-only; `--fix` применяет безопасные патчи.
-- **Validation invariants** — все 11 инвариантов REQUIREMENTS §13, включая rejection `spec_only + current_behavior`.
-- **Context pack** — source priority из config, per-card usage_policy, conflicts/open-questions.
-- **Model routing** — extractor/coder/reviewer roles в config.
-- **OpenCode artifacts** — skills, commands, agents, tools для всех workflow.
+```text
+src/                    TypeScript core library and CLI
+src/schemas/            Zod-схемы frontmatter и claim/evidence
+src/core/               discovery, bootstrap, reconcile, validate, context, relations, claims
+src/commands/           CLI-команды (10 команд)
+src/scaffold/           шаблоны .ai/memory и .opencode
+test/                   Vitest-тесты (115 тестов)
+examples/synapse-mini/  мини-пример проекта после init
+docs/                   REQUIREMENTS, LIMITATIONS, plans
+```
 
-## Что сознательно отложено (v0.2+/v0.4)
+## Что не делает (by design)
 
-- Semantic classifier через runtime LLM — v0.1 использует deterministic heuristics; semantic reasoning через OpenCode agents после bootstrap.
-- claim re-check при reconcile (сейчас проверяет stale refs, не claims).
-- Graph export — v0.4.
-- MCP server — v0.4.
-- Decision card content extraction (сейчас signal-based; content parsing — v0.2).
+- **Не парсит код на AST уровне.** CLI использует keyword matching, не symbol analysis. LLM-агенты делают semantic verification.
+- **Не LLM orchestrator.** CLI не запускает LLM-вызовы. OpenCode dispatches агенты на основе agents/skills/commands.
+- **Не external database.** Source of truth — Markdown файлы в репозитории. Нет RAG, embeddings, graph database.
+- **Не PDF/DOCX.** Только Markdown specs. PDF/DOCX — excluded (всё в markdown).
+- **Не interactive diff UI.** Plugin advisory enforcement, не TUI.
