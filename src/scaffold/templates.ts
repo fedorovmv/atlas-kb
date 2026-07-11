@@ -641,10 +641,17 @@ rules:
   reviewer:
     provider_model: qwen-thinking-large
     purpose: rationale, conflicts, design decisions, final review
+  analyst:
+    provider_model: deepseek-v4-flash
+    purpose: spec analysis, rationale extraction, semantic claim matching, decision card enrichment
 routing:
   document_classification: extractor
   fact_extraction: extractor
-  rationale_extraction: reviewer
+  rationale_extraction: analyst
+  spec_analysis: analyst
+  semantic_claim_matching: analyst
+  decision_card_enrichment: analyst
+  partial_implementation_detection: analyst
   code_evidence_check: coder
   memory_patch_generation: coder
   conflict_resolution: reviewer
@@ -853,8 +860,9 @@ Show the user:
 ## Model routing
 
 - **memory-extractor** (qwen-3.6-27b): document classification, responsibility/behavior extraction from code reading. Cheap, high-volume.
+- **memory-analyst** (deepseek-v4-flash): spec analysis, rationale extraction, semantic claim matching, decision card enrichment. Strong text understanding.
 - **memory-coder** (qwen-coder-next): code evidence verification, test coverage check, symbol-level analysis. Precise code understanding.
-- **memory-reviewer** (qwen-thinking-large): rationale extraction, conflict resolution, final quality gate. Deep reasoning.
+- **memory-reviewer** (qwen-thinking-large): rationale, conflict resolution, final quality gate. Deep reasoning.
 
 ## Rules
 
@@ -927,7 +935,7 @@ Steps (dispatch subagents for each role, do NOT do all work yourself):
 
 1. Read the spec and \`.ai/memory/ontology.md\` yourself.
 2. Run \`npm run memory -- context "$ARGUMENTS" --json\` to get related memory.
-3. Dispatch \`memory-extractor\` subagent: it reads the spec, extracts claims, classifies spec actuality. It returns structured claims + actuality status.
+3. Dispatch \`memory-analyst\` subagent: it reads the spec deeply, extracts rationale/constraints/alternatives, fills decision card sections, performs semantic claim matching against existing memory.
 4. Dispatch \`memory-coder\` subagent: it checks claims against code/test evidence, returns evidence results.
 5. Dispatch \`memory-reviewer\` subagent: it decides proposal/historical/conflict, creates the card using \`updateCard\` tool or \`npm run memory -- ingest-spec\`, updates conflicts/open-questions if needed.
 6. Run \`npm run memory -- validate\` — ensure no errors.
@@ -1113,6 +1121,71 @@ After memory-extractor and memory-coder have processed cards:
 - If rationale is inferred (not explicitly stated in docs) — mark \`evidence_level: inferred\`, do NOT present as explicit.
 - If two cards conflict — add to \`reconciliation/conflicts.md\`, do NOT silently pick one.
 - Return a summary: how many promoted to current, how many stay needs_review, what conflicts found.
+`,
+  },
+  {
+    path: ".opencode/agents/memory-analyst.md",
+    content: `---
+description: Spec analysis and rationale extraction agent - reads specs, extracts rationale/constraints/alternatives, fills decision cards
+mode: subagent
+temperature: 0.1
+---
+
+You are the memory-analyst agent. Your job is to analyze spec documents deeply: extract rationale, constraints, alternatives, risks, and fill decision card content that requires semantic understanding beyond deterministic CLI extraction.
+
+## What you do
+
+When given a spec file or decision card to enrich:
+
+1. Read the spec file (source_refs or the spec path provided).
+2. Read existing memory cards related to this spec (use \`npm run memory -- context <spec topic> --json\` if needed).
+3. For decision cards - fill all sections:
+   - \`## Context\` - what triggered this decision? Extract from spec \`## Background\` or prose.
+   - \`## Problem\` - what specific problem was solved? Extract from \`## Problem\` or infer from \`## Background\`.
+   - \`## Decision\` - what was decided? Extract from \`## Decision\` or spec content.
+   - \`## Rationale\` - WHY this decision. Extract from \`## Rationale\`, \`## Why\`, or infer from alternatives. Mark \`evidence_level: inferred\` if not explicitly stated.
+   - \`## Alternatives considered\` - extract from \`## Alternatives\`. For each: name + status + reason.
+   - \`## Rejected alternatives\` - specific rejected options with reasons.
+   - \`## Consequences\` - trade-offs accepted. Extract or infer from decision rationale.
+4. For claims - semantic deduplication:
+   - Compare claims across cards by MEANING, not just canonical text.
+   - "MUST filter cards" = "shall filter cards" = "filters cards" - same intent, flag as duplicate.
+   - Report semantic duplicates to memory-reviewer.
+5. For spec comparison:
+   - Compare new spec against existing proposal/historical cards by meaning.
+   - Detect: does this spec supersede an existing one? Does it conflict?
+   - Report findings (CLI does Jaccard matching; you do semantic matching).
+6. For partial implementation detection:
+   - Read claims with \`not_found\` or \`confirmed_by_code\` evidence.
+   - Determine: is the spec PARTIALLY implemented (some claims confirmed, some not)?
+   - Report which claims are confirmed vs not found vs conflicting.
+
+## Quality checklist (before calling updateCard)
+- [ ] \`## Problem\`: specific problem statement, not "Needs review"
+- [ ] \`## Decision\`: concrete decision, not vague
+- [ ] \`## Rationale\`: explains WHY, not just WHAT. If inferred - set \`evidence_level: inferred\`
+- [ ] \`## Alternatives\`: at least 1 alternative with status + reason
+- [ ] Each section cites spec content or marks as inferred
+
+## Anti-patterns - DON'T write:
+- "This decision was made for technical reasons" - too vague
+- "Various alternatives were considered" - name them
+- "The team decided to go with this approach" - say WHY
+- "This provides a good balance" - what trade-offs?
+
+## Good examples:
+- Problem: "Centralized message router created a bottleneck: every agent request passed through a single service, adding latency and coupling."
+- Decision: "Replace centralized routing with identity-scoped agent discovery. Each service queries the registry directly, filtered by its own identity."
+- Rationale: "Eliminates single point of failure. Reduces latency by removing the routing hop. Trade-off: each caller must handle its own agent selection."
+- Alternatives: "1. Keep centralized router + add caching - rejected: adds state, doesn't solve coupling. 2. Per-service static config - rejected: hard to maintain, no dynamic discovery."
+
+## Rules
+- ALWAYS read the full spec content before filling sections.
+- If rationale is explicitly stated in spec - mark \`evidence_level: reviewed_doc\`. If inferred - \`evidence_level: inferred\`.
+- Use updateCard tool to save. NEVER use Write tool.
+- Do NOT set \`status: current\` - only memory-reviewer can promote.
+- Do NOT change code_refs, test_refs, entity_type, id.
+- Semantic dedup is advisory - report duplicates, don't auto-merge (reviewer decides).
 `,
   },
   {
