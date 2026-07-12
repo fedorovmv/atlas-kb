@@ -6,6 +6,8 @@ import { discoverProject } from "./discoverProject.js";
 import { resolveRoot, resolveMemoryRoot, toPosixPath } from "./paths.js";
 import { frontmatterYaml, today } from "./utils.js";
 import { readDocSections, readDocSummary, findSection, findContent, extractSections, extractFirstParagraph } from "./docExtraction.js";
+import { detectSpecRelations } from "./specRelations.js";
+import { loadMemoryCards } from "./loadMemory.js";
 import type { DiscoveryReport, CandidateModule, FileRecord } from "../schemas/discovery.js";
 
 export type BootstrapResult = {
@@ -121,15 +123,66 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     const specContent = await readFile(path.join(root, file.path), "utf8").catch(() => "");
     const sections = extractSections(specContent);
     const intro = extractFirstParagraph(specContent);
+
+    // Content-based historical detection — check for deprecated/obsolete/replaced signals
+    const contentLower = specContent.toLowerCase();
+    const contentHistorical = /status:\s*deprecated|status:\s*obsolete|\bobsolete\b|\blegacy\b|status:\s*replaced/.test(contentLower);
+    const finalIsLegacy = isLegacy || contentHistorical;
+
     const problem = findContent(sections, specContent, ["problem", "motivation", "background", "context", "цель", "проблема", "фон", "контекст"]);
     const requirements = findContent(sections, specContent, ["requirements", "claims", "behavior", "specification", "требования", "поведение", "описание", "архитектура"]);
     const rationale = findContent(sections, specContent, ["rationale", "why", "decision", "alternatives", "обоснование", "решение", "альтернативы"]);
     const status = findContent(sections, specContent, ["status", "state", "статус", "состояние"]);
 
-    if (isLegacy) {
+    if (finalIsLegacy) {
       await writeCard(`historical/${slug}.md`, renderHistoricalCard(file, `historical-${slug}`, intro, problem, rationale, status));
     } else {
       await writeCard(`proposals/${slug}.md`, renderProposalCard(file, `proposal-${slug}`, intro, problem, requirements, rationale));
+    }
+  }
+
+  // Post-creation: detect supersede relations and reclassify old specs as historical
+  if (!options.dryRun) {
+    const allCards = await loadMemoryCards({ root, memoryRoot });
+    const relations = detectSpecRelations(allCards);
+
+    for (const rel of relations.filter((r) => r.type === "supersedes")) {
+      const oldCard = allCards.find((c) => c.meta.id === rel.toId);
+      if (!oldCard) continue;
+      // Skip if already historical
+      if (oldCard.meta.entity_type === "historical" || oldCard.meta.status === "historical") continue;
+
+      // Reclassify: read existing content, rewrite as historical
+      const target = path.join(memoryRoot, oldCard.relativePath);
+      if (!existsSync(target)) continue;
+
+      const raw = await readFile(target, "utf8");
+      const parsed = matter(raw);
+      const newMeta = {
+        ...parsed.data,
+        entity_type: "historical",
+        status: "historical",
+        authority: "historical_context",
+        evidence_level: "spec_only",
+        stability: "deprecated",
+        review_required: false,
+        superseded_by: [rel.fromId],
+      };
+      const newFm = frontmatterYaml(newMeta as Record<string, unknown>);
+      const supersededNote = `\n\n> **Superseded by ${rel.fromId}** — ${rel.reason}\n`;
+      const newContent = `---\n${newFm}\n---\n${parsed.content}${supersededNote}\n`;
+
+      // Write to historical/ path, remove old proposal
+      const oldRelPath = oldCard.relativePath;
+      const historicalSlug = oldRelPath.replace(/^proposals\//, "").replace(/^scenarios\//, "").replace(/^decisions\//, "");
+      const historicalPath = path.join(memoryRoot, "historical", historicalSlug);
+      await mkdir(path.dirname(historicalPath), { recursive: true });
+      await writeFile(historicalPath, newContent, "utf8");
+
+      // Remove old card (proposal/scenario/decision)
+      const { unlink } = await import("node:fs/promises");
+      await unlink(target).catch(() => {});
+      skipped.push(`${oldRelPath} (reclassified as historical: superseded by ${rel.fromId})`);
     }
   }
 
