@@ -95,6 +95,78 @@ describe("spec classification and claim extraction", () => {
     const claims = extractClaims("", "empty.md");
     expect(claims).toEqual([]);
   });
+
+  it("extracts numbered requirements", () => {
+    const spec = `# Test Spec
+
+## Requirements
+
+1. The registry SHALL maintain a list of agent cards.
+2. Every discovery request MUST be scoped to the caller identity.
+3. The system handles 1000 RPS with < 50ms latency.
+`;
+    const claims = extractClaims(spec, "test.md");
+    const texts = claims.map((c) => c.text);
+    expect(texts.some((t) => t.includes("maintain a list of agent cards"))).toBe(true);
+    expect(texts.some((t) => t.includes("scoped to the caller identity"))).toBe(true);
+    expect(texts.some((t) => t.includes("1000 RPS"))).toBe(true);
+  });
+
+  it("extracts prose without modal verbs in requirements section", () => {
+    const spec = `# Test Spec
+
+## Requirements
+
+The registry filters available agent cards by caller service identity.
+The system provides query-only discovery.
+`;
+    const claims = extractClaims(spec, "test.md");
+    const texts = claims.map((c) => c.text);
+    expect(texts.some((t) => t.includes("filters available agent cards"))).toBe(true);
+    expect(texts.some((t) => t.includes("provides query-only"))).toBe(true);
+  });
+
+  it("extracts non-goals as design_rationale", () => {
+    const spec = `# Test Spec
+
+## Non-goals
+
+- This component is NOT an orchestration layer.
+- Does not transform request payloads.
+- Out of scope: caching layer.
+
+## Out of scope
+
+- Real-time monitoring dashboard.
+`;
+    const claims = extractClaims(spec, "test.md");
+    const nonGoalClaims = claims.filter((c) => c.type === "design_rationale");
+    const texts = nonGoalClaims.map((c) => c.text);
+    expect(texts.some((t) => t.includes("NOT an orchestration"))).toBe(true);
+    expect(texts.some((t) => t.includes("Does not transform"))).toBe(true);
+    expect(texts.some((t) => t.includes("caching layer"))).toBe(true);
+    expect(texts.some((t) => t.includes("Real-time monitoring"))).toBe(true);
+  });
+
+  it("extracts acceptance criteria as proposed_behavior", () => {
+    const spec = `# Test Spec
+
+## Acceptance criteria
+
+- All discovery requests return filtered results.
+- Response time < 100ms for 99th percentile.
+
+## Definition of done
+
+- Integration tests pass for all caller identities.
+`;
+    const claims = extractClaims(spec, "test.md");
+    const proposedClaims = claims.filter((c) => c.type === "proposed_behavior");
+    const texts = proposedClaims.map((c) => c.text);
+    expect(texts.some((t) => t.includes("filtered results"))).toBe(true);
+    expect(texts.some((t) => t.includes("99th percentile"))).toBe(true);
+    expect(texts.some((t) => t.includes("Integration tests pass"))).toBe(true);
+  });
 });
 
 describe("ingestSpecCommand stores claims with evidence in card frontmatter", () => {

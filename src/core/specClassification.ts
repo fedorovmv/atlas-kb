@@ -55,7 +55,9 @@ export function extractClaims(specContent: string, specPath: string): Claim[] {
   let claimNum = 0;
   let currentSection = "";
   let currentAlternative: string | null = null;
-  const rationalePattern = /rationale|why|decision|alternative|problem|constraint|consequence|trade.?off|non.?goal|value/i;
+  const rationalePattern = /rationale|why|decision|alternative|problem|constraint|consequence|trade.?off|non.?goal|value|out.?of.?scope/i;
+  // Broader behavioral verb pattern — catches prose without explicit modal verbs
+  const behaviorPattern = /must|shall|should|will|does|is|are|filters?|returns?|accepts?|rejects?|handles?|provides?|supports?|requires?|enforces?|validates?|registers?|discovers?|stores?|maintains?|controls?|manages?|processes?|transforms?|routes?|caches?|logs?|monitors?|tracks?|limits?|restricts?|scopes?|isolates?/i;
 
   for (let li = 0; li < lines.length; li++) {
     const line = lines[li];
@@ -88,13 +90,39 @@ export function extractClaims(specContent: string, specPath: string): Claim[] {
       continue;
     }
 
+    // Bullet list items — with broader verb pattern
     const bulletMatch = line.match(/^\s*[-*]\s+(.+)/);
-    if (bulletMatch && /must|shall|should|will|does|is|filters|returns|accepts|rejects/i.test(bulletMatch[1])) {
+    if (bulletMatch && behaviorPattern.test(bulletMatch[1])) {
       claimNum++;
       const type = rationalePattern.test(currentSection)
         ? "design_rationale"
-        : "current_behavior";
+        : inferClaimTypeFromSection(currentSection, bulletMatch[1]) ?? "current_behavior";
       claims.push(makeClaim(claimNum, bulletMatch[1].trim(), type, specPath));
+      continue;
+    }
+
+    // Numbered list items — "1. The registry SHALL..." or "1. The registry filters..."
+    const numberedMatch = line.match(/^\s*(\d+)\.\s+(.+)/);
+    if (numberedMatch && behaviorPattern.test(numberedMatch[2])) {
+      claimNum++;
+      const type = rationalePattern.test(currentSection)
+        ? "design_rationale"
+        : inferClaimTypeFromSection(currentSection, numberedMatch[2]) ?? "current_behavior";
+      claims.push(makeClaim(claimNum, numberedMatch[2].trim(), type, specPath));
+      continue;
+    }
+
+    // Non-goal / out-of-scope bullet items — capture even without behavior verbs
+    if (bulletMatch && /non.?goal|out.?of.?scope|not.?included|excluded|explicitly/i.test(currentSection)) {
+      claimNum++;
+      claims.push(makeClaim(claimNum, bulletMatch[1].trim(), "design_rationale", specPath));
+      continue;
+    }
+
+    // Acceptance criteria bullets — "Definition of done", "Success criteria"
+    if (bulletMatch && /acceptance|definition.?of.?done|success.?criteria|exit.?criteria/i.test(currentSection)) {
+      claimNum++;
+      claims.push(makeClaim(claimNum, bulletMatch[1].trim(), "proposed_behavior", specPath));
       continue;
     }
 
@@ -103,6 +131,13 @@ export function extractClaims(specContent: string, specPath: string): Claim[] {
       if (rationalePattern.test(currentSection)) {
         claimNum++;
         claims.push(makeClaim(claimNum, line.trim(), "design_rationale", specPath));
+        continue;
+      }
+      // Prose with behavioral verbs in requirements/behavior sections
+      if (behaviorPattern.test(line) && /requirement|claim|behavior|overview|background/i.test(currentSection)) {
+        claimNum++;
+        const type = inferClaimTypeFromSection(currentSection, line.trim()) ?? "current_behavior";
+        claims.push(makeClaim(claimNum, line.trim(), type, specPath));
         continue;
       }
     }
@@ -121,7 +156,8 @@ export function extractClaims(specContent: string, specPath: string): Claim[] {
 }
 
 function inferClaimTypeFromSection(section: string, _heading: string): Claim["type"] | null {
-  if (/rationale|why|decision|alternatives|problem|constraint|consequence|trade.?off|non.?goal|value/.test(section)) return "design_rationale";
+  if (/rationale|why|decision|alternatives|problem|constraint|consequence|trade.?off|non.?goal|out.?of.?scope|value/.test(section)) return "design_rationale";
+  if (/acceptance|definition.?of.?done|success.?criteria|exit.?criteria/.test(section)) return "proposed_behavior";
   if (/background|context|prior/.test(section)) return "historical_context";
   if (/requirement|claim|behavior|overview/.test(section)) return "current_behavior";
   if (/open question|unknown|tbd/.test(section)) return "open_question";

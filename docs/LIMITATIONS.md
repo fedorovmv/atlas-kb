@@ -26,7 +26,7 @@ CLI — deterministic heuristic, не semantic understanding. Инструмен
 - связывание rationale с current decisions — semantic matching, v0.4+;
 - обновление decision card при появлении новой спеки — reconcile extension, v0.4+;
 - различение explicit vs inferred rationale — LLM judgment (memory-analyst помечает, но не автоматически);
-- claim re-extraction — CLI `extractClaims` пропускает numbered requirements, prose без modal verbs, embedded constraints. memory-analyst инструктирован re-extract, но это advisory — зависит от запуска analyst step;
+- claim re-extraction — CLI `extractClaims` теперь ловит numbered requirements, prose с behavioral verbs, non-goals, acceptance criteria, out-of-scope. Но всё ещё может пропускать: embedded constraints в prose без verbs, implicit claims в examples, domain-specific terminology. Memory-analyst инструктирован re-extract как advisory поверх CLI;
 - promotion `heuristic_match` → `code_confirmed` — только memory-coder после semantic verification. Без coder step cards остаются `heuristic_match` (не могут стать `current`).
 
 ### By design (не планируется)
