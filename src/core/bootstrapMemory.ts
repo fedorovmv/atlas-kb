@@ -283,11 +283,10 @@ function extractScenarios(report: DiscoveryReport): { id: string; slug: string; 
     const id = `scenario-${slug}`;
     if (seen.has(id)) continue;
     seen.add(id);
-    if (/agent|registry|discovery|routing|gateway|tool/i.test(baseTitle)) {
-      scenarios.push({ id, slug, title: baseTitle.charAt(0).toUpperCase() + baseTitle.slice(1), topics: file.topics, sourceFiles: [file.path] });
-    }
+    // No hardcoded keyword filter — create scenario cards for all doc/spec files
+    scenarios.push({ id, slug, title: baseTitle.charAt(0).toUpperCase() + baseTitle.slice(1), topics: file.topics, sourceFiles: [file.path] });
   }
-  return scenarios.slice(0, 10);
+  return scenarios.slice(0, 20);
 }
 
 function extractDecisions(report: DiscoveryReport): { id: string; title: string; rationale: string; sourceFile: string }[] {

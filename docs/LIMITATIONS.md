@@ -51,25 +51,25 @@ CLI — deterministic heuristic, не semantic understanding. Инструмен
 
 `classifySpecActuality` никогда не возвращает `current_confirmed` — это LLM-only статус (memory-coder после semantic verification). CLI возвращает максимум `partially_confirmed`.
 
-### Scenario extraction — hardcoded keywords
+### Scenario extraction — all doc/spec files, limit 20
 
-`extractScenarios` в bootstrap использует hardcoded regex (`agent|registry|discovery|routing|gateway|tool`) для фильтрации doc/spec заголовков. Файлы без этих слов в title → не создаются scenario cards. Лимит 10 scenarios. Для arbitrary project может пропустить relevant scenarios.
+`extractScenarios` в bootstrap создаёт scenario cards для всех doc/spec файлов (раньше фильтровал по hardcoded keywords `agent|registry|...`, теперь без фильтра). Лимит 20 scenarios. Для проектов с 20+ doc/spec файлами часть scenarios не будет создана — LLM extractor может добавить вручную.
 
 ### Cross-document comparison — Jaccard, не semantic
 
-`detectSpecRelations` — Jaccard topic overlap ≥ 0.3 + "replaces" keyword. Может пропустить semantic supersedes (разные слова, тот же смысл) или дать false positive (тот же topic, разный intent). LLM memory-analyst делает semantic comparison advisory.
+`detectSpecRelations` — Jaccard topic overlap ≥ 0.3 + "replaces" keyword + year signal. Может пропустить semantic supersedes (разные слова, тот же смысл) или дать false positive (тот же topic, разный intent). LLM memory-analyst делает semantic comparison advisory.
 
-### Context pack — lexical scoring
+### Context pack — lexical scoring + evidence weighting
 
-Релевантность основана на token matching, не semantic search. Может вернуть лишние cards или пропустить релевантные по смыслу.
+Релевантность основана на token matching, не semantic search. Может вернуть лишние cards или пропустить релевантные по смыслу. Evidence-level weighting: `code_confirmed` cards получают boost, `heuristic_match` — нейтрально, `spec_only`/`inferred`/`unknown` — penalty. Снижает шум от неподтверждённых cards.
 
 ### Validation — форма + policy, не content truth
 
 Проверяет frontmatter schema, relations, evidence format (`at <path>:<line>` pattern), dangerous policies, `heuristic_match + current → ERROR` (требует LLM promotion к `code_confirmed`). Не проверяет фактическую истинность содержимого — LLM memory-reviewer делает quality rubric + re-read verification.
 
-### Claim linking — keyword match
+### Claim linking — keyword + product_areas + code_refs overlap
 
-`linkClaimsToCards` — canonical title overlap + source_path match. Может miss semantic links (claim про "фильтрацию" → module "access control", разные слова, тот же смысл).
+`linkClaimsToCards` — canonical title overlap + source_path match + product_areas overlap + code_refs basename overlap. Может miss semantic links (claim про "фильтрацию" → module "access control", разные слова, тот же смысл).
 
 ## Риски
 

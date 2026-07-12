@@ -39,5 +39,19 @@ export function scoreCard(card: MemoryCard, query: string): number {
   if (haystack.includes(query.toLowerCase())) score += 5;
   if (card.meta.status === "current") score += 0.25;
   if (card.meta.entity_type === "decision" && tokens.some((t) => ["why", "почему", "rationale", "границ"].includes(t))) score += 2;
+
+  // Evidence quality weighting — prefer confirmed evidence over heuristic/unconfirmed
+  const evidenceBoost: Record<string, number> = {
+    code_confirmed: 0.5,
+    test_confirmed: 0.4,
+    contract_confirmed: 0.4,
+    reviewed_doc: 0.2,
+    heuristic_match: 0.0,   // keyword match, not verified — no boost
+    spec_only: -0.1,        // unconfirmed spec — slight penalty
+    inferred: -0.1,         // inferred — slight penalty
+    unknown: -0.2,          // unknown evidence — stronger penalty
+  };
+  score += evidenceBoost[card.meta.evidence_level] ?? 0;
+
   return score;
 }

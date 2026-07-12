@@ -9,6 +9,7 @@ export function linkClaimsToCards(
   return claims.map((claim) => {
     const result = { ...claim };
     const claimCanon = canonicalClaimText(claim.text);
+    const claimTokens = new Set(claimCanon.split(/\s+/).filter((t) => t.length >= 3));
 
     for (const type of ["module", "scenario", "decision"] as const) {
       const candidates = cards.filter((c) => c.meta.entity_type === type);
@@ -33,6 +34,31 @@ export function linkClaimsToCards(
         }
         // id in claim text
         if (claim.text.toLowerCase().includes(card.meta.id.toLowerCase())) score += 1;
+
+        // product_areas token overlap
+        for (const area of card.meta.product_areas ?? []) {
+          const areaCanon = canonicalClaimText(area);
+          if (areaCanon.length > 0 && claimCanon.includes(areaCanon)) { score += 1; break; }
+        }
+
+        // code_refs overlap — claim references same code file as card
+        if (claim.source_path) {
+          const claimBasename = claim.source_path.split("/").pop()?.replace(/\.\w+$/, "").toLowerCase() ?? "";
+          for (const ref of card.meta.code_refs ?? []) {
+            const refBasename = ref.path.split("/").pop()?.replace(/\.\w+$/, "").toLowerCase() ?? "";
+            if (claimBasename && refBasename && (claimBasename.includes(refBasename) || refBasename.includes(claimBasename))) {
+              score += 1;
+              break;
+            }
+          }
+        }
+
+        // product_areas token set overlap (fallback: claim tokens vs area tokens)
+        if (score === 0) {
+          const areaTokens = new Set((card.meta.product_areas ?? []).flatMap((a) => canonicalClaimText(a).split(/\s+/).filter((t) => t.length >= 3)));
+          const overlap = [...claimTokens].filter((t) => areaTokens.has(t)).length;
+          if (overlap >= 2) score += 1;
+        }
 
         if (score > bestScore) { bestScore = score; bestId = card.meta.id; }
       }
