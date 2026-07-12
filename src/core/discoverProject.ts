@@ -13,6 +13,9 @@ const IGNORE_PATTERNS = [
   "**/dist/**",
   "**/.git/**",
   "**/.ai/memory/**",
+  "**/vendor/**",
+  "**/third_party/**",
+  "**/.opencode/**",
 ];
 
 // ── Heuristic classification ─────────────────────────────────────────────────
