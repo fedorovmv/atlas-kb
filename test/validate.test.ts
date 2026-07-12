@@ -638,4 +638,43 @@ usage_policy:
     expect(status.heuristicCount).toBe(1);
     await rm(root, { recursive: true, force: true });
   });
+
+  it("warns on unknown frontmatter field (typo detection)", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "validate-typo-"));
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "typo.md"),
+      `---
+entity_type: module
+id: typo-card
+title: Typo
+status: needs_review
+authority: reviewed_memory
+evidence_level: inferred
+stability: evolving
+source_confidence: medium
+last_reviewed: 2026-07-11
+review_required: true
+knowledge_types:
+  - current_behavior
+evindence_level: code_confirmed
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Typo
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const typoWarnings = result.warnings.filter((w) => w.includes("evindence_level"));
+    expect(typoWarnings.length).toBe(1);
+    expect(typoWarnings[0]).toContain("did you mean 'evidence_level'?");
+    await rm(root, { recursive: true, force: true });
+  });
 });

@@ -11,6 +11,35 @@ import { RELATION_FIELDS } from "./relations.js";
 import { resolveRoot } from "./paths.js";
 import { hasQualityEvidenceSection } from "./evidenceSection.js";
 
+// Known frontmatter keys — anything else is likely a typo
+const KNOWN_FRONTMATTER_KEYS = new Set([
+  "entity_type", "id", "title", "status", "authority", "evidence_level",
+  "stability", "source_confidence", "last_reviewed", "review_required",
+  "knowledge_types", "product_areas", "aliases",
+  "related_modules", "related_scenarios", "related_decisions", "related_specs",
+  "related_tests", "conflicts_with", "supersedes", "superseded_by",
+  "affects_modules", "affects_scenarios", "affects_decisions",
+  "code_refs", "test_refs", "source_refs",
+  "usage_policy", "claims",
+]);
+
+/** Simple Levenshtein distance for typo suggestion. */
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+
 function formatZodError(error: z.ZodError) {
   return error.issues.map((item) => `${item.path.join(".") || "frontmatter"}: ${item.message}`).join("; ");
 }
@@ -33,6 +62,21 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
     try {
       const parsed = matter(raw);
       const meta = MemoryFrontmatterSchema.parse(parsed.data);
+
+      // Check for unknown frontmatter keys (likely typos, e.g. evindence_level)
+      const rawKeys = Object.keys(parsed.data);
+      for (const key of rawKeys) {
+        if (!KNOWN_FRONTMATTER_KEYS.has(key)) {
+          // Suggest closest known key
+          const suggestion = [...KNOWN_FRONTMATTER_KEYS].find((k) => {
+            const dist = levenshtein(key.toLowerCase(), k.toLowerCase());
+            return dist <= 2 && dist > 0;
+          });
+          const hint = suggestion ? ` — did you mean '${suggestion}'?` : "";
+          warnings.push(`${relativePath}: unknown frontmatter field '${key}'${hint}`);
+        }
+      }
+
       parsedCards.push({ path: absolutePath, relativePath, meta, body: parsed.content, raw });
     } catch (error) {
       if (error instanceof z.ZodError) {

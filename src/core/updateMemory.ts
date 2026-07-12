@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { writeFile, rename, unlink } from "node:fs/promises";
 import yaml from "js-yaml";
 import { loadMemoryCards, findCardById } from "./loadMemory.js";
 import { resolveRoot } from "./paths.js";
@@ -71,7 +71,16 @@ export async function updateMemoryCard(id: string, options: UpdateOptions): Prom
   const frontmatterYaml = yaml.dump(newMeta, { lineWidth: -1 }).trimEnd();
   const content = `---\n${frontmatterYaml}\n---\n\n${newBody.trimStart()}\n`;
 
-  await writeFile(card.path, content, "utf8");
+  // Atomic write: write to temp file, then rename. Prevents partial writes
+  // if process crashes or concurrent updates race.
+  const tmpPath = `${card.path}.tmp`;
+  await writeFile(tmpPath, content, "utf8");
+  try {
+    await rename(tmpPath, card.path);
+  } catch (err) {
+    await unlink(tmpPath).catch(() => {});
+    throw err;
+  }
 
   return { id, path: card.relativePath, updated: true, changes };
 }
