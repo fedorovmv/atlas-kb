@@ -5,24 +5,30 @@
 
 ## Execution state
 
-Base commit: (current HEAD after Phase 1 commit)
-Baseline: 259 tests pass, build clean.
+Base commit: Phase 1 commit (v0.5.0)
+Final commit: `b263de5` (Phase 2 Round 3 corrections, v0.6.0)
+Baseline: 259 tests → 385 tests, build clean.
 
 | Lane key | Epic | Status | Session | Dispatch |
 |---|---|---|---|---|
-| implementation/D1-boilerplate-detection | D1 | PENDING | — | — |
-| implementation/D2-category-extraction | D2 | PENDING | — | — |
-| implementation/D3-post-repair-fixes | D3 | PENDING | — | — |
-| implementation/E1-legacy-classification | E1 | PENDING | — | — |
-| implementation/E2-reconciliation-staging | E2 | PENDING | — | — |
-| implementation/E3-subject-hash-binding | E3 | PENDING | — | — |
-| implementation/E4-legacy-cli-workflow | E4 | PENDING | — | — |
-| implementation/F1-hash-freshness | F1 | PENDING | — | — |
-| implementation/F2-compaction | F2 | PENDING | — | — |
-| implementation/F3-overview-rendering | F3 | PENDING | — | — |
-| implementation/F4-artifact-index-search | F4 | PENDING | — | — |
-| implementation/F5-reference-validation | F5 | PENDING | — | — |
-| implementation/F6-sqlite-fts5 | F6 | PENDING (optional) | — | — |
+| implementation/D1-boilerplate-detection | D1 | ✅ COMPLETE | (multiple) | FRESH |
+| implementation/D2-category-extraction | D2 | ✅ COMPLETE | (direct) | FRESH |
+| implementation/D3-post-repair-fixes | D3 | ✅ COMPLETE | (direct) | FRESH |
+| implementation/E1-legacy-classification | E1 | ✅ COMPLETE | fix-17 | FRESH |
+| implementation/E2-reconciliation-staging | E2 | ✅ COMPLETE | (direct) | FRESH |
+| implementation/E3-subject-hash-binding | E3 | ✅ COMPLETE | (direct) | FRESH |
+| implementation/E4-legacy-cli-workflow | E4 | ✅ COMPLETE | (direct) | FRESH |
+| implementation/F1-hash-freshness | F1 | ✅ COMPLETE | (fixer) | FRESH |
+| implementation/F2-compaction | F2 | ✅ COMPLETE | (direct) | FRESH |
+| implementation/F3-overview-rendering | F3 | ✅ COMPLETE | (direct) | FRESH |
+| implementation/F4-artifact-index-search | F4 | ✅ COMPLETE | fix-18 | FRESH |
+| implementation/F5-reference-validation | F5 | ✅ COMPLETE | (direct) | FRESH |
+| implementation/F6-sqlite-fts5 | F6 | ❌ DROPPED | — | Oracle rec |
+| review-correction/phase2-b1-b3 | REVISE | ✅ COMPLETE | (direct) | FRESH |
+| review-correction/phase2-r2-r3 | REVISE | ✅ COMPLETE | (fixers) | FRESH |
+| final-council | REVIEW | ✅ APPROVE | cou-5/cou-6 | FRESH |
+
+**Phase 2 COMPLETE. v0.6.0. 385 tests. Council APPROVE (Round 3).**
 
 Execution order (respecting file-write conflicts):
 1. D1 + E1 + F1 + F4 + F5 (parallel: 5 independent lanes — but `src/index.ts` and `src/cli.ts` edits must be serialized: assign both files to F1 lane only; D1/E1/F4/F5 export via separate files, F1 adds all exports to index.ts)

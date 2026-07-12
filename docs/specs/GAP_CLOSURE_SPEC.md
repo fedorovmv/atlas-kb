@@ -1249,59 +1249,64 @@ v3 имеет 10 top-level memory файлов. ts-kb-flow сейчас имее
 
 ## 4. Фазирование и приоритеты
 
-### Phase 1 — P0 (Foundation)
+### Phase 1 — P0 (Foundation) ✅ COMPLETE
 
 **Цель**: Contract-first memory model с source coverage и dispatch advisory.
+**Версия**: v0.5.0 | **Тестов**: 259→375 (после Phase 2 коррекций) | **Council**: APPROVE
 
-| Эпик | Домен | Зависимости |
-|---|---|---|
-| A1. Расширение card types (hybrid scaffold) | A | — |
-| A2. Контракт секций карточек | A | A1 |
-| A3. Knowledge ontology | A | A1 |
-| A4. Runtime tier | A | A1 |
-| B1. Source coverage contract | B | A1 |
-| B2. Source content maps | B | A1 |
-| B3. Automatic source triage | B | B1, B2 |
-| C1. Specialist dispatch advisory (soft) | C | B3 |
-| C4. Contract-first init/plan/check | C | A2, B1, C1 |
+| Эпик | Домен | Зависимости | Статус |
+|---|---|---|---|
+| A1. Расширение card types (hybrid scaffold) | A | — | ✅ |
+| A2. Контракт секций карточек | A | A1 | ✅ |
+| A3. Knowledge ontology | A | A1 | ✅ |
+| A4. Runtime tier | A | A1 | ✅ |
+| B1. Source coverage contract | B | A1 | ✅ |
+| B2. Source content maps | B | A1 | ✅ |
+| B3. Automatic source triage | B | B1, B2 | ✅ |
+| C1. Specialist dispatch advisory (soft) | C | B3 | ✅ |
+| C4. Contract-first init/plan/check | C | A2, B1, C1 | ✅ |
 
-> **Note**: C2 (findings JSONL) and C3 (builder pack) — DEFERRED из Phase 1. Revisit в Phase 2 если bounded build context понадобится.
+> **Note**: C2 (findings JSONL) and C3 (builder pack) — DEFERRED. Реализовано не будет (0.2 Решение 2 — content maps only). Revisit только если bounded build context понадобится.
 
-### Phase 2 — P1 (Build pipeline & retrieval)
+### Phase 2 — P1 (Build pipeline & retrieval) ✅ COMPLETE
 
 **Цель**: Semantic repair, legacy ingestion, enhanced context.
+**Версия**: v0.6.0 | **Тестов**: 375→385 | **Council**: APPROVE (Round 3)
 
-| Эпик | Домен | Зависимости |
-|---|---|---|
-| D1. Semantic repair | D | B2, C2 |
-| D2. Category-aware extraction | D | D1 |
-| D3. Post-repair fixes | D | D1, D2 |
-| E1. Legacy classification | E | A3, B1 |
-| E2. Reconciliation & staging | E | E1 |
-| E3. Subject hash binding | E | E2 |
-| E4. Legacy ingest CLI | E | E1, E2, E3 |
-| F1. Hash-based freshness | F | — |
-| F2. Compaction | F | F1 |
-| F3. Overview rendering | F | F1 |
-| F4. Artifact index & search | F | — |
-| F5. Reference study validation | F | A2 |
-| F6. SQLite FTS5 (опционально) | F | F4 |
+| Эпик | Домен | Зависимости | Статус |
+|---|---|---|---|
+| D1. Semantic repair | D | B2 | ✅ |
+| D2. Category-aware extraction | D | D1 | ✅ |
+| D3. Post-repair fixes | D | D1, D2 | ✅ |
+| E1. Legacy classification | E | A3, B1 | ✅ |
+| E2. Reconciliation & staging | E | E1, D1 | ✅ |
+| E3. Subject hash binding | E | E2 | ✅ |
+| E4. Legacy ingest CLI | E | E1, E2, E3 | ✅ |
+| F1. Hash-based freshness | F | — | ✅ |
+| F2. Compaction | F | F1 | ✅ |
+| F3. Overview rendering | F | F1 | ✅ |
+| F4. Artifact index & search | F | — | ✅ |
+| F5. Reference study validation | F | A2 | ✅ |
+| F6. SQLite FTS5 (опционально) | F | F4 | ❌ DROPPED |
 
-> **Note**: C2 (findings JSONL) and C3 (builder pack) — revisit если bounded build context понадобится. D1 зависимость от C2 (findings) снимается: D1 использует content maps (B2), а не findings. Если C2 будет добавлен — D1 можно расширить.
+> **Decisions**: F6 (SQLite FTS5) DROPPEN per Oracle review — lexical scoring sufficient for small-medium repos. C2/C3 still deferred. E2 depends on D1 for stub detection (BOILERPLATE_PATTERNS reuse).
 
-### Phase 3 — P2 (Workflow & integration)
+### Phase 3 — P2 (Workflow & integration) ⏳ PLANNED
 
 **Цель**: Workflow orchestration, git hooks, CI, OpenSpec.
+**Целевая версия**: v0.7.0
 
-| Эпик | Домен | Зависимости |
-|---|---|---|
-| G1. Adaptive workflow modes | G | F4 |
-| G2. Session isolation | G | — |
-| G3. Route command | G | G1 |
-| G4. Model routing profiles | G | — |
-| H1. Git hooks | H | C4 |
-| H2. CI integration | H | C4 |
-| H3. OpenSpec (опционально) | H | — |
+| Эпик | Домен | Зависимости | Статус |
+|---|---|---|---|
+| G1. Adaptive workflow modes | G | F4 | PENDING |
+| G2. Session isolation | G | — | PENDING |
+| G3. Route command | G | G1 | PENDING |
+| G4. Model routing profiles | G | — | PENDING |
+| H1. Git hooks | H | C4 | PENDING |
+| H2. CI integration | H | C4 | PENDING |
+| H3. OpenSpec (опционально) | H | — | PENDING |
+
+> **Notes**: Phase 3 зависит от F4 (artifact index — complete) и C4 (contract-first validate — complete). Все зависимости удовлетворены.
 
 ---
 
@@ -1381,12 +1386,11 @@ v3 имеет 10 top-level memory файлов. ts-kb-flow сейчас имее
 - MCP server (отложено до v1.0+)
 - TUI / interactive UI
 
-### Deferred из Phase 1 (перенести в Phase 2+ если понадобится):
-- Specialist findings JSONL (C2) — deferred, agents читают cards directly
-- Builder input pack (C3) — deferred, agents читают cards directly
-- Hard-gate dispatch validation (C1) — not needed, OpenCode fresh-subagent-isolation suffices
-- specialist-dispatch.json — только JSONL attempts, no finalized dispatch
-- OPS/GOTCHAS/TESTING/TASK_ROUTING cards — deferred до Phase 2-3 когда их фичи переносятся
+### Deferred (перенести в Phase 3+ если понадобится):
+- Specialist findings JSONL (C2) — deferred, agents читают cards directly. D1 использует content maps, не findings.
+- Builder input pack (C3) — deferred, agents читают cards directly.
+- SQLite FTS5 (F6) — DROPPEN per Oracle review. Lexical scoring sufficient.
+- OPS/GOTCHAS/TESTING/TASK_ROUTING scaffold cards — deferred до Phase 3 когда их фичи переносятся (G домен).
 
 ### By-design ограничения (сохраняются из ts-kb-flow):
 - CLI never calls LLM напрямую
@@ -1398,16 +1402,18 @@ v3 имеет 10 top-level memory файлов. ts-kb-flow сейчас имее
 
 ## 8. Метрики успеха
 
-| Метрика | Цель |
-|---|---|
-| v3-фичей перенесено | 30/30 эпиков |
-| Тестов | ≥ 250 (сейчас 115) |
-| Покрытие кода | ≥ 80% |
-| CLI-команд | ≥ 25 (сейчас 11) |
-| OpenCode tools | ≥ 12 (сейчас 6) |
-| Card types | 20+ (сейчас 12) |
-| Документация | Каждый эпик задокументирован |
-| Миграция | `migrate-from-v3` работает на synapse-mini |
+| Метрика | Цель | Phase 1 | Phase 2 | Текущее |
+|---|---|---|---|---|
+| v3-фичей перенесено | 30/30 эпиков | 9/9 ✅ | 12/12 (F6 dropped) ✅ | 21/22 |
+| Тестов | ≥ 250 | 259 | 385 | 385 ✅ |
+| CLI-команд | ≥ 25 | 13 | 27 | 27 ✅ |
+| OpenCode tools | ≥ 12 | 7 | 7 | 7 (3 pending integration) |
+| Card types | 20+ | 20 | 20 | 20 ✅ |
+| Версия | — | v0.5.0 | v0.6.0 | v0.6.0 |
+| Документация | Каждый эпик | ✅ | ✅ | ✅ |
+| Миграция | migrate-from-v3 | — | — | Phase 3 |
+
+> **Note**: OpenCode tools (7) не достигли цели (≥12) — 3 новых tool template (legacyIngest, compact, artifactSearch) не добавлены в `tools/memory.ts`. Запланировано в Phase 3 integration task.
 
 ---
 
