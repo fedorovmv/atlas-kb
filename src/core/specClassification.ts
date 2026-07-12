@@ -55,9 +55,10 @@ export function extractClaims(specContent: string, specPath: string): Claim[] {
   let claimNum = 0;
   let currentSection = "";
   let currentAlternative: string | null = null;
-  const rationalePattern = /rationale|why|decision|alternative|problem|constraint|consequence|trade.?off|non.?goal|value|out.?of.?scope/i;
+  const rationalePattern = /rationale|why|decision|alternative|problem|constraint|consequence|trade.?off|non.?goal|value|out.?of.?scope|обоснование|почему|решение|альтернатив|проблема|ограничение|последств|компромисс|цель|задача/i;
   // Broader behavioral verb pattern — catches prose without explicit modal verbs
-  const behaviorPattern = /must|shall|should|will|does|is|are|filters?|returns?|accepts?|rejects?|handles?|provides?|supports?|requires?|enforces?|validates?|registers?|discovers?|stores?|maintains?|controls?|manages?|processes?|transforms?|routes?|caches?|logs?|monitors?|tracks?|limits?|restricts?|scopes?|isolates?/i;
+  // English + Russian patterns
+  const behaviorPattern = /must|shall|should|will|does|is|are|filters?|returns?|accepts?|rejects?|handles?|provides?|supports?|requires?|enforces?|validates?|registers?|discovers?|stores?|maintains?|controls?|manages?|processes?|transforms?|routes?|caches?|logs?|monitors?|tracks?|limits?|restricts?|scopes?|isolates?|должен|должно|обязан|реализует|предоставляет?|поддерживает?|требует?|проверяет?|регистрирует?|обнаруживает?|хранит|управляет|обрабатывает|преобразует|маршрутизирует|кэширует|логирует|контролирует|ограничивает|возвращает|принимает|отклоняет|фильтрует|выполняет|создаёт|генерирует|обновляет|удаляет|читает|записывает|запускает|останавливает|настраивает|вызывает|получает|отправляет|сохраняет|обновля/i;
 
   for (let li = 0; li < lines.length; li++) {
     const line = lines[li];
@@ -154,11 +155,11 @@ export function extractClaims(specContent: string, specPath: string): Claim[] {
 }
 
 function inferClaimTypeFromSection(section: string, _heading: string): Claim["type"] | null {
-  if (/rationale|why|decision|alternatives|problem|constraint|consequence|trade.?off|non.?goal|out.?of.?scope|value/.test(section)) return "design_rationale";
-  if (/acceptance|definition.?of.?done|success.?criteria|exit.?criteria/.test(section)) return "proposed_behavior";
-  if (/background|context|prior/.test(section)) return "historical_context";
-  if (/requirement|claim|behavior|overview/.test(section)) return "current_behavior";
-  if (/open question|unknown|tbd/.test(section)) return "open_question";
+  if (/rationale|why|decision|alternatives|problem|constraint|consequence|trade.?off|non.?goal|out.?of.?scope|value|обоснование|почему|решение|альтернатив|проблема|ограничение|последств|компромисс|цель|задача/.test(section)) return "design_rationale";
+  if (/acceptance|definition.?of.?done|success.?criteria|exit.?criteria|критер/.test(section)) return "proposed_behavior";
+  if (/background|context|prior|контекст|предыстор/.test(section)) return "historical_context";
+  if (/requirement|claim|behavior|overview|требован|поведен|описан/.test(section)) return "current_behavior";
+  if (/open question|unknown|tbd|вопрос|неизвест/.test(section)) return "open_question";
   return null;
 }
 

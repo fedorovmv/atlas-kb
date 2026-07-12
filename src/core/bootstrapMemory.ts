@@ -124,16 +124,44 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     const evidenceLevel = hasCode ? "heuristic_match" : "inferred";
 
     // Read attached docs for real content — try sections + bold labels
+    // Prefer docs that share a path prefix with the module's code files
+    const codePaths = mod.codeFiles.map((f) => f.toLowerCase());
+    const sortedDocFiles = [...mod.docFiles].sort((a, b) => {
+      const aLower = a.toLowerCase();
+      const bLower = b.toLowerCase();
+      const aScore = codePaths.reduce((max, cp) => {
+        // Score by shared path segments
+        const aSegs = aLower.split("/");
+        const cSegs = cp.split("/");
+        let shared = 0;
+        for (let i = 0; i < Math.min(aSegs.length, cSegs.length); i++) {
+          if (aSegs[i] === cSegs[i]) shared++;
+          else break;
+        }
+        return Math.max(max, shared);
+      }, 0);
+      const bScore = codePaths.reduce((max, cp) => {
+        const bSegs = bLower.split("/");
+        const cSegs = cp.split("/");
+        let shared = 0;
+        for (let i = 0; i < Math.min(bSegs.length, cSegs.length); i++) {
+          if (bSegs[i] === cSegs[i]) shared++;
+          else break;
+        }
+        return Math.max(max, shared);
+      }, 0);
+      return bScore - aScore; // higher score = more path overlap = sort first
+    });
     let docSummary = "";
     let docResponsibilities = "";
     let docOverview = "";
-    for (const docPath of mod.docFiles.slice(0, 3)) {
+    for (const docPath of sortedDocFiles.slice(0, 3)) {
       const raw = await readFile(path.join(root, docPath), "utf8").catch(() => "");
       if (!raw) continue;
       if (!docSummary) docSummary = await readDocSummary(root, docPath);
       const sections = extractSections(raw);
-      if (!docResponsibilities) docResponsibilities = findContent(sections, raw, ["responsibilities", "responsibility", "what it does", "functionality", "overview", "description"]) ?? "";
-      if (!docOverview) docOverview = findContent(sections, raw, ["overview", "description", "about", "summary"]) ?? "";
+      if (!docResponsibilities) docResponsibilities = findContent(sections, raw, ["responsibilities", "responsibility", "what it does", "functionality", "overview", "description", "ответственность", "назначение", "функции", "возможности", "описание"]) ?? "";
+      if (!docOverview) docOverview = findContent(sections, raw, ["overview", "description", "about", "summary", "обзор", "описание", "о модуле", "сводка"]) ?? "";
     }
 
     const card = await renderModuleCard(mod, status, evidenceLevel, docSummary, docResponsibilities, docOverview, report.files);
@@ -148,8 +176,8 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     let scenarioFlow = "";
     for (const srcPath of scenario.sourceFiles) {
       const sections = await readDocSections(root, srcPath);
-      if (!scenarioGoal) scenarioGoal = findSection(sections, ["goal", "overview", "summary", "description", "purpose", "background"]) ?? "";
-      if (!scenarioFlow) scenarioFlow = findSection(sections, ["flow", "process", "steps", "how it works", "workflow", "procedure"]) ?? "";
+      if (!scenarioGoal) scenarioGoal = findSection(sections, ["goal", "overview", "summary", "description", "purpose", "background", "цель", "задача", "описание", "назначение", "контекст"]) ?? "";
+      if (!scenarioFlow) scenarioFlow = findSection(sections, ["flow", "process", "steps", "how it works", "workflow", "procedure", "поток", "процесс", "шаги", "сценарий", "алгоритм"]) ?? "";
       if (scenarioGoal && scenarioFlow) break;
     }
     await writeCard(`scenarios/${scenario.slug}.md`, renderScenarioCard(scenario, scenarioGoal, scenarioFlow));
@@ -397,7 +425,7 @@ function renderScenarioCard(s: { id: string; title: string; topics: string[]; so
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${s.title}\n\n## Goal\n${goalContent || `Inferred from: ${s.topics.join(", ")}. Read source_refs for details.`}\n\n## Actors\nNeeds review — identify actors from code/tests/docs.\n\n## Flow\n${flowContent || "Needs review — read source_refs and code to describe the flow."}\n\n## Constraints\nNeeds review — identify constraints, limits, error conditions.\n\n## Failure cases\nNeeds review — identify known failure scenarios.\n\n## Code evidence\nNot yet verified — memory-coder must confirm flow against code.\n\n## Test evidence\nNot yet verified — memory-coder must confirm test coverage for this scenario.\n\n## Rationale\nNeeds review — why does this scenario exist and not another?\n`;
+  return `---\n${fm}\n---\n\n# ${s.title}\n\n## Goal\n${goalContent || "Needs review — read source_refs for goal."}\n\n## Actors\nNeeds review — identify actors from code/tests/docs.\n\n## Flow\n${flowContent || "Needs review — read source_refs and code to describe the flow."}\n\n## Constraints\nNeeds review — identify constraints, limits, error conditions.\n\n## Failure cases\nNeeds review — identify known failure scenarios.\n\n## Code evidence\nNot yet verified — memory-coder must confirm flow against code.\n\n## Test evidence\nNot yet verified — memory-coder must confirm test coverage for this scenario.\n\n## Rationale\nNeeds review — why does this scenario exist and not another?\n`;
 }
 
 function renderDecisionCard(
