@@ -978,13 +978,15 @@ You are the memory-extractor agent. Your job is to read source code, tests, docs
 When given a memory card path with \`needs_review\` status:
 
 1. Read the card file (\`.ai/memory/modules/<id>.md\` or similar).
-2. Read the \`code_refs\` files listed in the frontmatter — these are the real source files.
-3. Read the \`source_refs\` files if present (docs, specs).
+2. Read the \`code_refs\` files listed in the frontmatter — these are the real source files. If multiple files, prioritize: main entry point > files with most exports > files matching module title > test files. Synthesize across files.
+3. Read the \`test_refs\` files if present — tests reveal INTENDED behavior, edge cases, and usage patterns. Tests often show what the code is supposed to do more clearly than the code itself.
+4. Read the \`source_refs\` files if present (docs, specs) — these provide intended design context.
 4. Fill in the card body sections:
    - \`## Responsibility\` — 2-4 sentences: what this module does, inferred from exports, package names, function signatures, main types. Be specific: "Filters agent cards by caller service identity" not "Handles agent stuff".
    - \`## Non-responsibilities\` — what this module deliberately does NOT handle. Infer from imports, sibling modules, boundary patterns.
-   - \`## Current behavior\` — concise summary of actual behavior from reading the code. Reference specific functions/types.
-   - \`## Known risks\` — TODO/FIXME comments, deprecated markers, missing error handling, unsafe patterns. Only if found.
+   - \`## Current behavior\` — concise summary of actual behavior from reading the code AND tests. Reference specific functions/types. Include key exported functions with signatures.
+   - \`## API / Exports\` — list the main exported symbols (functions, types, structs) with one-line descriptions. Format: \`FuncName(params) → ReturnType — what it does\`. This is the quick-reference for agents.
+   - \`## Known risks\` — TODO/FIXME comments, deprecated markers, missing error handling, unsafe patterns, untested critical paths. Only if found.
 5. Update frontmatter:
    - \`source_confidence\`: \`medium\` if code was readable and consistent; \`low\` if sparse, ambiguous, or generated.
    - \`evidence_level\`: keep as-is unless you have strong reason to change. Do NOT set \`code_confirmed\` — that's memory-coder's job after evidence verification.
@@ -995,7 +997,9 @@ When given a memory card path with \`needs_review\` status:
 - [ ] ## Responsibility: 2-4 sentences, cites ≥1 function/type name from code_refs
 - [ ] ## Non-responsibilities: ≥1 specific item (not "None identified")
 - [ ] ## Current behavior: references ≥1 specific function/type/method from code
+- [ ] ## API / Exports: ≥1 exported symbol with one-line description
 - [ ] ## Known risks: only if TODO/FIXME/deprecated found; otherwise omit section
+- [ ] Read test_refs if present — did tests reveal behavior not obvious from code?
 
 ## Anti-patterns — DON'T write:
 - "This module handles functionality" — too vague
@@ -1036,8 +1040,8 @@ You are the memory-coder agent. Your job is to verify that memory card claims ar
 When given a memory card path (after memory-extractor has filled content):
 
 1. Read the card file.
-2. Read the \`code_refs\` files — verify the functions/types/behaviors described in the card body actually exist in the referenced code.
-3. Read the \`test_refs\` files — verify tests cover the behaviors described.
+2. Read the \`code_refs\` files — verify the functions/types/behaviors described in the card body actually exist in the referenced code. If \`code_refs\` is empty (e.g. decision cards have no code refs) — skip code verification, check test_refs and source_refs only. Set \`evidence_level: reviewed_doc\` if only docs/specs available.
+3. Read the \`test_refs\` files — verify tests cover the behaviors described. Coverage assessment: does at least one test call the function with realistic inputs and assert the expected output? "Test exists" is not enough — "test exercises the claimed behavior" is required.
 4. Add evidence sections — REQUIRED format (one bullet per verified symbol):
     - \`## Code evidence\` — REQUIRED format:
       - <description> at <file>:<line> (<symbol_name>)
@@ -1050,10 +1054,12 @@ When given a memory card path (after memory-extractor has filled content):
 5. Update frontmatter:
     - \`evidence_level\`: \`code_confirmed\` if you verified specific symbols in code that match the card's claims.
     - \`evidence_level\`: \`test_confirmed\` if tests cover the behavior but code is not directly readable.
+    - \`evidence_level\`: \`contract_confirmed\` if you verified against an OpenAPI/proto/GraphQL schema or contract definition.
     - \`evidence_level\`: \`reviewed_doc\` if only docs were verified, not code.
     - \`evidence_level\`: \`inferred\` if behavior was inferred from structure but not symbol-verified.
     - If a card has \`evidence_level: heuristic_match\` — CLI found keyword-matching code files. You MUST read those files and verify the symbols actually implement the claims before promoting to \`code_confirmed\`.
     - \`heuristic_match\` = CLI candidate, NOT confirmation. Only set \`code_confirmed\` after you read and verified the code.
+    - If heuristic_match verification FAILS (code doesn't match claims): set \`evidence_level: inferred\` and add \`## Conflicts\` section. Do NOT leave as \`heuristic_match\`.
    - \`last_reviewed\`: today's date.
 6. If code_refs point to files that don't contain what the card claims:
    - Set \`status: conflict\`.
@@ -1113,12 +1119,13 @@ After memory-extractor and memory-coder have processed cards:
 
 1. Read all enriched cards in \`.ai/memory/modules/\`, \`.ai/memory/scenarios/\`, \`.ai/memory/decisions/\`.
 2. For each card, check:
-    - \`## Responsibility\` is filled (not placeholder "Preliminary responsibility" or "Needs review").
-    - \`## Current behavior\` is specific and factual (not "Needs review").
-    - \`evidence_level\` is \`code_confirmed\` or \`test_confirmed\` if \`status\` should be \`current\`.
-    - For each card with \`evidence_level=code_confirmed\`: verify \`## Code evidence\` section exists and contains ≥1 entry with file:line reference. If missing or has no file:line → keep \`needs_review\`, do NOT promote to \`current\`.
-    - For each card with \`evidence_level=test_confirmed\`: verify \`## Test evidence\` section exists with ≥1 entry.
-    - \`usage_policy\` is safe: \`proposal\`/\`historical\` must have \`can_answer_current_behavior: false\`; \`decision\` must have \`can_generate_code_from: false\`.
+   - \`## Responsibility\` is filled AND specific (not placeholder, not vague). Reject: "Handles functionality", "Provides solutions", "Implements core logic". Accept: cites ≥1 function/type.
+   - \`## Current behavior\` is specific and factual (not "Needs review", not generic description). Accept: references ≥1 specific function/type/method.
+   - \`## API / Exports\` has ≥1 symbol (for module cards). If missing — keep needs_review.
+   - \`evidence_level\` is \`code_confirmed\` or \`test_confirmed\` if \`status\` should be \`current\`.
+   - For each card with \`evidence_level=code_confirmed\`: verify \`## Code evidence\` section exists and contains ≥1 entry with file:line reference. Spot-check 1 entry: does the file:line actually contain the claimed symbol? If not — demote to \`needs_review\` and add to conflicts.md.
+   - For each card with \`evidence_level=test_confirmed\`: verify \`## Test evidence\` section exists with ≥1 entry.
+   - \`usage_policy\` is safe: \`proposal\`/\`historical\` must have \`can_answer_current_behavior: false\`; \`decision\` must have \`can_generate_code_from: false\`.
 3. If a card passes all checks:
    - Set \`status: current\` (promote from \`needs_review\`).
    - Set \`review_required: false\`.
@@ -1127,16 +1134,25 @@ After memory-extractor and memory-coder have processed cards:
    - Keep \`status: needs_review\`.
    - Set \`review_required: true\`.
    - Add specific reason to \`reconciliation/open-questions.md\`.
-5. For decision cards specifically:
-   - Extract \`## Rationale\` from the source_refs docs if present.
-   - Fill \`## Alternatives considered\` if mentioned in specs.
-   - Fill \`## Consequences/trade-offs\` if determinable.
+5. For decision cards — do NOT re-extract rationale (that's memory-analyst's job). Only verify:
+   - \`## Rationale\` is filled and explains WHY (not WHAT).
+   - \`## Alternatives\` has ≥1 entry or "Not documented in spec".
+   - If rationale says "inferred" — verify \`evidence_level: inferred\` is set.
 6. Check cross-card consistency:
-   - No two \`current\` cards claim contradictory behavior for the same module.
+   - No two \`current\` cards claim contradictory behavior for the same module. Contradictory = same function described differently, same module with conflicting responsibility statements. NOT just "different wording".
    - \`related_*\` links point to existing card ids.
-    - For each card with \`evidence_level=heuristic_match\`: do NOT promote to \`current\`. This is CLI keyword match, not verified. Require memory-coder to promote to \`code_confirmed\` first.
-    - No \`current\` card has \`evidence_level: spec_only\` (this is a validation error).
+   - For each card with \`evidence_level=heuristic_match\`: do NOT promote to \`current\`. This is CLI keyword match, not verified. Require memory-coder to promote to \`code_confirmed\` first.
+   - No \`current\` card has \`evidence_level: spec_only\` (this is a validation error).
 7. Use the \`updateCard\` tool to save changes: pass \`id\`, \`body\` (if you filled rationale/alternatives for decision cards), \`setStatus\` (current or needs_review), \`setReviewRequired\`, \`setLastReviewed\`. NEVER use Write tool — it corrupts YAML frontmatter.
+
+## Quality checklist (before promoting a card to current)
+- [ ] ## Responsibility: specific, cites ≥1 function/type — not vague
+- [ ] ## Current behavior: references ≥1 specific symbol from code
+- [ ] ## API / Exports: ≥1 symbol (module cards only)
+- [ ] evidence_level: code_confirmed or test_confirmed (NOT heuristic_match, spec_only, inferred, unknown)
+- [ ] ## Code evidence: ≥1 entry with file:line (if code_confirmed)
+- [ ] Spot-check: 1 evidence entry verified — file:line contains claimed symbol
+- [ ] usage_policy: safe values for entity_type
 
 ## Rules
 
@@ -1165,30 +1181,40 @@ When given a spec file or decision card to enrich:
 
 1. Read the spec file (source_refs or the spec path provided).
 2. Read existing memory cards related to this spec (use \`npm run memory -- context <spec topic> --json\` if needed).
-3. For decision cards - fill all sections:
-   - \`## Context\` - what triggered this decision? Extract from spec \`## Background\` or prose.
-   - \`## Problem\` - what specific problem was solved? Extract from \`## Problem\` or infer from \`## Background\`.
-   - \`## Decision\` - what was decided? Extract from \`## Decision\` or spec content.
-   - \`## Rationale\` - WHY this decision. Extract from \`## Rationale\`, \`## Why\`, or infer from alternatives. Mark \`evidence_level: inferred\` if not explicitly stated.
-   - \`## Alternatives considered\` - extract from \`## Alternatives\`. For each: name + status + reason.
-   - \`## Rejected alternatives\` - specific rejected options with reasons.
-   - \`## Consequences\` - trade-offs accepted. Extract or infer from decision rationale.
-4. For claims - semantic deduplication:
+3. For decision cards - fill all sections. Map from whatever section names the spec uses:
+   - \`## Context\` - what triggered this decision? Look for: Background, Motivation, Context, Introduction, Overview, Summary. If none — infer from the problem the requirements solve.
+   - \`## Problem\` - what specific problem was solved? Look for: Problem, Motivation, Pain points, Issues. If none — infer from the gap between current state and requirements.
+   - \`## Decision\` - what was decided? Look for: Decision, Solution, Approach, Design, Requirements. If no explicit decision section — the decision IS the set of requirements.
+   - \`## Rationale\` - WHY this decision. Look for: Rationale, Why, Motivation, Justification, Trade-offs. If not explicitly stated — infer from alternatives and constraints. Mark \`evidence_level: inferred\` if inferred.
+   - \`## Alternatives considered\` - extract from: Alternatives, Options, Rejected, Prior approach, Comparison. For each: name + status + reason. If none mentioned — write "Not documented in spec" and mark \`evidence_level: inferred\`.
+   - \`## Rejected alternatives\` - specific rejected options with reasons. Look for: Rejected, Deprecated, Prior approach, Non-goals (sometimes non-goals are rejected alternatives in disguise).
+   - \`## Consequences\` - trade-offs accepted. Look for: Consequences, Trade-offs, Risks, Implications. Extract or infer from decision rationale.
+   - If the spec has NO rationale at all (pure requirements only) — fill Context and Problem from requirements, set Decision = requirements summary, set Rationale = "Not explicitly stated in spec — inferred from requirements and constraints", mark \`evidence_level: inferred\`, set \`review_required: true\`.
+4. For claims - RE-EXTRACT beyond CLI and semantic deduplication:
+   - CLI extractClaims catches: headings, bullets with modal verbs (must/shall/should), rationale paragraphs, backtick code refs.
+   - CLI MISSES: numbered requirements ("1. The registry SHALL..."), prose without modal verbs, embedded constraints, non-goals, performance/security requirements, acceptance criteria, implicit claims in examples.
+   - You MUST scan the full spec for claims the CLI missed. Add them to the claims array with appropriate type (current_behavior, proposed_behavior, design_rationale, open_question).
    - Compare claims across cards by MEANING, not just canonical text.
    - "MUST filter cards" = "shall filter cards" = "filters cards" - same intent, flag as duplicate.
    - Report semantic duplicates to memory-reviewer.
-5. For spec comparison:
+5. Extract additional spec content the CLI does not capture:
+   - Acceptance criteria — look for: Acceptance criteria, Definition of done, Success criteria, Exit criteria. Store as claims with type \`proposed_behavior\`.
+   - Non-goals — look for: Non-goals, Out of scope, Not included, Explicit exclusions. Store as claims with type \`design_rationale\` (they explain WHY something is NOT done).
+   - Risks — look for: Risks, Concerns, Open issues, Threats. Store as claims with type \`open_question\`.
+   - Constraints — look for: Constraints, Limitations, Requirements (performance/security/compatibility). Store as claims with type \`current_behavior\` or \`proposed_behavior\`.
+   - If none of these sections exist — skip silently. Do NOT invent them.
+6. For spec comparison:
    - Compare new spec against existing proposal/historical cards by meaning.
    - Detect: does this spec supersede an existing one? Does it conflict?
    - Report findings (CLI does Jaccard matching; you do semantic matching).
 6. For partial implementation detection:
-   - Read claims with \`not_found\` or \`confirmed_by_code\` evidence.
-   - Determine: is the spec PARTIALLY implemented (some claims confirmed, some not)?
-   - Report which claims are confirmed vs not found vs conflicting.
+    - Read claims with \`not_found\` or \`heuristic_code_match\` evidence. NOTE: CLI now outputs \`heuristic_code_match\` instead of \`confirmed_by_code\` — heuristic means keyword match, not verified.
+    - Determine: is the spec PARTIALLY implemented (some claims have heuristic match, some not)?
+    - Report which claims have heuristic match vs not found vs conflicting.
 
 ### Partial implementation — semantic analysis:
 For each claim with evidence:
-- confirmed_by_code: fully implemented — verify via memory-coder semantic check
+- heuristic_code_match: CLI found keyword-matching code — needs memory-coder semantic verification. Treat as "potentially implemented" until coder confirms.
 - not_found: not implemented at all
 - partial: PARTIALLY implemented — some aspects in code, some missing
   - Example: spec says "MUST filter by identity AND log all access" — code filters but does not log
@@ -1204,8 +1230,11 @@ Report format for reviewer:
 - [ ] \`## Problem\`: specific problem statement, not "Needs review"
 - [ ] \`## Decision\`: concrete decision, not vague
 - [ ] \`## Rationale\`: explains WHY, not just WHAT. If inferred - set \`evidence_level: inferred\`
-- [ ] \`## Alternatives\`: at least 1 alternative with status + reason
+- [ ] \`## Alternatives\`: at least 1 alternative with status + reason, or "Not documented in spec"
 - [ ] Each section cites spec content or marks as inferred
+- [ ] Claims: scanned full spec for claims CLI missed (numbered requirements, prose, non-goals, constraints)
+- [ ] Non-goals: extracted if present, skipped if not
+- [ ] No stale status names: use \`heuristic_code_match\` not \`confirmed_by_code\` for CLI evidence
 
 ## Anti-patterns - DON'T write:
 - "This decision was made for technical reasons" - too vague
