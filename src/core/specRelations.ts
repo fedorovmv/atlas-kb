@@ -1,4 +1,5 @@
 import type { MemoryCard } from "./types.js";
+import { extractSpecTopics } from "./topics.js";
 
 export type DetectedRelation = {
   fromId: string;
@@ -7,30 +8,6 @@ export type DetectedRelation = {
   reason: string;
   confidence: "high" | "medium" | "low";
 };
-
-/**
- * Local copy of extractSpecTopics from specClassification.ts (lines 51-56).
- * Duplicated to avoid circular dependency risk and keep specRelations.ts
- * self-contained. If logic diverges, extract to a shared utility module.
- * @see src/core/specClassification.ts
- */
-function extractSpecTopics(path: string, content: string): string[] {
-  const segments = path
-    .toLowerCase()
-    .split("/")
-    .filter(
-      (s) =>
-        !["specs", "docs", "spec", "doc", "legacy", "archive", "proposals", "cr"].includes(s),
-    );
-  const headings = content.match(/^#+\s+(.+)$/gm) ?? [];
-  const headingTopics = headings.map((h) => h.replace(/^#+\s+/, "").toLowerCase());
-  return [
-    ...new Set([
-      ...segments.flatMap((s) => s.split(/[-_.]/)),
-      ...headingTopics.flatMap((h) => h.split(/\s+/)),
-    ]),
-  ].filter((s) => s.length >= 3);
-}
 
 function jaccard(setA: Set<string>, setB: Set<string>): number {
   const intersection = [...setA].filter((x) => setB.has(x)).length;

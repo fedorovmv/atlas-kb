@@ -47,6 +47,12 @@ CLI — deterministic heuristic, не semantic understanding. Инструмен
 
 `checkEvidence` — keyword match (basename tokens), не symbol analysis. CLI ставит `heuristic_code_match` / `heuristic_test_match` (не `confirmed`). LLM memory-coder превращает `heuristic_match` → `code_confirmed` после semantic verification. False positive ограничен: CLI не подтверждает, только кандидатирует.
 
+`classifySpecActuality` никогда не возвращает `current_confirmed` — это LLM-only статус (memory-coder после semantic verification). CLI возвращает максимум `partially_confirmed`.
+
+### Scenario extraction — hardcoded keywords
+
+`extractScenarios` в bootstrap использует hardcoded regex (`agent|registry|discovery|routing|gateway|tool`) для фильтрации doc/spec заголовков. Файлы без этих слов в title → не создаются scenario cards. Лимит 10 scenarios. Для arbitrary project может пропустить relevant scenarios.
+
 ### Cross-document comparison — Jaccard, не semantic
 
 `detectSpecRelations` — Jaccard topic overlap ≥ 0.3 + "replaces" keyword. Может пропустить semantic supersedes (разные слова, тот же смысл) или дать false positive (тот же topic, разный intent). LLM memory-analyst делает semantic comparison advisory.

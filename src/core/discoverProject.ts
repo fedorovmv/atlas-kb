@@ -328,19 +328,19 @@ function groupCandidateModules(files: FileRecord[]): CandidateModule[] {
   }
 
   // Phase 2: merge modules that share topics (e.g., registry + specs that mention registry)
-  modules.push(...mergeRelatedModules(modules, files));
+  mergeRelatedModules(modules, files);
 
   return modules;
 }
 
 /**
  * Merge modules that share strong topic overlap — e.g., a doc/spec module
- * whose topics strongly overlap with a code module.
+ * whose topics strongly overlap with a code module. Mutates existing modules in-place.
  */
 function mergeRelatedModules(
   existing: CandidateModule[],
   allFiles: FileRecord[],
-): CandidateModule[] {
+): void {
   // For now, check if spec/doc files exist that share topics with an existing
   // code module but are in a different group, and attach them.
   const specDocFiles = allFiles.filter(
@@ -365,8 +365,6 @@ function mergeRelatedModules(
       }
     }
   }
-
-  return []; // No new modules created, just mutated existing ones
 }
 
 // ── Main entry ───────────────────────────────────────────────────────────────

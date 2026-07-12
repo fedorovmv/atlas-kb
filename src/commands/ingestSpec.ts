@@ -2,7 +2,6 @@ import path from "node:path";
 import { mkdir, writeFile, readFile, appendFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import fg from "fast-glob";
-import yaml from "js-yaml";
 import { dedupClaims } from "../core/claimDedup.js";
 import { linkClaimsToCards } from "../core/claimLinking.js";
 import { discoverProject } from "../core/discoverProject.js";
@@ -11,30 +10,16 @@ import { loadMemoryCards, findCardById } from "../core/loadMemory.js";
 import { updateMemoryCard } from "../core/updateMemory.js";
 import { resolveRoot, resolveMemoryRoot } from "../core/paths.js";
 import { detectSpecRelations } from "../core/specRelations.js";
+import { frontmatterYaml, today, readFileIfExists } from "../core/utils.js";
+import { RELATION_FIELDS, type RelationField } from "../core/relations.js";
 import type { RepoMemoryOptions } from "../core/types.js";
 import type { StoredClaim } from "../schemas/claim.js";
-
-function frontmatterYaml(data: Record<string, unknown>): string {
-  return yaml.dump(data, { lineWidth: -1 }).trimEnd();
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function extractSection(content: string, sectionName: string): string | null {
   const pattern = new RegExp(`^##\\s+${sectionName}\\s*\\n([\\s\\S]*?)(?=\\n##\\s|$)`, "im");
   const match = content.match(pattern);
   if (!match) return null;
   return match[1].trim();
-}
-
-async function readFileIfExists(filePath: string): Promise<string> {
-  try {
-    return await readFile(filePath, "utf8");
-  } catch {
-    return "";
-  }
 }
 
 async function writeCard(memoryRoot: string, relPath: string, content: string, force: boolean, dryRun: boolean): Promise<"written" | "skipped"> {
@@ -143,7 +128,8 @@ export async function ingestSpecCommand(
       const merged: Record<string, string[]> = {};
       let hasChanges = false;
       for (const [field, newIds] of Object.entries(newRelations)) {
-        const existing = ((card.meta as any)[field] as string[] | undefined) ?? [];
+        const relField = field as RelationField;
+        const existing = card.meta[relField] ?? [];
         const deduped = [...new Set([...existing, ...newIds])];
         merged[field] = deduped;
         // Check if anything actually changed
@@ -161,11 +147,11 @@ export async function ingestSpecCommand(
     if (conflictRelations.length > 0) {
       const memoryRootForConflicts = resolveMemoryRoot(options);
       const conflictsPath = path.join(memoryRootForConflicts, "reconciliation", "conflicts.md");
-      const today = new Date().toISOString().slice(0, 10);
+      const todayStr = today();
       const existing = await readFileIfExists(conflictsPath);
       const newLines: string[] = [];
       for (const rel of conflictRelations) {
-        const line = `- [ingest ${today}] Conflict: card=${rel.fromId} conflicts_with=${rel.toId} — ${rel.reason}`;
+        const line = `- [ingest ${todayStr}] Conflict: card=${rel.fromId} conflicts_with=${rel.toId} — ${rel.reason}`;
         if (!existing.includes(line)) {
           newLines.push(`\n${line}\n`);
         }

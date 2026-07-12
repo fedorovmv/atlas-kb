@@ -2,6 +2,7 @@ import { ClaimSchema, EvidenceSchema } from "../schemas/claim.js";
 import type { Claim, Evidence } from "../schemas/claim.js";
 import type { DiscoveryReport, FileRecord } from "../schemas/discovery.js";
 import type { MemoryCard } from "./types.js";
+import { extractSpecTopics } from "./topics.js";
 
 export type SpecActuality =
   | "current_confirmed"
@@ -46,13 +47,6 @@ export function classifySpecActuality(
   if ((draftPath || draftContent) && heuristicCount === 0) return "proposed_unconfirmed";
 
   return "unknown_needs_review";
-}
-
-function extractSpecTopics(path: string, content: string): string[] {
-  const segments = path.toLowerCase().split("/").filter((s) => !["specs", "docs", "spec", "doc", "legacy", "archive", "proposals", "cr"].includes(s));
-  const headings = content.match(/^#+\s+(.+)$/gm) ?? [];
-  const headingTopics = headings.map((h) => h.replace(/^#+\s+/, "").toLowerCase());
-  return [...new Set([...segments.flatMap((s) => s.split(/[-_.]/)), ...headingTopics.flatMap((h) => h.split(/\s+/))])].filter((s) => s.length >= 3);
 }
 
 export function extractClaims(specContent: string, specPath: string): Claim[] {

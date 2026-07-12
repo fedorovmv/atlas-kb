@@ -376,4 +376,24 @@ describe("detectSpecRelations", () => {
     // Loose threshold should find at least as many as strict
     expect(looseRelations.length).toBeGreaterThanOrEqual(strictRelations.length);
   });
+
+  it("handles empty topics (Jaccard 0/0) without crash", () => {
+    // Use paths that produce NO topics (all tokens < 3 chars or filtered)
+    const cardA = makeCard({
+      meta: { id: "spec-empty-a", title: "Empty A" },
+      relativePath: "x/y.md", // "y" is 1 char → filtered by length >= 3
+      body: "",
+    });
+    const cardB = makeCard({
+      meta: { id: "spec-empty-b", title: "Empty B" },
+      relativePath: "z/w.md",
+      body: "",
+    });
+
+    // Should not crash on division by zero (union=0 → jaccard returns 0)
+    const relations = detectSpecRelations([cardA, cardB]);
+    expect(relations).toBeDefined();
+    // Two proposal cards with no topic overlap → no relations
+    expect(relations.length).toBe(0);
+  });
 });

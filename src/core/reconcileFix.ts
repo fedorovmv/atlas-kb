@@ -1,13 +1,15 @@
 import path from "node:path";
-import { appendFile, mkdir, readFile } from "node:fs/promises";
+import { appendFile, mkdir } from "node:fs/promises";
 import type { ReconcileReport } from "./reconcile.js";
 import { updateMemoryCard } from "./updateMemory.js";
 import { loadMemoryCards, findCardById } from "./loadMemory.js";
 import { resolveMemoryRoot } from "./paths.js";
+import { today, readFileIfExists } from "./utils.js";
 import type { RepoMemoryOptions } from "./types.js";
 import type { Claim } from "../schemas/claim.js";
 import { checkEvidence } from "./specClassification.js";
 import { discoverProject } from "./discoverProject.js";
+import type { DiscoveryReport } from "../schemas/discovery.js";
 
 export type AppliedFixes = {
   conflictsAppended: string[];
@@ -18,10 +20,11 @@ export type AppliedFixes = {
 
 export async function applyReconcileFixes(
   report: ReconcileReport,
-  options: RepoMemoryOptions = {}
+  options: RepoMemoryOptions = {},
+  discovery?: DiscoveryReport,
 ): Promise<AppliedFixes> {
   const memoryRoot = resolveMemoryRoot(options);
-  const today = new Date().toISOString().slice(0, 10);
+  const todayStr = today();
   const reconciliationDir = path.join(memoryRoot, "reconciliation");
   await mkdir(reconciliationDir, { recursive: true });
 
@@ -39,7 +42,7 @@ export async function applyReconcileFixes(
   const openQNewLines: string[] = [];
 
   for (const ref of report.staleRefsDetailed || []) {
-    const line = `- [reconcile ${today}] Stale ref: card=${ref.cardId}, path=${ref.refPath}`;
+    const line = `- [reconcile ${todayStr}] Stale ref: card=${ref.cardId}, path=${ref.refPath}`;
     if (!existingOpenQ.includes(line)) {
       openQNewLines.push(`\n${line}\n`);
       result.openQuestionsAppended.push(ref.cardId);
@@ -47,7 +50,7 @@ export async function applyReconcileFixes(
   }
 
   for (const modId of report.orphanModules || []) {
-    const line = `- [reconcile ${today}] Orphan module: ${modId} — discovery found module without memory card`;
+    const line = `- [reconcile ${todayStr}] Orphan module: ${modId} — discovery found module without memory card`;
     if (!existingOpenQ.includes(line)) {
       openQNewLines.push(`\n${line}\n`);
       result.openQuestionsAppended.push(modId);
@@ -65,7 +68,7 @@ export async function applyReconcileFixes(
   const conflictNewLines: string[] = [];
 
   for (const claim of report.weakCurrentClaimsDetailed || []) {
-    const line = `- [reconcile ${today}] Weak current evidence: card=${claim.cardId}, evidence_level=${claim.evidenceLevel}`;
+    const line = `- [reconcile ${todayStr}] Weak current evidence: card=${claim.cardId}, evidence_level=${claim.evidenceLevel}`;
     if (!existingConflicts.includes(line)) {
       conflictNewLines.push(`\n${line}\n`);
       result.conflictsAppended.push(claim.cardId);
@@ -79,7 +82,7 @@ export async function applyReconcileFixes(
   // ── 3. proposal card updates — stale proposals ───────────────────────────
 
   const cards = await loadMemoryCards(options);
-  const noteMarker = `Stale proposal — flagged by reconcile on ${today}. Evidence insufficient; review required.`;
+  const noteMarker = `Stale proposal — flagged by reconcile on ${todayStr}. Evidence insufficient; review required.`;
 
   for (const proposal of report.staleProposals || []) {
     const card = findCardById(cards, proposal.cardId);
@@ -90,7 +93,7 @@ export async function applyReconcileFixes(
     const newBody = card.body + `\n\n${noteMarker}\n`;
     await updateMemoryCard(proposal.cardId, {
       ...options,
-      fields: { status: "needs_review", last_reviewed: today },
+      fields: { status: "needs_review", last_reviewed: todayStr },
       body: newBody,
     });
     result.proposalCardsUpdated.push(proposal.cardId);
@@ -99,7 +102,7 @@ export async function applyReconcileFixes(
   // ── 4. Claim evidence update — changed claim evidence ──────────────────
   const changedEvidence = report.changedClaimEvidence ?? [];
   if (changedEvidence.length > 0) {
-    const discovery = await discoverProject(options);
+    const discoveryReport = discovery ?? await discoverProject(options);
     // Deduplicate by cardId — multiple claims can share the same card
     const updatedCardIds = new Set<string>();
 
@@ -109,11 +112,11 @@ export async function applyReconcileFixes(
       if (idx === -1 || !cards[idx].meta.claims || cards[idx].meta.claims.length === 0) continue;
 
       const card = cards[idx];
-      const freshEvidence = checkEvidence(card.meta.claims as Claim[], discovery);
+      const freshEvidence = checkEvidence(card.meta.claims as Claim[], discoveryReport);
       const updatedClaims = card.meta.claims.map((sc) => {
         const fresh = freshEvidence.find((e) => e.claim_id === sc.id);
         if (fresh && sc.evidence && fresh.status !== sc.evidence.status) {
-          return { ...sc, evidence: { ...fresh, claim_id: sc.id }, last_checked: today };
+          return { ...sc, evidence: { ...fresh, claim_id: sc.id }, last_checked: todayStr };
         }
         return sc;
       });
@@ -125,12 +128,4 @@ export async function applyReconcileFixes(
   }
 
   return result;
-}
-
-async function readFileIfExists(filePath: string): Promise<string> {
-  try {
-    return await readFile(filePath, "utf8");
-  } catch {
-    return "";
-  }
 }

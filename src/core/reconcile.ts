@@ -3,7 +3,9 @@ import { existsSync } from "node:fs";
 import { loadMemoryCards } from "./loadMemory.js";
 import { discoverProject } from "./discoverProject.js";
 import { resolveRoot } from "./paths.js";
+import { RELATION_FIELDS, type RelationField } from "./relations.js";
 import type { RepoMemoryOptions } from "./types.js";
+import type { DiscoveryReport } from "../schemas/discovery.js";
 import type { Claim } from "../schemas/claim.js";
 import { checkEvidence } from "./specClassification.js";
 import { findCrossCardDuplicates } from "./claimDedup.js";
@@ -23,11 +25,14 @@ export type ReconcileReport = {
   duplicateClaims?: { cardIdA: string; claimIdA: string; cardIdB: string; claimIdB: string; canonicalText: string }[];
 };
 
-export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<ReconcileReport> {
+export async function reconcileMemory(
+  options: RepoMemoryOptions = {},
+  precomputedDiscovery?: DiscoveryReport,
+): Promise<ReconcileReport> {
   const root = resolveRoot(options);
   const staleProposalDays = options.staleProposalDays ?? 90;
   const cards = await loadMemoryCards(options);
-  const discovery = await discoverProject(options);
+  const discovery = precomputedDiscovery ?? await discoverProject(options);
   const discoveredPaths = new Set(discovery.files.map((f) => f.path));
 
   const staleRefs: string[] = [];
@@ -95,20 +100,17 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
   const moduleIds = new Set(cards.filter((c) => c.meta.entity_type === "module").map((c) => c.meta.id));
   for (const mod of discovery.candidateModules) {
     if (mod.confidence !== "low") {
-      const modSuffix = mod.id.split("-").pop() ?? mod.id;
-      const hasCard = [...moduleIds].some((id) => id.includes(modSuffix) || mod.id.includes(id.split("-").pop() ?? id));
-      if (!hasCard) orphanModules.push(mod.id);
+      if (!moduleIds.has(mod.id)) orphanModules.push(mod.id);
     }
   }
 
   // Broken relation detection
   const brokenRelations: { cardId: string; field: string; targetId: string }[] = [];
   const allIds = new Set(cards.map(c => c.meta.id));
-  const relationFields = ["supersedes", "superseded_by", "conflicts_with", "related_specs"];
   for (const card of cards) {
-    for (const field of relationFields) {
-      const ids = (card.meta as any)[field] as string[] | undefined;
-      if (!ids || ids.length === 0) continue;
+    for (const field of RELATION_FIELDS) {
+      const ids = card.meta[field] ?? [];
+      if (ids.length === 0) continue;
       for (const targetId of ids) {
         if (!allIds.has(targetId)) {
           brokenRelations.push({ cardId: card.meta.id, field, targetId });
@@ -125,7 +127,7 @@ export async function reconcileMemory(options: RepoMemoryOptions = {}): Promise<
     if (!card.meta.claims || card.meta.claims.length === 0) continue;
     for (const claim of card.meta.claims) {
       for (const field of ["module", "scenario", "decision"] as const) {
-        const targetId = (claim as any)[field] as string | undefined;
+        const targetId = claim[field];
         if (targetId && !allIds.has(targetId)) {
           brokenClaimLinks.push({ cardId: card.meta.id, claimId: claim.id, field, targetId });
         }

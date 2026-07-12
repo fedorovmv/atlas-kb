@@ -1,10 +1,10 @@
 import path from "node:path";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
-import { existsSync, readFileSync } from "node:fs";
-import yaml from "js-yaml";
+import { existsSync } from "node:fs";
 import matter from "gray-matter";
 import { discoverProject } from "./discoverProject.js";
 import { resolveRoot, resolveMemoryRoot, toPosixPath } from "./paths.js";
+import { frontmatterYaml, today } from "./utils.js";
 import type { DiscoveryReport, CandidateModule, FileRecord } from "../schemas/discovery.js";
 
 export type BootstrapResult = {
@@ -12,6 +12,25 @@ export type BootstrapResult = {
   skipped: string[];
   report: DiscoveryReport;
 };
+
+// --- Skip logic ---
+
+async function shouldSkipExisting(target: string, force: boolean): Promise<string | null> {
+  if (!force) return "exists";
+  // With --force: skip enriched cards to prevent data loss
+  try {
+    const raw = await readFile(target, "utf8");
+    if (!raw.trimStart().startsWith("---")) return null; // no frontmatter — overwrite
+    const parsed = matter(raw);
+    const meta = parsed.data as { review_required?: boolean; evidence_level?: string; status?: string };
+    // Skip if card is enriched (review completed or evidence confirmed)
+    if (meta.review_required === false) return "already reviewed";
+    if (meta.evidence_level === "code_confirmed" || meta.evidence_level === "test_confirmed") return "evidence confirmed";
+    return null; // needs_review or unconfirmed — safe to overwrite
+  } catch {
+    return null; // can't read — overwrite
+  }
+}
 
 export async function bootstrapMemory(options: { root?: string; memoryRoot?: string; force?: boolean; dryRun?: boolean } = {}): Promise<BootstrapResult> {
   const root = resolveRoot(options);
@@ -25,7 +44,7 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     const target = path.join(memoryRoot, relativePath);
     const rel = toPosixPath(path.relative(root, target));
     if (existsSync(target)) {
-      const skipReason = shouldSkipExisting(target, options.force ?? false);
+      const skipReason = await shouldSkipExisting(target, options.force ?? false);
       if (skipReason) {
         skipped.push(`${rel} (${skipReason})`);
         return;
@@ -85,33 +104,10 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
   return { written, skipped, report };
 }
 
-// --- Skip logic ---
-
-function shouldSkipExisting(target: string, force: boolean): string | null {
-  if (!force) return "exists";
-  // With --force: skip enriched cards to prevent data loss
-  try {
-    const raw = readFileSync(target, "utf8");
-    if (!raw.trimStart().startsWith("---")) return null; // no frontmatter — overwrite
-    const parsed = matter(raw);
-    const meta = parsed.data as { review_required?: boolean; evidence_level?: string; status?: string };
-    // Skip if card is enriched (review completed or evidence confirmed)
-    if (meta.review_required === false) return "already reviewed";
-    if (meta.evidence_level === "code_confirmed" || meta.evidence_level === "test_confirmed") return "evidence confirmed";
-    return null; // needs_review or unconfirmed — safe to overwrite
-  } catch {
-    return null; // can't read — overwrite
-  }
-}
-
 // --- Card renderers ---
 
-function frontmatterYaml(data: Record<string, unknown>): string {
-  return yaml.dump(data, { lineWidth: -1 }).trimEnd();
-}
-
 function renderModuleCard(mod: CandidateModule, status: string, evidenceLevel: string): string {
-  const today = new Date().toISOString().slice(0, 10);
+  const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "module",
     id: mod.id,
@@ -121,7 +117,7 @@ function renderModuleCard(mod: CandidateModule, status: string, evidenceLevel: s
     evidence_level: evidenceLevel,
     stability: status === "current" ? "stable" : "evolving",
     source_confidence: mod.confidence === "high" ? "high" : mod.confidence === "medium" ? "medium" : "low",
-    last_reviewed: today,
+    last_reviewed: todayStr,
     review_required: status !== "current",
     knowledge_types: ["current_behavior"],
     product_areas: mod.topics.slice(0, 3),
@@ -171,7 +167,7 @@ function renderModuleCard(mod: CandidateModule, status: string, evidenceLevel: s
 }
 
 function renderScenarioCard(s: { id: string; title: string; topics: string[]; sourceFiles: string[] }): string {
-  const today = new Date().toISOString().slice(0, 10);
+  const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "scenario",
     id: s.id,
@@ -181,7 +177,7 @@ function renderScenarioCard(s: { id: string; title: string; topics: string[]; so
     evidence_level: "inferred",
     stability: "evolving",
     source_confidence: "low",
-    last_reviewed: today,
+    last_reviewed: todayStr,
     review_required: true,
     knowledge_types: ["current_behavior"],
     product_areas: s.topics.slice(0, 3),
@@ -197,7 +193,7 @@ function renderScenarioCard(s: { id: string; title: string; topics: string[]; so
 }
 
 function renderDecisionCard(d: { id: string; title: string; rationale: string; sourceFile: string }): string {
-  const today = new Date().toISOString().slice(0, 10);
+  const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "decision",
     id: d.id,
@@ -207,7 +203,7 @@ function renderDecisionCard(d: { id: string; title: string; rationale: string; s
     evidence_level: "reviewed_doc",
     stability: "stable",
     source_confidence: "medium",
-    last_reviewed: today,
+    last_reviewed: todayStr,
     review_required: false,
     knowledge_types: ["design_rationale"],
     source_refs: [{ path: d.sourceFile, role: "rationale" }],
@@ -222,7 +218,7 @@ function renderDecisionCard(d: { id: string; title: string; rationale: string; s
 }
 
 function renderHistoricalCard(file: FileRecord, id: string): string {
-  const today = new Date().toISOString().slice(0, 10);
+  const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "historical",
     id,
@@ -232,7 +228,7 @@ function renderHistoricalCard(file: FileRecord, id: string): string {
     evidence_level: "spec_only",
     stability: "deprecated",
     source_confidence: "low",
-    last_reviewed: today,
+    last_reviewed: todayStr,
     review_required: false,
     knowledge_types: ["historical_context"],
     source_refs: [{ path: file.path, role: "historical" }],
@@ -247,7 +243,7 @@ function renderHistoricalCard(file: FileRecord, id: string): string {
 }
 
 function renderProposalCard(file: FileRecord, id: string): string {
-  const today = new Date().toISOString().slice(0, 10);
+  const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "proposal",
     id,
@@ -257,7 +253,7 @@ function renderProposalCard(file: FileRecord, id: string): string {
     evidence_level: "spec_only",
     stability: "experimental",
     source_confidence: "low",
-    last_reviewed: today,
+    last_reviewed: todayStr,
     review_required: true,
     knowledge_types: ["proposed_behavior"],
     source_refs: [{ path: file.path, role: "spec" }],
@@ -317,7 +313,7 @@ authority: reviewed_memory
 evidence_level: unknown
 stability: evolving
 source_confidence: unknown
-last_reviewed: ${new Date().toISOString().slice(0, 10)}
+last_reviewed: ${today()}
 review_required: true
 knowledge_types: ["conflict"]
 usage_policy:
@@ -341,7 +337,7 @@ authority: reviewed_memory
 evidence_level: unknown
 stability: evolving
 source_confidence: unknown
-last_reviewed: ${new Date().toISOString().slice(0, 10)}
+last_reviewed: ${today()}
 review_required: true
 knowledge_types: ["open_question"]
 usage_policy:

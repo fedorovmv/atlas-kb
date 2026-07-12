@@ -1,14 +1,16 @@
 import { reconcileMemory } from "../core/reconcile.js";
 import { applyReconcileFixes } from "../core/reconcileFix.js";
+import { discoverProject } from "../core/discoverProject.js";
 import type { AppliedFixes } from "../core/reconcileFix.js";
 import type { RepoMemoryOptions } from "../core/types.js";
 
 export async function reconcileMemoryCommand(options: RepoMemoryOptions & { json?: boolean; fix?: boolean } = {}) {
-  const report = await reconcileMemory(options);
+  const discovery = await discoverProject(options);
+  const report = await reconcileMemory(options, discovery);
 
   let appliedFixes: AppliedFixes | undefined;
   if (options.fix) {
-    appliedFixes = await applyReconcileFixes(report, options);
+    appliedFixes = await applyReconcileFixes(report, options, discovery);
   }
 
   if (options.json) {

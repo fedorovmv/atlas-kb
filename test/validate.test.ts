@@ -554,4 +554,44 @@ usage_policy:
     const evErrors = result.errors.filter((e) => e.includes("proper-test-evidence.md"));
     expect(evErrors).toEqual([]);
   });
+
+  it("errors: heuristic_match + status=current → ERROR (requires LLM verification)", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "heuristic-current.md"),
+      `---
+entity_type: module
+id: heuristic-current
+title: Heuristic Current
+status: current
+authority: reviewed_memory
+evidence_level: heuristic_match
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Heuristic Current
+
+## Responsibility
+Test module.
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    expect(result.ok).toBe(false);
+    expect(result.errors.join("\n")).toContain("heuristic_match");
+    expect(result.errors.join("\n")).toContain("requires code_confirmed or test_confirmed");
+  });
 });
