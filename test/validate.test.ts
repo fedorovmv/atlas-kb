@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import path from "node:path";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { createTempProject } from "./helpers.js";
 import { validateMemory } from "../src/core/validate.js";
+import { checkEnrichmentStatus } from "../src/core/validate.js";
 
 const badHistorical = `---
 entity_type: historical
@@ -593,5 +596,46 @@ Test module.
     expect(result.ok).toBe(false);
     expect(result.errors.join("\n")).toContain("heuristic_match");
     expect(result.errors.join("\n")).toContain("requires code_confirmed or test_confirmed");
+  });
+
+  it("checkEnrichmentStatus: detects unenriched memory bank (all needs_review)", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "enrichment-test-"));
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "unenriched.md"),
+      `---
+entity_type: module
+id: unenriched
+title: Unenriched
+status: needs_review
+authority: reviewed_memory
+evidence_level: heuristic_match
+stability: evolving
+source_confidence: medium
+last_reviewed: 2026-07-11
+review_required: true
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: true
+---
+
+# Unenriched
+`,
+      "utf8",
+    );
+    const { loadMemoryCards } = await import("../src/core/loadMemory.js");
+    const cards = await loadMemoryCards({ root });
+    const status = checkEnrichmentStatus(cards);
+    expect(status.enriched).toBe(false);
+    expect(status.needsReviewCount).toBe(1);
+    expect(status.currentCount).toBe(0);
+    expect(status.heuristicCount).toBe(1);
+    await rm(root, { recursive: true, force: true });
   });
 });

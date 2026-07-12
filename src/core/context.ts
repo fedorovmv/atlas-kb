@@ -38,7 +38,9 @@ function compactExcerpt(body: string, max = 1200) {
 }
 
 function renderCardLine(card: MemoryCard) {
-  return `- \`${card.relativePath}\` — ${card.meta.title} [${card.meta.entity_type}, ${card.meta.status}, evidence=${card.meta.evidence_level}]`;
+  const needsVerification = card.meta.evidence_level === "heuristic_match" || card.meta.evidence_level === "spec_only" || card.meta.evidence_level === "inferred";
+  const marker = needsVerification ? " [needs LLM verification]" : "";
+  return `- \`${card.relativePath}\` — ${card.meta.title} [${card.meta.entity_type}, ${card.meta.status}, evidence=${card.meta.evidence_level}]${marker}`;
 }
 
 type SourcePriority = {

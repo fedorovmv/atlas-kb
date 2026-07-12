@@ -1,7 +1,20 @@
-import { validateMemory as validate } from "../core/validate.js";
+import { validateMemory as validate, checkEnrichmentStatus } from "../core/validate.js";
+import { loadMemoryCardsBestEffort } from "../core/loadMemory.js";
 
 export async function validateMemoryCommand(options: { root?: string; json?: boolean; strictWarnings?: boolean } = {}) {
   const result = await validate({ root: options.root });
+
+  // Enrichment status check
+  const cards = await loadMemoryCardsBestEffort({ root: options.root });
+  const enrichment = checkEnrichmentStatus(cards);
+  if (!enrichment.enriched && cards.length > 0) {
+    result.warnings.push(
+      `Memory bank not enriched: ${enrichment.needsReviewCount} cards need review, 0 current. ` +
+      `Dispatch LLM agents (see AGENTS.md): memory-extractor → memory-coder → memory-reviewer. ` +
+      `${enrichment.heuristicCount} cards have heuristic_match evidence — require memory-coder to promote to code_confirmed.`
+    );
+  }
+
   const ok = result.ok && (!options.strictWarnings || result.warnings.length === 0);
 
   if (options.json) {

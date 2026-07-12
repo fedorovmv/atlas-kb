@@ -121,3 +121,12 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
 
   return { ok: errors.length === 0, errors, warnings };
 }
+
+/** Check if memory bank is unenriched — all cards needs_review, no current. */
+export function checkEnrichmentStatus(cards: MemoryCard[]): { enriched: boolean; currentCount: number; needsReviewCount: number; heuristicCount: number } {
+  const currentCount = cards.filter((c) => c.meta.status === "current").length;
+  const needsReviewCount = cards.filter((c) => c.meta.status === "needs_review").length;
+  const heuristicCount = cards.filter((c) => c.meta.evidence_level === "heuristic_match").length;
+  const enriched = currentCount > 0 || needsReviewCount === 0;
+  return { enriched, currentCount, needsReviewCount, heuristicCount };
+}
