@@ -1308,6 +1308,17 @@ v3 имеет 10 top-level memory файлов. ts-kb-flow сейчас имее
 
 > **Notes**: Phase 3 зависит от F4 (artifact index — complete) и C4 (contract-first validate — complete). Все зависимости удовлетворены. Integration debt (3 OpenCode tools) — COMPLETE.
 
+### Phase 4 — Migration (v1.0 precursor) ✅ COMPLETE
+
+**Цель**: migrate-from-v3 command for v3 memory bank migration.
+**Версия**: v0.8.0 | **Тестов**: 455→546 | **Council**: pending
+
+| Эпик | Домен | Зависимости | Статус |
+|---|---|---|---|
+| migrate-from-v3 | §6 | Phase 3 | ✅ |
+
+> **Notes**: Single epic. Frontmatter synthesis (4→11+ fields), entity_type mapping (14→20), structural transforms, source-coverage migration, optional docs migration. All Council gates passed.
+
 ---
 
 ## 5. Требования к тестам
@@ -1405,13 +1416,13 @@ v3 имеет 10 top-level memory файлов. ts-kb-flow сейчас имее
 | Метрика | Цель | Phase 1 | Phase 2 | Phase 3 | Текущее |
 |---|---|---|---|---|---|
 | v3-фичей перенесено | 30/30 эпиков | 9/9 ✅ | 12/12 (F6 dropped) ✅ | 7/7 ✅ | 28/29 |
-| Тестов | ≥ 250 | 259 | 385 | 456 | 456 ✅ |
-| CLI-команд | ≥ 25 | 13 | 27 | 36 | 36 ✅ |
+| Тестов | ≥ 250 | 259 | 385 | 456 | 546 ✅ |
+| CLI-команд | ≥ 25 | 13 | 27 | 36 | 37 ✅ |
 | OpenCode tools | ≥ 12 | 7 | 7 | 10 | 10 ✅ |
 | Card types | 20+ | 20 | 20 | 20 | 20 ✅ |
-| Версия | — | v0.5.0 | v0.6.0 | v0.7.0 | v0.7.0 |
+| Версия | — | v0.5.0 | v0.6.0 | v0.7.0 | v0.8.0 |
 | Документация | Каждый эпик | ✅ | ✅ | ✅ | ✅ |
-| Миграция | migrate-from-v3 | — | — | Phase 4 | Phase 4 |
+| Миграция | migrate-from-v3 | — | — | Phase 4 | ✅ COMPLETE |
 
 > **Note**: OpenCode tools (7) не достигли цели (≥12) — 3 новых tool template (legacyIngest, compact, artifactSearch) не добавлены в `tools/memory.ts`. Запланировано в Phase 3 integration task.
 

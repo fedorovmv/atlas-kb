@@ -42,3 +42,6 @@ export * from "./core/changeSurface.js";
 export * from "./core/routeWorkflow.js";
 export * from "./core/sessionTracking.js";
 export * from "./core/modelRouting.js";
+// Phase 4 — V3 migration
+export { migrateFromV3Command } from "./commands/migrateFromV3.js";
+export { V3FrontmatterSchema, type V3Frontmatter, type V3Card, type MigrationResult, type MigrationReport } from "./schemas/migrateFromV3.js";

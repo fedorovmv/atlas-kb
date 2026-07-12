@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.8.0
+
+### Added
+- migrate-from-v3 command: full v3→ts-kb-flow memory bank migration with frontmatter synthesis
+- V3FrontmatterSchema + migration field synthesis (4 v3 required → 11+ ts-kb-flow required fields)
+- entity_type mapping (14 v3 memory_card_type → 20 ts-kb-flow entity_type, index variants collapse to readme)
+- Structural transforms: related_cards→related_*, owned_paths→code_refs, scope→product_areas
+- source-coverage.json migration with path→id transformation (schemas identical, direct copy + targetCards transform)
+- Optional docs migration (--include-docs: service→module, runbook→ops, gotcha→gotchas, guide→reference)
+- Safety: --force, --dry-run, --json, skip-existing default, atomic writes, staging dir
+- Post-migration validation (per-card MemoryFrontmatterSchema.parse + duplicate-id + relation check)
+- 4 new core modules: migrateSynthesis, migratePaths, migrateDocs, migrateFromV3
+- 1 new schema: migrateFromV3 (V3FrontmatterSchema + 7 static maps + interfaces)
+
+### Changed
+- cli.ts: Added migrate-from-v3 command registration with 7 options
+- index.ts: Added migrateFromV3Command + migration schema exports
+
+### Notes
+- CLI commands: 36→37 (1 new)
+- Tests: 455→546 (91 new)
+- v1.0.0 next: all v3 gaps closed
+
 ## 0.7.0
 
 ### Added

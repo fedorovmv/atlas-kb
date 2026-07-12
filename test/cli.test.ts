@@ -278,3 +278,164 @@ describe("CLI Phase 3 commands", () => {
     expect(output.length).toBeGreaterThan(0);
   });
 });
+
+const V3_CARD_CONTENT = `---
+memory_card_type: module
+runtime_tier: production
+source_status: current
+evidence_level: code
+title: Test Module
+---
+
+## Зачем агенту читать эту карточку
+Test module for migration.
+`;
+
+async function createV3Fixture(tmpDir: string) {
+  const v3ModulesDir = path.join(tmpDir, "v3/knowledge/memory/modules");
+  await mkdir(v3ModulesDir, { recursive: true });
+  await writeFile(path.join(v3ModulesDir, "test-module.md"), V3_CARD_CONTENT, "utf8");
+  return v3ModulesDir;
+}
+
+describe("CLI migrate-from-v3", () => {
+  it("CLI migrate-from-v3 <v3-dir> — basic migration", async () => {
+    const target = await mkdtemp(path.join(tmpdir(), "migrate-target-"));
+    const v3Dir = await mkdtemp(path.join(tmpdir(), "migrate-v3-"));
+    const v3ModulesDir = path.join(v3Dir, "knowledge/memory/modules");
+    await mkdir(v3ModulesDir, { recursive: true });
+    await writeFile(path.join(v3ModulesDir, "test-module.md"), V3_CARD_CONTENT, "utf8");
+
+    const output = runCli(target, ["migrate-from-v3", v3Dir]);
+    expect(output).toContain("Migrated:");
+
+    const targetPath = path.join(target, ".ai/memory/modules/test-module.md");
+    const targetContent = await readFile(targetPath, "utf8");
+    expect(targetContent).toContain("Test Module");
+
+    await rm(target, { recursive: true, force: true });
+    await rm(v3Dir, { recursive: true, force: true });
+  });
+
+  it("CLI migrate-from-v3 --dry-run — no files written", async () => {
+    const target = await mkdtemp(path.join(tmpdir(), "migrate-dryrun-"));
+    const v3Dir = await mkdtemp(path.join(tmpdir(), "migrate-v3-dry-"));
+    const v3ModulesDir = path.join(v3Dir, "knowledge/memory/modules");
+    await mkdir(v3ModulesDir, { recursive: true });
+    await writeFile(path.join(v3ModulesDir, "test-module.md"), V3_CARD_CONTENT, "utf8");
+
+    runCli(target, ["migrate-from-v3", v3Dir, "--dry-run"]);
+
+    // Assert no .ai/memory was created
+    const targetMemory = path.join(target, ".ai/memory/modules/test-module.md");
+    try {
+      await readFile(targetMemory, "utf8");
+      expect.fail("File should not exist in dry-run mode");
+    } catch {
+      // Expected — file was not written
+    }
+
+    await rm(target, { recursive: true, force: true });
+    await rm(v3Dir, { recursive: true, force: true });
+  });
+
+  it("CLI migrate-from-v3 --json — valid JSON output", async () => {
+    const target = await mkdtemp(path.join(tmpdir(), "migrate-json-"));
+    const v3Dir = await mkdtemp(path.join(tmpdir(), "migrate-v3-json-"));
+    const v3ModulesDir = path.join(v3Dir, "knowledge/memory/modules");
+    await mkdir(v3ModulesDir, { recursive: true });
+    await writeFile(path.join(v3ModulesDir, "test-module.md"), V3_CARD_CONTENT, "utf8");
+
+    const output = runCli(target, ["migrate-from-v3", v3Dir, "--json"]);
+    const parsed = JSON.parse(output);
+
+    expect(parsed).toHaveProperty("command");
+    expect(parsed).toHaveProperty("v3Dir");
+    expect(parsed).toHaveProperty("target");
+    expect(parsed).toHaveProperty("discovered");
+    expect(parsed).toHaveProperty("migrated");
+    expect(parsed).toHaveProperty("skipped");
+    expect(parsed).toHaveProperty("errors");
+    expect(parsed).toHaveProperty("warnings");
+
+    await rm(target, { recursive: true, force: true });
+    await rm(v3Dir, { recursive: true, force: true });
+  });
+
+  it("CLI migrate-from-v3 --force — overwrites existing", async () => {
+    const target = await mkdtemp(path.join(tmpdir(), "migrate-force-"));
+    const v3Dir = await mkdtemp(path.join(tmpdir(), "migrate-v3-force-"));
+    const v3ModulesDir = path.join(v3Dir, "knowledge/memory/modules");
+    await mkdir(v3ModulesDir, { recursive: true });
+    await writeFile(path.join(v3ModulesDir, "test-module.md"), V3_CARD_CONTENT, "utf8");
+
+    // Pre-create target .ai/memory/modules/test-module.md with different content
+    const targetModulesDir = path.join(target, ".ai/memory/modules");
+    await mkdir(targetModulesDir, { recursive: true });
+    await writeFile(
+      path.join(targetModulesDir, "test-module.md"),
+      "EXISTING CONTENT",
+      "utf8",
+    );
+
+    runCli(target, ["migrate-from-v3", v3Dir, "--force"]);
+
+    const targetPath = path.join(target, ".ai/memory/modules/test-module.md");
+    const targetContent = await readFile(targetPath, "utf8");
+    expect(targetContent).not.toContain("EXISTING CONTENT");
+    expect(targetContent).toContain("Test Module");
+
+    await rm(target, { recursive: true, force: true });
+    await rm(v3Dir, { recursive: true, force: true });
+  });
+
+  it("CLI migrate-from-v3 --preserve-manifest — manifest copied", async () => {
+    const target = await mkdtemp(path.join(tmpdir(), "migrate-manifest-"));
+    const v3Dir = await mkdtemp(path.join(tmpdir(), "migrate-v3-manifest-"));
+    const v3ModulesDir = path.join(v3Dir, "knowledge/memory/modules");
+    await mkdir(v3ModulesDir, { recursive: true });
+    await writeFile(path.join(v3ModulesDir, "test-module.md"), V3_CARD_CONTENT, "utf8");
+
+    // Create a source-manifest.json
+    const v3MemoryRoot = path.join(v3Dir, "knowledge/memory");
+    await writeFile(
+      path.join(v3MemoryRoot, "source-manifest.json"),
+      JSON.stringify({ source: "v3", version: "3.0" }),
+      "utf8",
+    );
+
+    runCli(target, ["migrate-from-v3", v3Dir, "--preserve-manifest"]);
+
+    const manifestPath = path.join(target, ".ai/memory/source-manifest.json");
+    const manifestContent = await readFile(manifestPath, "utf8");
+    expect(manifestContent).toContain("v3");
+
+    await rm(target, { recursive: true, force: true });
+    await rm(v3Dir, { recursive: true, force: true });
+  });
+
+  it("CLI migrate-from-v3 --skip-review — sets review_required=false", async () => {
+    const target = await mkdtemp(path.join(tmpdir(), "migrate-skipreview-"));
+    const v3Dir = await mkdtemp(path.join(tmpdir(), "migrate-v3-skipreview-"));
+    const v3ModulesDir = path.join(v3Dir, "knowledge/memory/modules");
+    await mkdir(v3ModulesDir, { recursive: true });
+    await writeFile(path.join(v3ModulesDir, "test-module.md"), V3_CARD_CONTENT, "utf8");
+
+    runCli(target, ["migrate-from-v3", v3Dir, "--skip-review"]);
+
+    const targetPath = path.join(target, ".ai/memory/modules/test-module.md");
+    const targetContent = await readFile(targetPath, "utf8");
+    expect(targetContent).toContain("review_required: false");
+
+    await rm(target, { recursive: true, force: true });
+    await rm(v3Dir, { recursive: true, force: true });
+  });
+
+  it("CLI migrate-from-v3 help — command listed", () => {
+    const output = execFileSync(tsxBin, [cli, "--help"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect(output).toContain("migrate-from-v3");
+  });
+});

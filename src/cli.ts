@@ -23,6 +23,7 @@ import { routeCommand } from "./commands/route.js";
 import { sessionOpenCommand, sessionCloseCommand } from "./commands/session.js";
 import { profileCommand } from "./commands/profile.js";
 import { openspecNewCommand, openspecStatusCommand, openspecCheckCommand, openspecArchiveCommand } from "./commands/openspec.js";
+import { migrateFromV3Command } from "./commands/migrateFromV3.js";
 
 const program = new Command();
 
@@ -421,6 +422,32 @@ program
   .action(async (name, opts) => {
     const root = program.opts().root;
     await openspecArchiveCommand({ root, name, json: opts.json });
+  });
+
+// Phase 4 — V3 migration
+program
+  .command("migrate-from-v3 <v3-dir>")
+  .description("Migrate v3 knowledge/memory/ to ts-kb-flow .ai/memory/")
+  .option("--force", "Overwrite existing files", false)
+  .option("--dry-run", "Preview only, no writes", false)
+  .option("--json", "JSON output", false)
+  .option("--include-docs", "Migrate knowledge/docs/", false)
+  .option("--skip-coverage", "Skip source-coverage.json", false)
+  .option("--preserve-manifest", "Copy source-manifest.json", false)
+  .option("--skip-review", "Set review_required=false for all", false)
+  .action(async (v3Dir, opts) => {
+    const root = program.opts().root;
+    await migrateFromV3Command({
+      root: root || process.cwd(),
+      v3Dir,
+      force: opts.force,
+      dryRun: opts.dryRun,
+      json: opts.json,
+      includeDocs: opts.includeDocs,
+      skipCoverage: opts.skipCoverage,
+      preserveManifest: opts.preserveManifest,
+      noAutoReview: opts.skipReview,
+    });
   });
 
 try {
