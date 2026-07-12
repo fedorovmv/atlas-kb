@@ -4,7 +4,7 @@ id: agent-tool-registry
 title: Agent & Tool Registry
 status: current
 authority: reviewed_memory
-evidence_level: code_confirmed
+evidence_level: reviewed_doc
 stability: evolving
 source_confidence: medium
 last_reviewed: 2026-07-08
@@ -44,49 +44,49 @@ usage_policy:
 
 # Agent & Tool Registry
 
-## Responsibilities
+## Ответственность
 
-Registry stores and exposes agent/tool metadata for discovery and filters availability according to service identity and access policy.
+Реестр хранит и предоставляет метаданные агентов/инструментов для обнаружения, фильтруя доступность согласно идентичности сервиса и политике доступа.
 
-## Non-responsibilities
+## Не входит в ответственность
 
-- Choosing the target agent
-- Business orchestration
-- Runtime execution of target calls
+- Выбор целевого агента
+- Бизнес-оркестрация
+- Выполнение вызовов в runtime
 
-## Current behavior
+## Текущее поведение
 
-Calling agents use discovery metadata to find available targets. Runtime calls are performed through the mesh/runtime path, not by the registry itself.
+Вызывающие агенты используют метаданные обнаружения для поиска доступных целей. Runtime-вызовы выполняются через путь mesh/runtime, а не самим реестром.
 
-## Related scenarios
+## Связанные сценарии
 
 - a2a-agent-discovery
 
-## Related decisions
+## Связанные решения
 
 - registry-is-discovery-not-orchestration
 
-## Code references
+## Свидетельства из кода
 
 - `internal/registry`
 - `pkg/agentcard`
 
-## Test references
+## Свидетельства из тестов
 
 - `tests/agent-registry`
 
-## Known risks
+## Известные риски
 
-- Filter logic may need updates as access policies evolve.
+- Логика фильтрации может требовать обновлений по мере развития политик доступа.
 
-## Open questions
+## Открытые вопросы
 
-- Which checks belong to discovery time and which belong to runtime time?
+- Какие проверки относятся к времени обнаружения, а какие — к runtime?
 
-## Why these boundaries
+## Почему такие границы
 
-Registry remains a discovery component to avoid mixing metadata storage, target selection, and runtime orchestration.
+Реестр остаётся компонентом обнаружения, чтобы не смешивать хранение метаданных, выбор цели и runtime-оркестрацию.
 
-## Code evidence
+## Подтверждения в коде
 
-- FilterCardsForCaller function at internal/registry/access_filter.go:5 (FilterCardsForCaller)
+- Функция FilterCardsForCaller в internal/registry/access_filter.go:5 (FilterCardsForCaller)

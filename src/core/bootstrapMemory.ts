@@ -363,41 +363,41 @@ async function renderModuleCard(
   const cleanSummary = docSummary && !isBoilerplate(docSummary) ? docSummary : "";
 
   const responsibility = cleanResponsibilities || cleanOverview || cleanSummary ||
-    `Module with ${mod.codeFiles.length} code files, ${mod.testFiles.length} test files. Topics: ${mod.topics.join(", ")}. Read code_refs and source_refs for details.`;
-  const nonResponsibilities = "Needs review — infer from code boundaries, imports, sibling modules.";
-  const currentBehavior = cleanSummary || "Needs review — read code_refs for actual behavior.";
+    `Модуль с ${mod.codeFiles.length} файлами кода, ${mod.testFiles.length} тестовыми файлами. Темы: ${mod.topics.join(", ")}. См. code_refs и source_refs.`;
+  const nonResponsibilities = "Требует ревью — определите по границам кода, импортам, соседним модулям.";
+  const currentBehavior = cleanSummary || "Требует ревью — прочитайте code_refs для описания поведения.";
 
   const body = [
     `# ${mod.title}`,
     "",
-    "## Responsibility",
+    "## Ответственность",
     responsibility,
     "",
-    "## Non-responsibilities",
+    "## Не входит в ответственность",
     nonResponsibilities,
     "",
-    "## Current behavior",
+    "## Текущее поведение",
     currentBehavior,
     "",
-    "## Known risks",
-    "Needs review — check TODO/FIXME/deprecated in code_refs.",
+    "## Известные риски",
+    "Требует ревью — проверьте TODO/FIXME/deprecated в code_refs.",
     "",
-    "## Code evidence",
+    "## Свидетельства из кода",
     ...mod.codeFiles.map((p) => `- Code file at ${p}:1`),
-    "Preliminary evidence from code_refs — memory-coder must confirm specific symbols.",
+    "Предварительные свидетельства из code_refs — memory-coder должен подтвердить конкретные символы.",
     "",
-    "## Test evidence",
+    "## Свидетельства из тестов",
     ...mod.testFiles.map((p) => `- Test file at ${p}:1`),
-    "Preliminary evidence from test_refs — memory-coder must confirm test coverage.",
+    "Предварительные свидетельства из test_refs — memory-coder должен подтвердить покрытие тестами.",
     "",
-    "## Related",
-    `- Code files: ${mod.codeFiles.length}`,
-    `- Test files: ${mod.testFiles.length}`,
-    `- Doc files: ${mod.docFiles.length}`,
-    `- Demo files: ${mod.demoFiles.length} (NOT production evidence)`,
+    "## Связанные файлы",
+    `- Файлов кода: ${mod.codeFiles.length}`,
+    `- Тестовых файлов: ${mod.testFiles.length}`,
+    `- Файлов документации: ${mod.docFiles.length}`,
+    `- Demo-файлов: ${mod.demoFiles.length} (НЕ production-свидетельства)`,
     "",
-    "## Open questions",
-    "Needs review — add questions that cannot be answered from code alone.",
+    "## Открытые вопросы",
+    "Требует ревью — добавьте вопросы, на которые нельзя ответить только из кода.",
   ].join("\n");
   return `---\n${fm}\n---\n\n${body}\n`;
 }
@@ -425,7 +425,7 @@ function renderScenarioCard(s: { id: string; title: string; topics: string[]; so
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${s.title}\n\n## Goal\n${goalContent || "Needs review — read source_refs for goal."}\n\n## Actors\nNeeds review — identify actors from code/tests/docs.\n\n## Flow\n${flowContent || "Needs review — read source_refs and code to describe the flow."}\n\n## Constraints\nNeeds review — identify constraints, limits, error conditions.\n\n## Failure cases\nNeeds review — identify known failure scenarios.\n\n## Code evidence\nNot yet verified — memory-coder must confirm flow against code.\n\n## Test evidence\nNot yet verified — memory-coder must confirm test coverage for this scenario.\n\n## Rationale\nNeeds review — why does this scenario exist and not another?\n`;
+  return `---\n${fm}\n---\n\n# ${s.title}\n\n## Цель\n${goalContent || "Требует ревью — прочитайте source_refs для описания цели."}\n\n## Участники\nТребует ревью — определите участников из кода/тестов/документации.\n\n## Поток выполнения\n${flowContent || "Требует ревью — прочитайте source_refs и код для описания потока."}\n\n## Ограничения\nТребует ревью — определите ограничения, лимиты, условия ошибок.\n\n## Сценарии ошибок\nТребует ревью — определите известные сценарии ошибок.\n\n## Свидетельства из кода\nНе проверено — memory-coder должен подтвердить поток по коду.\n\n## Свидетельства из тестов\nНе проверено — memory-coder должен подтвердить покрытие тестами для этого сценария.\n\n## Обоснование\nТребует ревью — почему существует этот сценарий, а не другой?\n`;
 }
 
 function renderDecisionCard(
@@ -458,7 +458,7 @@ function renderDecisionCard(
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Context\n${context || "Needs review — what problem triggered this decision?"}\n\n## Problem\n${problem || "Needs review — what specific problem was solved?"}\n\n## Decision\n${decisionText || "Needs review — what was decided?"}\n\n## Rationale\n${rationale || d.rationale}\n\n## Alternatives considered\n${alternatives || "Needs review — what alternatives were evaluated?"}\n\n## Rejected alternatives\n${alternatives ? "See alternatives above." : "Needs review — what was rejected and why?"}\n\n## Consequences\n${consequences || "Needs review — what trade-offs were accepted?"}\n\n## Current behavior evidence\nNeeds review — does the decision still hold against current code?\n\n## Affected modules\nNeeds review — which modules are affected by this decision?\n\n## Affected scenarios\nNeeds review — which scenarios are affected by this decision?\n`;
+  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Контекст\n${context || "Требует ревью — какая проблема привела к этому решению?"}\n\n## Проблема\n${problem || "Требует ревью — какая конкретная проблема решена?"}\n\n## Решение\n${decisionText || "Требует ревью — что было решено?"}\n\n## Обоснование\n${rationale || d.rationale}\n\n## Рассмотренные альтернативы\n${alternatives || "Требует ревью — какие альтернативы были рассмотрены?"}\n\n## Отклонённые альтернативы\n${alternatives ? "См. альтернативы выше." : "Требует ревью — что было отклонено и почему?"}\n\n## Последствия\n${consequences || "Требует ревью — какие компромиссы были приняты?"}\n\n## Свидетельства текущего поведения\nТребует ревью — действительно ли решение актуально для текущего кода?\n\n## Затронутые модули\nТребует ревью — какие модули затронуты этим решением?\n\n## Затронутые сценарии\nТребует ревью — какие сценарии затронуты этим решением?\n`;
 }
 
 function renderHistoricalCard(
@@ -490,7 +490,7 @@ function renderHistoricalCard(
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${file.basename} (historical)\n\n## Summary\n${intro || "Legacy spec preserved for rationale context. Not an implementation guide."}\n\n## Status\n${status || "Deprecated/historical."}\n\n## Problems attempted\n${problem || "Needs review — what problem did this approach try to solve?"}\n\n## Prior approach\nLegacy spec preserved for rationale context. Not an implementation guide.\n\n## Rationale still useful\n${rationale || "Needs review — which parts of the rationale remain relevant?"}\n\n## Obsolete/unconfirmed ideas\nNeeds review — what is no longer applicable?\n\n## Decisions that survived\nNeeds review — which decisions from this spec carried forward?\n\n## Links to current decisions\nNeeds review — link to current decision cards that supersede this.\n`;
+  return `---\n${fm}\n---\n\n# ${file.basename} (historical)\n\n## Краткое описание\n${intro || "Устаревшая спецификация сохранена для контекста обоснования. Не руководство по реализации."}\n\n## Статус\n${status || "Устаревшее/историческое."}\n\n## Решаемая проблема\n${problem || "Требует ревью — какую проблему пытался решить этот подход?"}\n\n## Предыдущий подход\nУстаревшая спецификация сохранена для контекста обоснования. Не руководство по реализации.\n\n## Актуальное обоснование\n${rationale || "Требует ревью — какие части обоснования остаются актуальными?"}\n\n## Устаревшие/неподтверждённые идеи\nТребует ревью — что больше не применимо?\n\n## Выжившие решения\nТребует ревью — какие решения из этой спецификации перенесены?\n\n## Ссылки на текущие решения\nТребует ревью — ссылки на текущие карточки решений, заменяющие эту.\n`;
 }
 
 function renderProposalCard(
@@ -522,7 +522,7 @@ function renderProposalCard(
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${file.basename} (proposal)\n\n## Source spec\n${file.path}\n\n## Summary\n${intro || "Unconfirmed spec — requires code/test evidence before becoming current behavior."}\n\n## Problem\n${problem || "Needs review — what problem does this proposal solve?"}\n\n## Proposed behavior\n${requirements || "Needs review — extract proposed behavior from the source spec."}\n\n## Rationale from spec\n${rationale || "Needs review — extract rationale from the source spec."}\n\n## Affected modules\nNeeds review — which modules would this proposal change?\n\n## Affected scenarios\nNeeds review — which scenarios would this proposal change?\n\n## Current code check\nNeeds review — memory-coder must check if proposal is already partially implemented.\n\n## Confirmed/not found/conflicting claims\nNeeds review — classify each claim from the spec.\n\n## Suggested memory updates\nNeeds review — what should change in current memory if this proposal is accepted?\n\n## Review decision\nNeeds review — memory-reviewer decides: accept, reject, or needs more evidence.\n`;
+  return `---\n${fm}\n---\n\n# ${file.basename} (proposal)\n\n## Исходная спецификация\n${file.path}\n\n## Краткое описание\n${intro || "Неподтверждённая спецификация — требует кодовых/тестовых свидетельств перед становлением текущим поведением."}\n\n## Проблема\n${problem || "Требует ревью — какую проблему решает это предложение?"}\n\n## Предлагаемое поведение\n${requirements || "Требует ревью — извлеките предлагаемое поведение из исходной спецификации."}\n\n## Обоснование из спецификации\n${rationale || "Требует ревью — извлеките обоснование из исходной спецификации."}\n\n## Затронутые модули\nТребует ревью — какие модули изменит это предложение?\n\n## Затронутые сценарии\nТребует ревью — какие сценарии изменит это предложение?\n\n## Проверка текущего кода\nТребует ревью — memory-coder должен проверить, частично ли предложение уже реализовано.\n\n## Подтверждённые/не найденные/конфликтующие утверждения\nТребует ревью — классифицируйте каждое утверждение из спецификации.\n\n## Предлагаемые обновления памяти\nТребует ревью — что должно измениться в текущей памяти, если предложение принято?\n\n## Решение по ревью\nТребует ревью — memory-reviewer решает: принять, отклонить или нужно больше свидетельств.\n`;
 }
 
 // --- Extractors ---
@@ -564,7 +564,7 @@ function extractDecisions(report: DiscoveryReport): { id: string; title: string;
 const RECONCILIATION_CONFLICTS_TEMPLATE = `---
 entity_type: conflict
 id: reconciliation-conflicts
-title: Reconciliation conflicts
+title: Конфликты согласования
 status: needs_review
 authority: reviewed_memory
 evidence_level: unknown
@@ -580,15 +580,15 @@ usage_policy:
   requires_code_check_before_change: true
 ---
 
-# Reconciliation conflicts
+# Конфликты согласования
 
-Record contradictions between memory, code, tests, and specs here.
+Записывайте здесь противоречия между памятью, кодом, тестами и спецификациями.
 `;
 
 const RECONCILIATION_QUESTIONS_TEMPLATE = `---
 entity_type: open_question
 id: reconciliation-open-questions
-title: Open questions
+title: Открытые вопросы
 status: needs_review
 authority: reviewed_memory
 evidence_level: unknown
@@ -604,9 +604,9 @@ usage_policy:
   requires_code_check_before_change: true
 ---
 
-# Open questions
+# Открытые вопросы
 
-Record unresolved questions here instead of letting the agent invent answers.
+Записывайте здесь неразрешённые вопросы вместо того, чтобы позволить агенту придумывать ответы.
 `;
 
 // --- Index card templates ---
@@ -614,7 +614,7 @@ Record unresolved questions here instead of letting the agent invent answers.
 const MEMORY_INDEX_TEMPLATE = `---
 entity_type: index
 id: memory-index
-title: Memory Bank Index
+title: Индекс Memory Bank
 status: current
 authority: reviewed_memory
 evidence_level: reviewed_doc
@@ -633,28 +633,28 @@ usage_policy:
   requires_warning: false
 ---
 
-# Memory Bank Index
+# Индекс Memory Bank
 
-## Overview
+## Обзор
 <!-- LLM: краткое описание продукта -->
 
-## Module index
+## Индекс модулей
 <!-- LLM: список модулей со ссылками на modules/*.md -->
 
-## Architecture index
+## Индекс архитектуры
 <!-- LLM: ссылки на architecture/*.md -->
 
-## Flow index
+## Индекс потоков
 <!-- LLM: ссылки на flows/*.md -->
 
-## Decision index
+## Индекс решений
 <!-- LLM: ссылки на decisions/*.md -->
 `;
 
 const MODULES_INDEX_TEMPLATE = `---
 entity_type: index
 id: modules-index
-title: Modules Index
+title: Индекс модулей
 status: current
 authority: reviewed_memory
 evidence_level: reviewed_doc
@@ -673,25 +673,25 @@ usage_policy:
   requires_warning: false
 ---
 
-# Modules Index
+# Индекс модулей
 
-## Production modules
+## Production-модули
 <!-- LLM: runtime_tier=production модули со ссылками на modules/*.md -->
 
-## Demo modules
+## Demo-модули
 <!-- LLM: runtime_tier=demo модули со ссылками на modules/*.md -->
 
-## Shared modules
+## Общие модули
 <!-- LLM: runtime_tier=shared модули со ссылками на modules/*.md -->
 
-## Historical modules
+## Исторические модули
 <!-- LLM: runtime_tier=historical модули (архивные) -->
 `;
 
 const DECISIONS_INDEX_TEMPLATE = `---
 entity_type: index
 id: decisions-index
-title: Decisions Index
+title: Индекс решений
 status: current
 authority: reviewed_memory
 evidence_level: reviewed_doc
@@ -710,19 +710,19 @@ usage_policy:
   requires_warning: false
 ---
 
-# Decisions Index
+# Индекс решений
 
-## Active decisions
+## Активные решения
 <!-- LLM: ссылки на decisions/*.md — текущие архитектурные решения -->
 
-## Superseded decisions
+## Заменённые решения
 <!-- LLM: ссылки на decisions/*.md или historical/*.md — перезапсенные решения -->
 `;
 
 const ARCHITECTURE_INDEX_TEMPLATE = `---
 entity_type: architecture
 id: architecture-index
-title: Architecture Index
+title: Индекс архитектуры
 status: current
 authority: reviewed_memory
 evidence_level: reviewed_doc
@@ -741,13 +741,13 @@ usage_policy:
   requires_warning: false
 ---
 
-# Architecture Index
+# Индекс архитектуры
 
 <!-- LLM: общая картина архитектуры проекта -->
 
-## Architecture overview
+## Обзор архитектуры
 <!-- LLM: ссылки на architecture/*.md — архитектурные карточки по подмодулям -->
 
-## System interactions
+## Взаимодействие систем
 <!-- LLM: описание взаимодействия между подсистемами -->
 `;

@@ -30,37 +30,37 @@ usage_policy:
   requires_code_check_before_change: true
 ---
 
-# Scenario: MCP Tool Discovery
+# Сценарий: MCP Tool Discovery
 
-## Goal
+## Цель
 
-TBD. Fill this after checking current MCP Gateway code and specs.
+Определению подлежит. Заполните после проверки текущего кода MCP Gateway и спецификаций.
 
-## Actors
+## Участники
 
-TBD.
+Определению подлежит.
 
-## Flow
+## Поток выполнения
 
-TBD.
+Определению подлежит.
 
-## Constraints
+## Ограничения
 
-TBD.
+Определению подлежит.
 
-## Error cases
+## Сценарии ошибок
 
-TBD.
+Определению подлежит.
 
-## Related modules
+## Связанные модули
 
 - mcp-gateway
 - agent-tool-registry
 
-## Related tests
+## Связанные тесты
 
-TBD.
+Определению подлежит.
 
-## Rationale
+## Обоснование
 
-TBD.
+Определению подлежит.

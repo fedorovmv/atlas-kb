@@ -208,11 +208,11 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
       errors.push(`${card.relativePath}: spec_only evidence cannot claim current_behavior without code/test/contract evidence`);
     }
 
-    if (m.evidence_level === "code_confirmed" && !hasQualityEvidenceSection(card.body, "Code evidence")) {
-      errors.push(`${card.relativePath}: evidence_level=code_confirmed requires ## Code evidence section with entries in format 'description at <path>:<line> (symbol_name)'`);
+    if (m.evidence_level === "code_confirmed" && !hasQualityEvidenceSection(card.body, "Свидетельства из кода")) {
+      errors.push(`${card.relativePath}: evidence_level=code_confirmed требует секцию ## Свидетельства из кода с записями в формате 'описание at <путь>:<строка> (имя_символа)'`);
     }
-    if (m.evidence_level === "test_confirmed" && !hasQualityEvidenceSection(card.body, "Test evidence")) {
-      errors.push(`${card.relativePath}: evidence_level=test_confirmed requires ## Test evidence section with entries in format 'description at <path>:<line> (symbol_name)'`);
+    if (m.evidence_level === "test_confirmed" && !hasQualityEvidenceSection(card.body, "Свидетельства из тестов")) {
+      errors.push(`${card.relativePath}: evidence_level=test_confirmed требует секцию ## Свидетельства из тестов с записями в формате 'описание at <путь>:<строка> (имя_символа)'`);
     }
 
     for (const field of RELATION_FIELDS) {

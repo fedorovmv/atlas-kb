@@ -31,51 +31,51 @@ usage_policy:
   requires_code_check_before_change: true
 ---
 
-# Decision: Registry is discovery, not orchestration
+# Решение: Registry is discovery, not orchestration
 
-## Context
+## Контекст
 
-The product needs a way for agents and tools to discover available metadata inside Synapse API Mesh.
+Продукту нужен способ для агентов и инструментов обнаруживать доступные метаданные внутри Synapse API Mesh.
 
-## Problem
+## Проблема
 
-If registry responsibilities are not explicit, it can be mistaken for a runtime orchestrator that chooses agents or executes calls.
+Если ответственность реестра не определена явно, его можно перепутать с runtime-оркестратором, который выбирает агенты или выполняет вызовы.
 
-## Decision
+## Решение
 
-Registry is a discovery component. It stores and exposes metadata and access-filtered availability. It does not choose target agents and does not execute runtime calls.
+Реестр — это компонент обнаружения. Он хранит и предоставляет метаданные и доступность с фильтрацией по правам доступа. Он не выбирает целевые агенты и не выполняет runtime-вызовы.
 
-## Rationale
+## Обоснование
 
-This boundary keeps the component simple and avoids mixing metadata discovery, business decisions, and runtime execution.
+Эта граница сохраняет простоту компонента и избегает смешивания обнаружения метаданных, бизнес-решений и runtime-исполнения.
 
-## Alternatives considered
+## Рассмотренные альтернативы
 
-- Registry as metadata store only (without filtering)
-- Registry as runtime orchestrator
+- Реестр только как хранилище метаданных (без фильтрации)
+- Реестр как runtime-оркестратор
 
-## Rejected alternatives
+## Отклонённые альтернативы
 
-### Registry as runtime orchestrator
+### Реестр как runtime-оркестратор
 
-Status: rejected.
+Статус: отклонено.
 
-Reason: this mixes discovery and runtime responsibilities and creates incorrect expectations about the registry.
+Причина: это смешивает ответственность обнаружения и runtime, создавая неверные ожидания относительно реестра.
 
-## Consequences
+## Последствия
 
-- Agent selection remains outside registry.
-- Runtime checks must be described separately.
-- Code changes around registry must preserve this boundary unless a new decision supersedes it.
+- Выбор агента остаётся за пределами реестра.
+- Runtime-проверки должны описываться отдельно.
+- Изменения кода вокруг реестра должны сохранять эту границу, пока новое решение её не заменит.
 
-## Current behavior evidence
+## Свидетельства текущего поведения
 
-- FilterCardsForCaller in internal/registry/access_filter.go enforces discovery-only behavior.
+- FilterCardsForCaller в internal/registry/access_filter.go обеспечивает поведение только для обнаружения.
 
-## Affected modules
+## Затронутые модули
 
 - agent-tool-registry
 
-## Affected scenarios
+## Затронутые сценарии
 
 - a2a-agent-discovery

@@ -38,42 +38,42 @@ usage_policy:
 
 # MCP Gateway
 
-## Responsibilities
+## Ответственность
 
-TBD. Fill this after checking current code and product documentation.
+Определению подлежит. Заполните после проверки текущего кода и документации продукта.
 
-## Non-responsibilities
+## Не входит в ответственность
 
-TBD.
+Определению подлежит.
 
-## Current behavior
+## Текущее поведение
 
-TBD.
+Определению подлежит.
 
-## Related scenarios
+## Связанные сценарии
 
 - mcp-tool-discovery
 
-## Related decisions
+## Связанные решения
 
 - registry-is-discovery-not-orchestration
 
-## Code references
+## Свидетельства из кода
 
 - `internal/mcp`
 
-## Test references
+## Свидетельства из тестов
 
-TBD.
+Определению подлежит.
 
-## Known risks
+## Известные риски
 
-TBD.
+Определению подлежит.
 
-## Open questions
+## Открытые вопросы
 
-TBD.
+Определению подлежит.
 
-## Why these boundaries
+## Почему такие границы
 
-TBD.
+Определению подлежит.

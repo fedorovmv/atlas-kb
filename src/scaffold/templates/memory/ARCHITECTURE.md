@@ -24,9 +24,9 @@ usage_policy:
 
 <!-- LLM: общая картина архитектуры проекта -->
 
-## Architecture overview
+## Обзор архитектуры
 
-High-level overview of the Synapse API Mesh architecture.
+Высокоуровневый обзор архитектуры Synapse API Mesh.
 
-## System interactions
+## Системные взаимодействия
 <!-- LLM: описание взаимодействия между подсистемами -->

@@ -188,7 +188,7 @@ usage_policy:
 
 # Code Confirmed Current
 
-## Code evidence
+## Свидетельства из кода
 
 - validateMemory function at src/core/validate.ts:17 implements evidence checks
 `,
@@ -199,7 +199,7 @@ usage_policy:
     expect(codeConfirmedErrors).toEqual([]);
   });
 
-  it("errors: code_confirmed without ## Code evidence section", async () => {
+  it("errors: code_confirmed without ## Свидетельства из кода section", async () => {
     const root = await createTempProject();
     const dir = path.join(root, ".ai/memory/modules");
     await mkdir(dir, { recursive: true });
@@ -235,10 +235,10 @@ No evidence section here.
     const result = await validateMemory({ root });
     expect(result.ok).toBe(false);
     expect(result.errors.join("\n")).toContain("missing-evidence.md");
-    expect(result.errors.join("\n")).toContain("evidence_level=code_confirmed requires ## Code evidence section with entries in format");
+    expect(result.errors.join("\n")).toContain("evidence_level=code_confirmed требует секцию ## Свидетельства из кода с записями в формате");
   });
 
-  it("passes: code_confirmed with ## Code evidence section", async () => {
+  it("passes: code_confirmed with ## Свидетельства из кода section", async () => {
     const root = await createTempProject();
     const dir = path.join(root, ".ai/memory/modules");
     await mkdir(dir, { recursive: true });
@@ -267,7 +267,7 @@ usage_policy:
 
 # Has Evidence
 
-## Code evidence
+## Свидетельства из кода
 
 - FilterCardsForCaller function at internal/registry/access_filter.go:12
 `,
@@ -278,7 +278,7 @@ usage_policy:
     expect(evErrors).toEqual([]);
   });
 
-  it("errors: test_confirmed without ## Test evidence section", async () => {
+  it("errors: test_confirmed without ## Свидетельства из тестов section", async () => {
     const root = await createTempProject();
     const dir = path.join(root, ".ai/memory/modules");
     await mkdir(dir, { recursive: true });
@@ -314,7 +314,7 @@ No evidence section here.
     const result = await validateMemory({ root });
     expect(result.ok).toBe(false);
     expect(result.errors.join("\n")).toContain("missing-test-evidence.md");
-    expect(result.errors.join("\n")).toContain("evidence_level=test_confirmed requires ## Test evidence section with entries in format");
+    expect(result.errors.join("\n")).toContain("evidence_level=test_confirmed требует секцию ## Свидетельства из тестов с записями в формате");
   });
 
   it("passes: reviewed_doc without evidence section", async () => {
@@ -384,7 +384,7 @@ usage_policy:
 
 # Bad Evidence Bullet
 
-## Code evidence
+## Свидетельства из кода
 
 - TODO
 `,
@@ -393,7 +393,7 @@ usage_policy:
     const result = await validateMemory({ root });
     expect(result.ok).toBe(false);
     expect(result.errors.join("\n")).toContain("bad-evidence-bullet.md");
-    expect(result.errors.join("\n")).toContain("in format 'description at");
+    expect(result.errors.join("\n")).toContain("с записями в формате 'описание at");
   });
 
   it("validate errors: evidence bullet generic content", async () => {
@@ -425,7 +425,7 @@ usage_policy:
 
 # Generic Evidence
 
-## Code evidence
+## Свидетельства из кода
 
 - checked
 `,
@@ -434,7 +434,7 @@ usage_policy:
     const result = await validateMemory({ root });
     expect(result.ok).toBe(false);
     expect(result.errors.join("\n")).toContain("generic-evidence.md");
-    expect(result.errors.join("\n")).toContain("in format 'description at");
+    expect(result.errors.join("\n")).toContain("с записями в формате 'описание at");
   });
 
   it("validate passes: proper evidence entry", async () => {
@@ -466,7 +466,7 @@ usage_policy:
 
 # Proper Evidence
 
-## Code evidence
+## Свидетельства из кода
 
 - Filter at internal/registry/access_filter.go:12 (FilterCardsForCaller)
 `,
@@ -506,7 +506,7 @@ usage_policy:
 
 # Bad Test Evidence
 
-## Test evidence
+## Свидетельства из тестов
 
 - checked
 `,
@@ -515,7 +515,7 @@ usage_policy:
     const result = await validateMemory({ root });
     expect(result.ok).toBe(false);
     expect(result.errors.join("\n")).toContain("bad-test-evidence.md");
-    expect(result.errors.join("\n")).toContain("in format 'description at");
+    expect(result.errors.join("\n")).toContain("с записями в формате 'описание at");
   });
 
   it("validate passes: proper test evidence", async () => {
@@ -547,7 +547,7 @@ usage_policy:
 
 # Proper Test Evidence
 
-## Test evidence
+## Свидетельства из тестов
 
 - Test TestFilter at tests/registry/filter_test.go:8 covers filtering
 `,
@@ -745,25 +745,25 @@ usage_policy:
 
 # Module No Recommended
 
-## Responsibilities
+## Ответственность
 content
-## Non-responsibilities
+## Не входит в ответственность
 content
-## Current behavior
+## Текущее поведение
 content
-## Related scenarios
+## Связанные сценарии
 content
-## Related decisions
+## Связанные решения
 content
-## Code references
+## Свидетельства из кода
 content
-## Test references
+## Свидетельства из тестов
 content
-## Known risks
+## Известные риски
 content
-## Open questions
+## Открытые вопросы
 content
-## Why these boundaries
+## Почему такие границы
 content
 `,
       "utf8",
@@ -862,25 +862,25 @@ usage_policy:
 
 # Bad Module ${i}
 
-## Responsibilities
+## Ответственность
 content
-## Non-responsibilities
+## Не входит в ответственность
 content
-## Current behavior
+## Текущее поведение
 content
-## Related scenarios
+## Связанные сценарии
 content
-## Related decisions
+## Связанные решения
 content
-## Code references
+## Свидетельства из кода
 content
-## Test references
+## Свидетельства из тестов
 content
-## Known risks
+## Известные риски
 content
-## Open questions
+## Открытые вопросы
 content
-## Why these boundaries
+## Почему такие границы
 content
 `,
         "utf8",
@@ -945,25 +945,25 @@ usage_policy:
 
 Check [this](nonexistent.md) file for details.
 
-## Responsibilities
+## Ответственность
 content
-## Non-responsibilities
+## Не входит в ответственность
 content
-## Current behavior
+## Текущее поведение
 content
-## Related scenarios
+## Связанные сценарии
 content
-## Related decisions
+## Связанные решения
 content
-## Code references
+## Свидетельства из кода
 content
-## Test references
+## Свидетельства из тестов
 content
-## Known risks
+## Известные риски
 content
-## Open questions
+## Открытые вопросы
 content
-## Why these boundaries
+## Почему такие границы
 content
 `,
       "utf8",
@@ -1010,25 +1010,25 @@ usage_policy:
 ${codeLines}
 \`\`\`
 
-## Responsibilities
+## Ответственность
 content
-## Non-responsibilities
+## Не входит в ответственность
 content
-## Current behavior
+## Текущее поведение
 content
-## Related scenarios
+## Связанные сценарии
 content
-## Related decisions
+## Связанные решения
 content
-## Code references
+## Свидетельства из кода
 content
-## Test references
+## Свидетельства из тестов
 content
-## Known risks
+## Известные риски
 content
-## Open questions
+## Открытые вопросы
 content
-## Why these boundaries
+## Почему такие границы
 content
 `,
       "utf8",

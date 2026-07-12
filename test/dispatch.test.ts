@@ -225,25 +225,25 @@ usage_policy:
 
 # Test Card
 
-## Responsibilities
+## Ответственность
 Test
-## Non-responsibilities
+## Не входит в ответственность
 Test
-## Current behavior
+## Текущее поведение
 Test
-## Related scenarios
+## Связанные сценарии
 Test
-## Related decisions
+## Связанные решения
 Test
-## Code references
+## Свидетельства из кода
 - test-card at src/test-card.ts:1 (testCard)
-## Test references
+## Свидетельства из тестов
 - test-card at tests/test-card.test.ts:1 (testCard)
-## Known risks
+## Известные риски
 Test
-## Open questions
+## Открытые вопросы
 Test
-## Why these boundaries
+## Почему такие границы
 Test
 `,
         "utf8",

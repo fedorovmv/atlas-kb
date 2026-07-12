@@ -76,16 +76,16 @@ describe("validateCardSections", () => {
 
   it("module with all required sections → ok=true", () => {
     const requiredSections = [
-      "## Responsibilities",
-      "## Non-responsibilities",
-      "## Current behavior",
-      "## Related scenarios",
-      "## Related decisions",
-      "## Code references",
-      "## Test references",
-      "## Known risks",
-      "## Open questions",
-      "## Why these boundaries",
+      "## Ответственность",
+      "## Не входит в ответственность",
+      "## Текущее поведение",
+      "## Связанные сценарии",
+      "## Связанные решения",
+      "## Свидетельства из кода",
+      "## Свидетельства из тестов",
+      "## Известные риски",
+      "## Открытые вопросы",
+      "## Почему такие границы",
     ];
     const body = "# Full Module\n\n" + requiredSections.map((s) => `${s}\n\ncontent`).join("\n");
     const card = makeCard({ entity_type: "module", id: "full-module" }, body);
@@ -105,27 +105,27 @@ describe("validateCardSections", () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it("decision without Rationale → error contains '## Rationale'", () => {
-    const body = "# Decision\n\n## Context\n\nSome context\n## Problem\n\nProblem here";
+  it("decision without Rationale → error contains '## Обоснование'", () => {
+    const body = "# Decision\n\n## Контекст\n\nSome context\n## Проблема\n\nProblem here";
     const card = makeCard({ entity_type: "decision", id: "test-decision" }, body);
     const result = validateCardSections(card);
     expect(result.ok).toBe(false);
-    const rationaleErrors = result.errors.filter((e) => e.includes("## Rationale"));
+    const rationaleErrors = result.errors.filter((e) => e.includes("## Обоснование"));
     expect(rationaleErrors.length).toBeGreaterThan(0);
   });
 
   it("module without recommended sections → warning, ok=true", () => {
     const requiredSections = [
-      "## Responsibilities",
-      "## Non-responsibilities",
-      "## Current behavior",
-      "## Related scenarios",
-      "## Related decisions",
-      "## Code references",
-      "## Test references",
-      "## Known risks",
-      "## Open questions",
-      "## Why these boundaries",
+      "## Ответственность",
+      "## Не входит в ответственность",
+      "## Текущее поведение",
+      "## Связанные сценарии",
+      "## Связанные решения",
+      "## Свидетельства из кода",
+      "## Свидетельства из тестов",
+      "## Известные риски",
+      "## Открытые вопросы",
+      "## Почему такие границы",
     ];
     const body = "# Partial Module\n\n" + requiredSections.map((s) => `${s}\n\ncontent`).join("\n");
     const card = makeCard({ entity_type: "module", id: "partial-module" }, body);

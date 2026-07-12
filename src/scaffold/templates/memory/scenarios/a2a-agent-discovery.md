@@ -30,42 +30,42 @@ usage_policy:
   requires_code_check_before_change: true
 ---
 
-# Scenario: A2A Agent Discovery
+# Сценарий: A2A Agent Discovery
 
-## Goal
+## Цель
 
-A calling agent discovers available agent cards before invoking a target service through the mesh.
+Вызывающий агент обнаруживает доступные карточки агентов перед вызовом целевого сервиса через mesh.
 
-## Actors
+## Участники
 
-- Calling agent
-- Registry
+- Вызывающий агент
+- Реестр
 
-## Flow
+## Поток выполнения
 
-1. Calling agent requests available agent cards.
-2. Registry filters cards according to caller identity and policies.
-3. Calling agent receives available cards.
-4. Calling agent invokes the selected target service through mesh/runtime.
+1. Вызывающий агент запрашивает доступные карточки агентов.
+2. Реестр фильтрует карточки согласно идентичности вызывающего и политикам.
+3. Вызывающий агент получает доступные карточки.
+4. Вызывающий агент вызывает выбранный целевой сервис через mesh/runtime.
 
-## Constraints
+## Ограничения
 
-- Registry does not choose the target agent.
-- Registry does not execute target calls.
-- Historical specs cannot override current runtime behavior.
+- Реестр не выбирает целевой агент.
+- Реестр не выполняет вызовы целей.
+- Исторические спецификации не могут переопределить текущее runtime-поведение.
 
-## Error cases
+## Сценарии ошибок
 
-TBD.
+Определению подлежит.
 
-## Related modules
+## Связанные модули
 
 - agent-tool-registry
 
-## Related tests
+## Связанные тесты
 
-TBD.
+Определению подлежит.
 
-## Rationale
+## Обоснование
 
-Discovery-first pattern ensures separation between metadata and runtime execution.
+Паттерн discovery-first обеспечивает разделение между метаданными и runtime-исполнением.
