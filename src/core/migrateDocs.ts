@@ -10,6 +10,7 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 import fg from "fast-glob";
 import matter from "gray-matter";
+import { normalizeSlug } from "./migrateSynthesis.js";
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -162,15 +163,10 @@ export function migrateDoc(
   const entity_type = effectiveMapping.entity_type;
 
   // ── id: slug from filename ───────────────────────────────────────
-  let rawId = v3Doc.filename.endsWith(".md")
+  const rawFilename = v3Doc.filename.endsWith(".md")
     ? v3Doc.filename.slice(0, -3)
     : v3Doc.filename;
-  rawId = rawId.replace(/[/]/g, "-").toLowerCase();
-  // Ensure id regex: /^[a-z0-9][a-z0-9\-_.]*$/
-  if (rawId.length > 0 && !/^[a-z0-9]/.test(rawId[0])) {
-    rawId = rawId.replace(/^[^a-z0-9]+/, "");
-  }
-  const id = rawId;
+  const id = normalizeSlug(rawFilename);
 
   // ── title ────────────────────────────────────────────────────────
   const title = v3Doc.frontmatter.title ?? deriveTitle(v3Doc.filename);

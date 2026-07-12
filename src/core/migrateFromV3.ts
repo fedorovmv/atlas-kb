@@ -131,7 +131,7 @@ export function migrateCard(
 export async function migrateSourceCoverage(
   v3Dir: string,
   targetDir: string,
-): Promise<boolean> {
+): Promise<"ok" | "missing" | "failed"> {
   try {
     const coveragePath = path.join(v3Dir, "knowledge", "memory", "source-coverage.json");
     const raw = await readFile(coveragePath, "utf8");
@@ -144,17 +144,14 @@ export async function migrateSourceCoverage(
       });
     }
 
-    const targetPath = path.join(targetDir, "source-coverage.json");
-    await atomicWrite(targetPath, JSON.stringify(coverage, null, 2));
-    return true;
+    const targetCoveragePath = path.join(targetDir, "source-coverage.json");
+    await atomicWrite(targetCoveragePath, JSON.stringify(coverage, null, 2));
+    return "ok";
   } catch (err) {
     if (err instanceof Error && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
-      // coverage file missing — ok, skip
-      return false;
+      return "missing";
     }
-    // genuine error — warn but don't fail migration
-    console.warn("source-coverage.json migration failed:", err);
-    return false;
+    return "failed";
   }
 }
 
@@ -345,10 +342,13 @@ export async function runMigration(
   }
 
   if (!options.skipCoverage) {
-    const covOk = await migrateSourceCoverage(v3Dir, targetDir);
-    if (!covOk) {
+    const coverageResult = await migrateSourceCoverage(v3Dir, targetDir);
+    if (coverageResult === "failed") {
       console.error("warning: source-coverage.json migration failed");
+      report.warnings += 1;
     }
+    // "missing" = no coverage file in v3 dir, skip silently
+    // "ok" = migrated successfully
   }
 
   if (options.preserveManifest) {
@@ -379,7 +379,10 @@ export async function runMigration(
       }
     } catch (err) {
       if (err instanceof Error && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
-        // missing structural files is fine — fresh target
+        // fresh target — structural files don't exist yet, skip full validation
+      } else if (err instanceof Error) {
+        console.error("post-migration validation error:", err.message);
+        report.warnings += 1;
       } else {
         report.warnings += 1;
       }

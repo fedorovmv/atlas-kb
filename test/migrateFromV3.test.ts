@@ -256,8 +256,8 @@ describe("migrateSourceCoverage", () => {
   });
 
   it("copies and transforms source-coverage.json", async () => {
-    const ok = await migrateSourceCoverage(baseDir, targetDir);
-    expect(ok).toBe(true);
+    const result = await migrateSourceCoverage(baseDir, targetDir);
+    expect(result).toBe("ok");
 
     const targetPath = path.join(targetDir, "source-coverage.json");
     expect(existsSync(targetPath)).toBe(true);

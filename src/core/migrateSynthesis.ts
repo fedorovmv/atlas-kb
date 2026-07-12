@@ -20,7 +20,7 @@ type Confidence = z.infer<typeof ConfidenceSchema>;
 
 const ID_REGEX = /^[a-z0-9][a-z0-9\-_.]*$/;
 
-function normalizeSlug(slug: string): string {
+export function normalizeSlug(slug: string): string {
   return slug.toLowerCase().replace(/[^a-z0-9\-_.]/g, "-").replace(/^[-_.]+/, "");
 }
 
@@ -28,7 +28,12 @@ function normalizeSlug(slug: string): string {
 export function synthesizeId(slug: string, usedIds: Set<string>): string {
   let normalized = normalizeSlug(slug);
   if (!ID_REGEX.test(normalized)) {
-    normalized = "card-" + Date.now();
+    // Deterministic fallback: hash slug chars into stable id
+    let hash = 0;
+    for (let i = 0; i < slug.length; i++) {
+      hash = ((hash << 5) - hash + slug.charCodeAt(i)) | 0;
+    }
+    normalized = "card-" + Math.abs(hash).toString(36);
   }
   if (!usedIds.has(normalized)) {
     usedIds.add(normalized);

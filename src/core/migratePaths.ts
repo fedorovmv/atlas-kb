@@ -192,6 +192,7 @@ export function mapScope(scope: string | string[] | undefined): string[] {
  * original paths that produced that slug. Empty map means no collisions.
  *
  * The caller can use this to propose -1, -2, etc. suffixes for resolution.
+ * @deprecated Not used by pipeline — kept for dry-run reporting API
  */
 export function detectSlugCollisions(paths: string[]): {
   collisions: Map<string, string[]>;

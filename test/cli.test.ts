@@ -431,6 +431,70 @@ describe("CLI migrate-from-v3", () => {
     await rm(v3Dir, { recursive: true, force: true });
   });
 
+  it("CLI migrate-from-v3 --include-docs migrates docs to correct subdir", async () => {
+    const target = await mkdtemp(path.join(tmpdir(), "migrate-docs-"));
+    const v3Dir = await mkdtemp(path.join(tmpdir(), "migrate-v3-docs-"));
+
+    const v3ModulesDir = path.join(v3Dir, "knowledge/memory/modules");
+    await mkdir(v3ModulesDir, { recursive: true });
+    await writeFile(path.join(v3ModulesDir, "test-module.md"), V3_CARD_CONTENT, "utf8");
+
+    const v3DocsDir = path.join(v3Dir, "knowledge/docs/services");
+    await mkdir(v3DocsDir, { recursive: true });
+    const docsContent = `---
+node_type: service
+title: Test Service
+status: active
+---
+# Test Service
+Service doc content.
+`;
+    await writeFile(path.join(v3DocsDir, "test-svc.md"), docsContent, "utf8");
+
+    runCli(target, ["migrate-from-v3", v3Dir, "--include-docs"]);
+
+    const targetPath = path.join(target, ".ai/memory/modules/test-svc.md");
+    const targetContent = await readFile(targetPath, "utf8");
+    expect(targetContent).toContain("Test Service");
+
+    await rm(target, { recursive: true, force: true });
+    await rm(v3Dir, { recursive: true, force: true });
+  });
+
+  it("CLI migrate-from-v3 --skip-coverage does not create source-coverage.json", async () => {
+    const target = await mkdtemp(path.join(tmpdir(), "migrate-skipcov-"));
+    const v3Dir = await mkdtemp(path.join(tmpdir(), "migrate-v3-skipcov-"));
+
+    const v3ModulesDir = path.join(v3Dir, "knowledge/memory/modules");
+    await mkdir(v3ModulesDir, { recursive: true });
+    await writeFile(path.join(v3ModulesDir, "test-module.md"), V3_CARD_CONTENT, "utf8");
+
+    const v3MemoryRoot = path.join(v3Dir, "knowledge/memory");
+    await writeFile(
+      path.join(v3MemoryRoot, "source-coverage.json"),
+      JSON.stringify({
+        entries: [
+          { path: "docs/test.md", sha256: "abc", disposition: "extracted", targetCards: [] },
+        ],
+        counts: {},
+      }),
+      "utf8",
+    );
+
+    runCli(target, ["migrate-from-v3", v3Dir, "--skip-coverage"]);
+
+    const coveragePath = path.join(target, ".ai/memory/source-coverage.json");
+    try {
+      await readFile(coveragePath, "utf8");
+      expect.fail("source-coverage.json should not exist with --skip-coverage");
+    } catch {
+      // Expected — file was not written
+    }
+
+    await rm(target, { recursive: true, force: true });
+    await rm(v3Dir, { recursive: true, force: true });
+  });
+
   it("CLI migrate-from-v3 help — command listed", () => {
     const output = execFileSync(tsxBin, [cli, "--help"], {
       cwd: repoRoot,
