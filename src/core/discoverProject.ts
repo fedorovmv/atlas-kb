@@ -351,14 +351,42 @@ function mergeRelatedModules(
   );
 
   for (const mod of existing) {
+    // Skip modules with no code files — they can't match by path
+    if (mod.codeFiles.length === 0) continue;
+
     const modTopics = new Set(mod.topics);
+    // Compute the common path prefix of the module's code files
+    // e.g., "runtime-agent-registry/internal/search" for search module
+    const codePaths = mod.codeFiles.map((f) => f.toLowerCase());
+    // Get the shared prefix segments of all code files
+    const sharedPrefixSegs: string[] = [];
+    if (codePaths.length > 0) {
+      const firstSegs = codePaths[0].split("/");
+      for (let i = 0; i < firstSegs.length; i++) {
+        if (codePaths.every((cp) => cp.split("/")[i] === firstSegs[i])) {
+          sharedPrefixSegs.push(firstSegs[i]);
+        } else {
+          break;
+        }
+      }
+    }
+    const sharedPrefix = sharedPrefixSegs.join("/");
+
     for (const file of specDocFiles) {
       if (mod.codeFiles.includes(file.path) || mod.testFiles.includes(file.path) || mod.docFiles.includes(file.path) || mod.specFiles.includes(file.path)) {
         continue;
       }
+
       // Check topic overlap
       const overlap = file.topics.filter((t) => modTopics.has(t));
-      if (overlap.length >= 1) {
+
+      // Only assign if:
+      // 1. Topic overlap >= 2 (stronger than just 1), OR
+      // 2. Topic overlap >= 1 AND doc path shares prefix with module code path
+      const docPath = file.path.toLowerCase();
+      const sharesPrefix = sharedPrefix.length > 0 && docPath.startsWith(sharedPrefix);
+
+      if ((overlap.length >= 2) || (overlap.length >= 1 && sharesPrefix)) {
         if (file.kind === "doc") {
           mod.docFiles.push(file.path);
         } else if (file.kind === "spec" || file.kind === "legacy") {

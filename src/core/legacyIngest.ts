@@ -52,13 +52,15 @@ function contentHash(content: string): string {
 
 function classifyByContent(content: string): { classification: string; confidence: number; matches: string[] } {
   const lower = content.toLowerCase();
+  // Normalize numbered headers: "## 1. цель" → "## цель"
+  const normalized = lower.replace(/##\s+\d+[.)]\s+/g, "## ");
   const matches: string[] = [];
   let confidence = 0;
 
   // OpenSpec patterns
   const openspecPatterns = ["openspec", "# openspec", "## requirements", "## acceptance criteria"];
   for (const pat of openspecPatterns) {
-    if (lower.includes(pat)) {
+    if (normalized.includes(pat)) {
       matches.push(pat);
       confidence += 0.3;
       break; // one pattern match counts once
@@ -68,7 +70,7 @@ function classifyByContent(content: string): { classification: string; confidenc
   // Service docs
   const servicePatterns = ["service:", "## service overview", "## service description"];
   for (const pat of servicePatterns) {
-    if (lower.includes(pat)) {
+    if (normalized.includes(pat)) {
       matches.push(pat);
       confidence += 0.3;
       break;
@@ -78,7 +80,7 @@ function classifyByContent(content: string): { classification: string; confidenc
   // Decision docs (ADR)
   const decisionPatterns = ["## decision", "## rationale", "decision record", "# adr"];
   for (const pat of decisionPatterns) {
-    if (lower.includes(pat)) {
+    if (normalized.includes(pat)) {
       matches.push(pat);
       confidence += 0.3;
       break;
@@ -86,7 +88,7 @@ function classifyByContent(content: string): { classification: string; confidenc
   }
 
   // Reference docs
-  if (lower.includes("## behaviors carried over")) {
+  if (normalized.includes("## behaviors carried over")) {
     matches.push("behaviors-carried-over");
     confidence += 0.3;
   }
@@ -94,7 +96,7 @@ function classifyByContent(content: string): { classification: string; confidenc
   // Runbook docs
   const runbookPatterns = ["## deployment", "## configuration", "## troubleshooting"];
   for (const pat of runbookPatterns) {
-    if (lower.includes(pat)) {
+    if (normalized.includes(pat)) {
       matches.push(pat);
       confidence += 0.3;
       break;
@@ -104,7 +106,7 @@ function classifyByContent(content: string): { classification: string; confidenc
   // Gotcha docs
   const gotchaPatterns = ["## pitfall", "## avoidance", "## gotcha", "## common mistake"];
   for (const pat of gotchaPatterns) {
-    if (lower.includes(pat)) {
+    if (normalized.includes(pat)) {
       matches.push(pat);
       confidence += 0.3;
       break;
@@ -120,9 +122,12 @@ function classifyByContent(content: string): { classification: string; confidenc
     "## цель", "## решение", "## предложение", "## контекст", "## альтернативы",
     "## последствия", "## текущее поведение", "## предлагаемое поведение",
     "## архитектур", "## описание", "## проблема", "## задача",
+    "## принцип", "## введение", "## сложность",
+    "## что меняется", "## текущие точки", "## главные проблемы",
+    "## контракт", "## pipeline", "## поля ответа",
   ];
   for (const pat of proposalPatterns) {
-    if (lower.includes(pat)) {
+    if (normalized.includes(pat)) {
       matches.push(pat);
       confidence += 0.3;
       break;
@@ -136,7 +141,7 @@ function classifyByContent(content: string): { classification: string; confidenc
     "## диаграмма", "## mermaid",
   ];
   for (const pat of archPatterns) {
-    if (lower.includes(pat)) {
+    if (normalized.includes(pat)) {
       matches.push(pat);
       confidence += 0.3;
       break;
@@ -150,7 +155,33 @@ function classifyByContent(content: string): { classification: string; confidenc
     "## search", "## indexing",
   ];
   for (const pat of referencePatterns) {
-    if (lower.includes(pat)) {
+    if (normalized.includes(pat)) {
+      matches.push(pat);
+      confidence += 0.3;
+      break;
+    }
+  }
+
+  // Implementation plan patterns (English + Russian)
+  const planPatterns = [
+    "## file structure", "## task", "## implementation",
+    "## файл", "## шаг",
+  ];
+  for (const pat of planPatterns) {
+    if (normalized.includes(pat)) {
+      matches.push(pat);
+      confidence += 0.3;
+      break;
+    }
+  }
+
+  // Analysis/comparison patterns
+  const analysisPatterns = [
+    "## introduction", "## analysis", "## comparison", "## complexity",
+    "## анализ", "## сравнен",
+  ];
+  for (const pat of analysisPatterns) {
+    if (normalized.includes(pat)) {
       matches.push(pat);
       confidence += 0.3;
       break;
@@ -251,6 +282,29 @@ function heuristicClassify(relPath: string, content: string): Sig {
       "## описание": "kb-reference",
       "## проблема": "kb-decision",
       "## задача": "kb-decision",
+      // More Russian proposal/decision patterns
+      "## принцип": "kb-reference",
+      "## введение": "kb-reference",
+      "## сложность": "kb-reference",
+      "## что меняется": "kb-decision",
+      "## текущие точки": "kb-decision",
+      "## главные проблемы": "kb-decision",
+      "## контракт": "kb-reference",
+      "## pipeline": "kb-reference",
+      "## поля ответа": "kb-reference",
+      // Implementation plan patterns
+      "## file structure": "kb-reference",
+      "## task": "kb-reference",
+      "## implementation": "kb-decision",
+      "## файл": "kb-reference",
+      "## шаг": "kb-reference",
+      // Analysis/comparison patterns
+      "## introduction": "kb-reference",
+      "## analysis": "kb-reference",
+      "## comparison": "kb-reference",
+      "## complexity": "kb-reference",
+      "## анализ": "kb-reference",
+      "## сравнен": "kb-reference",
       // architecture patterns
       "## architecture": "kb-decision",
       "## design": "kb-decision",
