@@ -1,8 +1,8 @@
-import { loadMemoryCards } from "../core/loadMemory.js";
+import { loadMemoryCardsBestEffort } from "../core/loadMemory.js";
 import { getRelatedCards, RELATION_FIELDS } from "../core/relations.js";
 
 export async function relatedMemory(id: string, options: { root?: string; json?: boolean } = {}) {
-  const cards = await loadMemoryCards({ root: options.root });
+  const cards = await loadMemoryCardsBestEffort({ root: options.root });
   const result = getRelatedCards(cards, id);
   if (!result.card) throw new Error(`Memory card not found: ${id}`);
 

@@ -72,6 +72,26 @@ export class LoadMemoryError extends Error {
   }
 }
 
+/**
+ * Best-effort load: returns valid cards, logs warnings for broken ones.
+ * Use in read-only commands (reconcile, context, related, ls, show)
+ * where partial data is better than total failure.
+ * Write commands should use loadMemoryCards (strict) instead.
+ */
+export async function loadMemoryCardsBestEffort(options: RepoMemoryOptions = {}): Promise<MemoryCard[]> {
+  try {
+    return await loadMemoryCards(options);
+  } catch (err) {
+    if (err instanceof LoadMemoryError) {
+      for (const e of err.errors) {
+        console.error(`warning: skipping broken card ${e.relativePath}: ${e.error}`);
+      }
+      return err.validCards.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+    }
+    throw err;
+  }
+}
+
 export function findCardById(cards: MemoryCard[], id: string) {
   return cards.find((card) => card.meta.id === id);
 }

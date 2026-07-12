@@ -1,8 +1,8 @@
-import { loadMemoryCards } from "../core/loadMemory.js";
+import { loadMemoryCardsBestEffort } from "../core/loadMemory.js";
 import type { EntityType, Status } from "../schemas/frontmatter.js";
 
 export async function listMemory(options: { type?: EntityType; status?: Status; root?: string; json?: boolean } = {}) {
-  const cards = await loadMemoryCards({ root: options.root });
+  const cards = await loadMemoryCardsBestEffort({ root: options.root });
   const filtered = cards.filter((card) => {
     if (options.type && card.meta.entity_type !== options.type) return false;
     if (options.status && card.meta.status !== options.status) return false;

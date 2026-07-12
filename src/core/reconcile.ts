@@ -1,6 +1,6 @@
 import path from "node:path";
 import { existsSync } from "node:fs";
-import { loadMemoryCards } from "./loadMemory.js";
+import { loadMemoryCardsBestEffort } from "./loadMemory.js";
 import { discoverProject } from "./discoverProject.js";
 import { resolveRoot } from "./paths.js";
 import { RELATION_FIELDS, type RelationField } from "./relations.js";
@@ -31,7 +31,7 @@ export async function reconcileMemory(
 ): Promise<ReconcileReport> {
   const root = resolveRoot(options);
   const staleProposalDays = options.staleProposalDays ?? 90;
-  const cards = await loadMemoryCards(options);
+  const cards = await loadMemoryCardsBestEffort(options);
   const discovery = precomputedDiscovery ?? await discoverProject(options);
   const discoveredPaths = new Set(discovery.files.map((f) => f.path));
 

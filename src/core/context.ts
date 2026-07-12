@@ -1,7 +1,7 @@
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import type { ContextPack, MemoryCard, RepoMemoryOptions } from "./types.js";
-import { loadMemoryCards } from "./loadMemory.js";
+import { loadMemoryCardsBestEffort } from "./loadMemory.js";
 import { getDirectRelatedIds } from "./relations.js";
 import { scoreCard } from "./score.js";
 import { resolveMemoryRoot, resolveRoot } from "./paths.js";
@@ -79,7 +79,7 @@ function renderUsagePolicyLine(card: MemoryCard): string {
 
 export async function buildMemoryContext(query: string, options: RepoMemoryOptions & { limit?: number } = {}): Promise<ContextPack> {
   const limit = options.limit ?? 8;
-  const cards = await loadMemoryCards(options);
+  const cards = await loadMemoryCardsBestEffort(options);
   const sourcePriority = await loadSourcePriority(options);
   const scored = cards
     .map((card) => ({ card, score: scoreCard(card, query) }))

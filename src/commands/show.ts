@@ -1,7 +1,7 @@
-import { loadMemoryCards, findCardById } from "../core/loadMemory.js";
+import { loadMemoryCardsBestEffort, findCardById } from "../core/loadMemory.js";
 
 export async function showMemory(id: string, options: { root?: string; json?: boolean } = {}) {
-  const cards = await loadMemoryCards({ root: options.root });
+  const cards = await loadMemoryCardsBestEffort({ root: options.root });
   const card = findCardById(cards, id);
   if (!card) throw new Error(`Memory card not found: ${id}`);
 

@@ -3,7 +3,7 @@ import path from "node:path";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { loadMemoryCards, LoadMemoryError } from "../src/core/loadMemory.js";
+import { loadMemoryCards, loadMemoryCardsBestEffort, LoadMemoryError } from "../src/core/loadMemory.js";
 
 describe("loadMemoryCards resilience", () => {
   it("throws LoadMemoryError on broken frontmatter but preserves valid cards", async () => {
@@ -119,6 +119,114 @@ usage_policy:
     const cards = await loadMemoryCards({ root });
     expect(cards.length).toBe(3);
     expect(cards.map((c) => c.meta.id).sort()).toEqual(["card-0", "card-1", "card-2"]);
+
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it("loadMemoryCardsBestEffort returns valid cards when some are broken", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "loadmem-besteffort-"));
+    const memDir = path.join(root, ".ai/memory/modules");
+    await mkdir(memDir, { recursive: true });
+
+    // Valid card
+    await writeFile(
+      path.join(memDir, "good.md"),
+      `---
+entity_type: module
+id: good-card
+title: Good
+status: needs_review
+authority: reviewed_memory
+evidence_level: inferred
+stability: evolving
+source_confidence: medium
+last_reviewed: 2026-07-11
+review_required: true
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Good
+`,
+      "utf8",
+    );
+
+    // Broken card — invalid status
+    await writeFile(
+      path.join(memDir, "bad.md"),
+      `---
+entity_type: module
+id: bad-card
+title: Bad
+status: bogus
+authority: reviewed_memory
+evidence_level: inferred
+stability: evolving
+source_confidence: medium
+last_reviewed: 2026-07-11
+review_required: true
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Bad
+`,
+      "utf8",
+    );
+
+    // Best-effort: should return valid card, not throw
+    const cards = await loadMemoryCardsBestEffort({ root });
+    expect(cards.length).toBe(1);
+    expect(cards[0].meta.id).toBe("good-card");
+
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it("loadMemoryCardsBestEffort returns all cards when none broken", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "loadmem-besteffort-ok-"));
+    const memDir = path.join(root, ".ai/memory/modules");
+    await mkdir(memDir, { recursive: true });
+
+    await writeFile(
+      path.join(memDir, "ok.md"),
+      `---
+entity_type: module
+id: ok-card
+title: OK
+status: needs_review
+authority: reviewed_memory
+evidence_level: inferred
+stability: evolving
+source_confidence: medium
+last_reviewed: 2026-07-11
+review_required: true
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# OK
+`,
+      "utf8",
+    );
+
+    const cards = await loadMemoryCardsBestEffort({ root });
+    expect(cards.length).toBe(1);
+    expect(cards[0].meta.id).toBe("ok-card");
 
     await rm(root, { recursive: true, force: true });
   });
