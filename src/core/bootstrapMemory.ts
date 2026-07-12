@@ -5,6 +5,7 @@ import matter from "gray-matter";
 import { discoverProject } from "./discoverProject.js";
 import { resolveRoot, resolveMemoryRoot, toPosixPath } from "./paths.js";
 import { frontmatterYaml, today } from "./utils.js";
+import { readDocSections, readDocSummary, findSection, findContent, extractSections, extractFirstParagraph } from "./docExtraction.js";
 import type { DiscoveryReport, CandidateModule, FileRecord } from "../schemas/discovery.js";
 
 export type BootstrapResult = {
@@ -61,33 +62,74 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
   for (const mod of report.candidateModules) {
     if (mod.confidence === "low" && mod.codeFiles.length === 0) continue;
     const hasCode = mod.codeFiles.length > 0;
-    const hasTest = mod.testFiles.length > 0;
     const status = "needs_review";
     const evidenceLevel = hasCode ? "heuristic_match" : "inferred";
-    const card = renderModuleCard(mod, status, evidenceLevel);
+
+    // Read attached docs for real content — try sections + bold labels
+    let docSummary = "";
+    let docResponsibilities = "";
+    let docOverview = "";
+    for (const docPath of mod.docFiles.slice(0, 3)) {
+      const raw = await readFile(path.join(root, docPath), "utf8").catch(() => "");
+      if (!raw) continue;
+      if (!docSummary) docSummary = await readDocSummary(root, docPath);
+      const sections = extractSections(raw);
+      if (!docResponsibilities) docResponsibilities = findContent(sections, raw, ["responsibilities", "responsibility", "what it does", "functionality", "overview", "description"]) ?? "";
+      if (!docOverview) docOverview = findContent(sections, raw, ["overview", "description", "about", "summary"]) ?? "";
+    }
+
+    const card = await renderModuleCard(mod, status, evidenceLevel, docSummary, docResponsibilities, docOverview);
     await writeCard(`modules/${mod.id}.md`, card);
   }
 
   // Scenario cards from spec/doc headings (deterministic extraction)
   const scenarios = extractScenarios(report);
   for (const scenario of scenarios) {
-    await writeCard(`scenarios/${scenario.slug}.md`, renderScenarioCard(scenario));
+    // Read source file for content
+    let scenarioGoal = "";
+    let scenarioFlow = "";
+    for (const srcPath of scenario.sourceFiles) {
+      const sections = await readDocSections(root, srcPath);
+      if (!scenarioGoal) scenarioGoal = findSection(sections, ["goal", "overview", "summary", "description", "purpose", "background"]) ?? "";
+      if (!scenarioFlow) scenarioFlow = findSection(sections, ["flow", "process", "steps", "how it works", "workflow", "procedure"]) ?? "";
+      if (scenarioGoal && scenarioFlow) break;
+    }
+    await writeCard(`scenarios/${scenario.slug}.md`, renderScenarioCard(scenario, scenarioGoal, scenarioFlow));
   }
 
   // Decision cards from explicit rationale sections
   const decisions = extractDecisions(report);
   for (const decision of decisions) {
-    await writeCard(`decisions/${decision.id}.md`, renderDecisionCard(decision));
+    // Read source doc for decision content — try sections + bold labels
+    const raw = await readFile(path.join(root, decision.sourceFile), "utf8").catch(() => "");
+    const sections = extractSections(raw);
+    const context = findContent(sections, raw, ["context", "background", "motivation", "introduction", "overview", "goal", "цель", "фон", "контекст", "описание"]);
+    const problem = findContent(sections, raw, ["problem", "issue", "pain point", "challenge", "motivation", "goal", "проблема", "задача", "цель"]);
+    const decisionText = findContent(sections, raw, ["decision", "solution", "approach", "design", "proposed solution", "architecture", "решение", "архитектура", "подход", "дизайн"]);
+    const rationale = findContent(sections, raw, ["rationale", "why", "justification", "reasoning", "motivation", "обоснование", "почему", "причины"]);
+    const alternatives = findContent(sections, raw, ["alternatives", "options considered", "rejected", "prior approach", "альтернативы", "варианты"]);
+    const consequences = findContent(sections, raw, ["consequences", "trade-offs", "tradeoffs", "implications", "risks", "constraints", "ограничения", "последствия", "риски"]);
+
+    await writeCard(`decisions/${decision.id}.md`, renderDecisionCard(decision, context, problem, decisionText, rationale, alternatives, consequences));
   }
 
   // Historical/proposal cards from spec files
   for (const file of report.files.filter((f) => f.kind === "spec" || f.kind === "legacy")) {
     const isLegacy = file.kind === "legacy" || file.signals.includes("legacy") || file.signals.includes("deprecated") || file.dirname.includes("legacy");
     const slug = slugifyPath(file.path);
+    // Read spec content for card body
+    const specContent = await readFile(path.join(root, file.path), "utf8").catch(() => "");
+    const sections = extractSections(specContent);
+    const intro = extractFirstParagraph(specContent);
+    const problem = findContent(sections, specContent, ["problem", "motivation", "background", "context", "цель", "проблема", "фон", "контекст"]);
+    const requirements = findContent(sections, specContent, ["requirements", "claims", "behavior", "specification", "требования", "поведение", "описание", "архитектура"]);
+    const rationale = findContent(sections, specContent, ["rationale", "why", "decision", "alternatives", "обоснование", "решение", "альтернативы"]);
+    const status = findContent(sections, specContent, ["status", "state", "статус", "состояние"]);
+
     if (isLegacy) {
-      await writeCard(`historical/${slug}.md`, renderHistoricalCard(file, `historical-${slug}`));
+      await writeCard(`historical/${slug}.md`, renderHistoricalCard(file, `historical-${slug}`, intro, problem, rationale, status));
     } else {
-      await writeCard(`proposals/${slug}.md`, renderProposalCard(file, `proposal-${slug}`));
+      await writeCard(`proposals/${slug}.md`, renderProposalCard(file, `proposal-${slug}`, intro, problem, requirements, rationale));
     }
   }
 
@@ -106,7 +148,14 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
 
 // --- Card renderers ---
 
-function renderModuleCard(mod: CandidateModule, status: string, evidenceLevel: string): string {
+async function renderModuleCard(
+  mod: CandidateModule,
+  status: string,
+  evidenceLevel: string,
+  docSummary: string,
+  docResponsibilities: string,
+  docOverview: string,
+): Promise<string> {
   const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "module",
@@ -126,47 +175,54 @@ function renderModuleCard(mod: CandidateModule, status: string, evidenceLevel: s
     source_refs: mod.docFiles.map((p) => ({ path: p, role: "current_doc" })),
     usage_policy: {
       can_answer_current_behavior: status === "current",
-      can_generate_code_from: false,
+      can_generate_code_from: status === "current",
       can_use_as_rationale: true,
       requires_code_check_before_change: true,
     },
   });
+
+  // Use real doc content if available, fallback to heuristic description
+  const responsibility = docResponsibilities || docOverview || docSummary ||
+    `Module with ${mod.codeFiles.length} code files, ${mod.testFiles.length} test files. Topics: ${mod.topics.join(", ")}. Read code_refs and source_refs for details.`;
+  const nonResponsibilities = "Needs review — infer from code boundaries, imports, sibling modules.";
+  const currentBehavior = docSummary || "Needs review — read code_refs for actual behavior.";
+
   const body = [
     `# ${mod.title}`,
     "",
-    `## Responsibility`,
-    `Preliminary responsibility inferred from: ${mod.signals.join(", ") || mod.topics.join(", ")}.`,
+    "## Responsibility",
+    responsibility,
     "",
-    `## Non-responsibilities`,
-    "Needs review — EXAMPLE: 'Filters agent cards by caller service identity at internal/registry/access_filter.go (FilterCardsForCaller)'",
+    "## Non-responsibilities",
+    nonResponsibilities,
     "",
-    `## Current behavior`,
-    "Needs review — EXAMPLE: 'Does NOT choose target agents. Does NOT transform request payloads.'",
+    "## Current behavior",
+    currentBehavior,
     "",
-    `## Known risks`,
-    "Needs review — EXAMPLE: 'TODO at internal/registry/access_filter.go:42: refactor caller filtering'",
+    "## Known risks",
+    "Needs review — check TODO/FIXME/deprecated in code_refs.",
     "",
-    `## Code evidence`,
+    "## Code evidence",
     ...mod.codeFiles.map((p) => `- Code file at ${p}:1`),
     "Preliminary evidence from code_refs — memory-coder must confirm specific symbols.",
     "",
-    `## Test evidence`,
+    "## Test evidence",
     ...mod.testFiles.map((p) => `- Test file at ${p}:1`),
     "Preliminary evidence from test_refs — memory-coder must confirm test coverage.",
     "",
-    `## Related`,
+    "## Related",
     `- Code files: ${mod.codeFiles.length}`,
     `- Test files: ${mod.testFiles.length}`,
     `- Doc files: ${mod.docFiles.length}`,
     `- Demo files: ${mod.demoFiles.length} (NOT production evidence)`,
     "",
-    `## Open questions`,
+    "## Open questions",
     "Needs review — add questions that cannot be answered from code alone.",
   ].join("\n");
   return `---\n${fm}\n---\n\n${body}\n`;
 }
 
-function renderScenarioCard(s: { id: string; title: string; topics: string[]; sourceFiles: string[] }): string {
+function renderScenarioCard(s: { id: string; title: string; topics: string[]; sourceFiles: string[] }, goalContent: string, flowContent: string): string {
   const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "scenario",
@@ -189,10 +245,18 @@ function renderScenarioCard(s: { id: string; title: string; topics: string[]; so
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${s.title}\n\n## Goal\nInferred from: ${s.topics.join(", ")}\n\n## Actors\nNeeds review — identify actors from code/tests/docs.\n\n## Flow\nNeeds review — read source_refs and code to describe the flow.\n\n## Constraints\nNeeds review — identify constraints, limits, error conditions.\n\n## Failure cases\nNeeds review — identify known failure scenarios.\n\n## Code evidence\nNot yet verified — memory-coder must confirm flow against code.\n\n## Test evidence\nNot yet verified — memory-coder must confirm test coverage for this scenario.\n\n## Rationale\nNeeds review — why does this scenario exist and not another?\n`;
+  return `---\n${fm}\n---\n\n# ${s.title}\n\n## Goal\n${goalContent || `Inferred from: ${s.topics.join(", ")}. Read source_refs for details.`}\n\n## Actors\nNeeds review — identify actors from code/tests/docs.\n\n## Flow\n${flowContent || "Needs review — read source_refs and code to describe the flow."}\n\n## Constraints\nNeeds review — identify constraints, limits, error conditions.\n\n## Failure cases\nNeeds review — identify known failure scenarios.\n\n## Code evidence\nNot yet verified — memory-coder must confirm flow against code.\n\n## Test evidence\nNot yet verified — memory-coder must confirm test coverage for this scenario.\n\n## Rationale\nNeeds review — why does this scenario exist and not another?\n`;
 }
 
-function renderDecisionCard(d: { id: string; title: string; rationale: string; sourceFile: string }): string {
+function renderDecisionCard(
+  d: { id: string; title: string; rationale: string; sourceFile: string },
+  context: string | null,
+  problem: string | null,
+  decisionText: string | null,
+  rationale: string | null,
+  alternatives: string | null,
+  consequences: string | null,
+): string {
   const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "decision",
@@ -214,10 +278,17 @@ function renderDecisionCard(d: { id: string; title: string; rationale: string; s
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Context\nNeeds review — what problem triggered this decision?\n\n## Problem\nNeeds review — what specific problem was solved?\n\n## Decision\nNeeds review — what was decided?\n\n## Rationale\n${d.rationale}\n\n## Alternatives considered\nNeeds review — what alternatives were evaluated?\n\n## Rejected alternatives\nNeeds review — what was rejected and why?\n\n## Consequences/trade-offs\nNeeds review — what trade-offs were accepted?\n\n## Current behavior evidence\nNeeds review — does the decision still hold against current code?\n`;
+  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Context\n${context || "Needs review — what problem triggered this decision?"}\n\n## Problem\n${problem || "Needs review — what specific problem was solved?"}\n\n## Decision\n${decisionText || "Needs review — what was decided?"}\n\n## Rationale\n${rationale || d.rationale}\n\n## Alternatives considered\n${alternatives || "Needs review — what alternatives were evaluated?"}\n\n## Rejected alternatives\n${alternatives ? "See alternatives above." : "Needs review — what was rejected and why?"}\n\n## Consequences/trade-offs\n${consequences || "Needs review — what trade-offs were accepted?"}\n\n## Current behavior evidence\nNeeds review — does the decision still hold against current code?\n`;
 }
 
-function renderHistoricalCard(file: FileRecord, id: string): string {
+function renderHistoricalCard(
+  file: FileRecord,
+  id: string,
+  intro: string,
+  problem: string | null,
+  rationale: string | null,
+  status: string | null,
+): string {
   const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "historical",
@@ -239,10 +310,17 @@ function renderHistoricalCard(file: FileRecord, id: string): string {
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${file.basename} (historical)\n\n## Problems attempted\nNeeds review — what problem did this approach try to solve?\n\n## Prior approach\nLegacy spec preserved for rationale context. Not an implementation guide.\n\n## Rationale still useful\nNeeds review — which parts of the rationale remain relevant?\n\n## Obsolete/unconfirmed ideas\nNeeds review — what is no longer applicable?\n\n## Decisions that survived\nNeeds review — which decisions from this spec carried forward?\n\n## Links to current decisions\nNeeds review — link to current decision cards that supersede this.\n`;
+  return `---\n${fm}\n---\n\n# ${file.basename} (historical)\n\n## Summary\n${intro || "Legacy spec preserved for rationale context. Not an implementation guide."}\n\n## Status\n${status || "Deprecated/historical."}\n\n## Problems attempted\n${problem || "Needs review — what problem did this approach try to solve?"}\n\n## Prior approach\nLegacy spec preserved for rationale context. Not an implementation guide.\n\n## Rationale still useful\n${rationale || "Needs review — which parts of the rationale remain relevant?"}\n\n## Obsolete/unconfirmed ideas\nNeeds review — what is no longer applicable?\n\n## Decisions that survived\nNeeds review — which decisions from this spec carried forward?\n\n## Links to current decisions\nNeeds review — link to current decision cards that supersede this.\n`;
 }
 
-function renderProposalCard(file: FileRecord, id: string): string {
+function renderProposalCard(
+  file: FileRecord,
+  id: string,
+  intro: string,
+  problem: string | null,
+  requirements: string | null,
+  rationale: string | null,
+): string {
   const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "proposal",
@@ -264,7 +342,7 @@ function renderProposalCard(file: FileRecord, id: string): string {
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${file.basename} (proposal)\n\n## Source spec\n${file.path}\n\n## Proposed behavior\nUnconfirmed spec — requires code/test evidence before becoming current behavior.\n\n## Rationale from spec\nNeeds review — extract rationale from the source spec.\n\n## Affected modules\nNeeds review — which modules would this proposal change?\n\n## Affected scenarios\nNeeds review — which scenarios would this proposal change?\n\n## Current code check\nNeeds review — memory-coder must check if proposal is already partially implemented.\n\n## Confirmed/not found/conflicting claims\nNeeds review — classify each claim from the spec.\n\n## Suggested memory updates\nNeeds review — what should change in current memory if this proposal is accepted?\n\n## Review decision\nNeeds review — memory-reviewer decides: accept, reject, or needs more evidence.\n`;
+  return `---\n${fm}\n---\n\n# ${file.basename} (proposal)\n\n## Source spec\n${file.path}\n\n## Summary\n${intro || "Unconfirmed spec — requires code/test evidence before becoming current behavior."}\n\n## Problem\n${problem || "Needs review — what problem does this proposal solve?"}\n\n## Proposed behavior\n${requirements || "Needs review — extract proposed behavior from the source spec."}\n\n## Rationale from spec\n${rationale || "Needs review — extract rationale from the source spec."}\n\n## Affected modules\nNeeds review — which modules would this proposal change?\n\n## Affected scenarios\nNeeds review — which scenarios would this proposal change?\n\n## Current code check\nNeeds review — memory-coder must check if proposal is already partially implemented.\n\n## Confirmed/not found/conflicting claims\nNeeds review — classify each claim from the spec.\n\n## Suggested memory updates\nNeeds review — what should change in current memory if this proposal is accepted?\n\n## Review decision\nNeeds review — memory-reviewer decides: accept, reject, or needs more evidence.\n`;
 }
 
 // --- Extractors ---
