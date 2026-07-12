@@ -548,9 +548,10 @@ import { classifyRuntimeTier } from "./runtimeTier.js";
 import type { FileRecord } from "../schemas/discovery.js";
 import type { SourceCoverage } from "../schemas/sourceCoverage.js";
 
-export function repairLinks(cards: MemoryCard[]): { fixed: number; unfixed: string[] } {
+export function repairLinks(cards: MemoryCard[]): { fixed: number; unfixed: string[]; changedCards: MemoryCard[] } {
   let fixed = 0;
   const unfixed: string[] = [];
+  const changedCards: MemoryCard[] = [];
 
   for (const card of cards) {
     const linkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -578,23 +579,28 @@ export function repairLinks(cards: MemoryCard[]): { fixed: number; unfixed: stri
         unfixed.push(`${card.meta.id}: ${linkPath}`);
       }
     }
-    // Note: actual file write would happen in the command, not here
+    if (changed) {
+      card.body = newBody;
+      changedCards.push(card);
+    }
   }
-  return { fixed, unfixed };
+  return { fixed, unfixed, changedCards };
 }
 
-export function repairModuleTiers(cards: MemoryCard[], discovery: FileRecord[]): { updated: number } {
+export function repairModuleTiers(cards: MemoryCard[], discovery: FileRecord[]): { updated: number; changedCards: MemoryCard[] } {
   let updated = 0;
+  const changedCards: MemoryCard[] = [];
   for (const card of cards) {
     if (card.meta.runtime_tier === "unknown" || !card.meta.runtime_tier) {
       const tier = classifyRuntimeTier(card, discovery);
       if (tier !== "unknown") {
         card.meta.runtime_tier = tier;
         updated++;
+        changedCards.push(card);
       }
     }
   }
-  return { updated };
+  return { updated, changedCards };
 }
 
 export function repairArchitectureIndex(cards: MemoryCard[]): { updated: boolean } {
@@ -616,11 +622,30 @@ export function repairCoverage(coverage: SourceCoverage): { fixed: number } {
   return { fixed };
 }
 
-export function rebuildIndexes(cards: MemoryCard[]): { decisions: boolean; flows: boolean } {
+export function rebuildIndexes(cards: MemoryCard[]): {
+  decisions: boolean;
+  flows: boolean;
+  decisionsTable: string;
+  flowsTable: string;
+} {
   const decisionCards = cards.filter((c) => c.meta.entity_type === "decision");
   const flowCards = cards.filter((c) => c.meta.entity_type === "flow");
+
+  // Build markdown table from child cards
+  const decisionsTable = decisionCards.length > 0
+    ? "| Title | ID | Status |\n|-------|----|--------|\n" +
+      decisionCards.map((c) => `| ${c.meta.title} | ${c.meta.id} | ${c.meta.status || "current"} |`).join("\n") + "\n"
+    : "";
+
+  const flowsTable = flowCards.length > 0
+    ? "| Title | ID | Status |\n|-------|----|--------|\n" +
+      flowCards.map((c) => `| ${c.meta.title} | ${c.meta.id} | ${c.meta.status || "current"} |`).join("\n") + "\n"
+    : "";
+
   return {
     decisions: decisionCards.length > 0,
     flows: flowCards.length > 0,
+    decisionsTable,
+    flowsTable,
   };
 }

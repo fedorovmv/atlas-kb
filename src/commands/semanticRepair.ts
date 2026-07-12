@@ -5,8 +5,49 @@ import { loadMemoryCards } from "../core/loadMemory.js";
 import { validateMemory } from "../core/validate.js";
 import { resolveRoot, resolveMemoryRoot } from "../core/paths.js";
 import { readFile, writeFile } from "node:fs/promises";
-import { frontmatterYaml } from "../core/utils.js";
+import { frontmatterYaml, readFileIfExists } from "../core/utils.js";
 import path from "node:path";
+
+/**
+ * Build index file content. Preserves frontmatter and custom sections.
+ * Finds the target section heading, replaces/inserts the child-card table.
+ */
+export function buildIndexContent(existing: string, table: string, sectionHeading: string): string {
+  // Split out frontmatter if present
+  const fmMatch = existing.match(/^---\n[\s\S]*?\n---\n/);
+  const frontmatter = fmMatch ? fmMatch[0] : `---
+entity_type: index
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: evolving
+source_confidence: high
+knowledge_types:
+  - design_rationale
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: false
+  requires_warning: false
+---
+
+`;
+  // Body after frontmatter
+  let body = fmMatch ? existing.slice(fmMatch[0].length) : existing;
+
+  const sectionRegex = new RegExp(`## ${sectionHeading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\n(?:[\\s\\S]*?)(?=\\n## |$)`);
+  if (sectionRegex.test(body)) {
+    // Replace existing section content
+    body = body.replace(sectionRegex, `## ${sectionHeading}\n${table}\n`);
+  } else {
+    // Append new section before any other content or at the end
+    body = body.trimEnd() + `\n## ${sectionHeading}\n${table}\n`;
+  }
+
+  return `${frontmatter}${body.trimEnd()}\n`;
+}
 
 export async function semanticRepairCommand(options: {
   root?: string;
@@ -43,11 +84,38 @@ export async function semanticRepairCommand(options: {
   const archResult = repairArchitectureIndex(cards);
   const indexResult = rebuildIndexes(cards);
 
-  // Write updated tier to disk for cards that had tier updated
-  for (const card of cards) {
-    if (card.meta.runtime_tier && card.meta.runtime_tier !== "unknown") {
-      // Check if the card file needs updating (simplified — write all repaired cards)
-    }
+  // Write cards whose body changed due to link repair
+  for (const card of linksResult.changedCards) {
+    const fm = frontmatterYaml(card.meta as Record<string, unknown>);
+    const content = `---\n${fm}\n---\n\n${card.body.trimStart()}\n`;
+    await writeFile(card.path, content, "utf8");
+    writtenFiles++;
+  }
+
+  // Write cards whose runtime_tier was updated
+  for (const card of tiersResult.changedCards) {
+    const fm = frontmatterYaml(card.meta as Record<string, unknown>);
+    const content = `---\n${fm}\n---\n\n${card.body.trimStart()}\n`;
+    await writeFile(card.path, content, "utf8");
+    writtenFiles++;
+  }
+
+  // Write DECISIONS.md index — preserve frontmatter and custom sections, append child table
+  if (indexResult.decisionsTable) {
+    const decisionsPath = path.join(memoryRoot, "DECISIONS.md");
+    const decisionsContent = await readFileIfExists(decisionsPath);
+    const decisionsBody = buildIndexContent(decisionsContent, indexResult.decisionsTable, "Active decisions");
+    await writeFile(decisionsPath, decisionsBody, "utf8");
+    writtenFiles++;
+  }
+
+  // Write FLOWS.md index — preserve frontmatter and custom sections, append child table
+  if (indexResult.flowsTable) {
+    const flowsPath = path.join(memoryRoot, "FLOWS.md");
+    const flowsContent = await readFileIfExists(flowsPath);
+    const flowsBody = buildIndexContent(flowsContent, indexResult.flowsTable, "Active flows");
+    await writeFile(flowsPath, flowsBody, "utf8");
+    writtenFiles++;
   }
 
   // Repair coverage if source-coverage.json exists

@@ -482,12 +482,13 @@ function readFileSyncSafe(filePath: string): string {
   }
 }
 
-export function computeSubjectHash(candidate: LegacyCandidate): string {
+export function computeSubjectHash(candidate: LegacyCandidate, root?: string): string {
+  const baseDir = root ?? process.cwd();
   // Read evidence file contents and hash them
   const evidenceHashes: string[] = [];
   for (const e of candidate.evidence) {
     try {
-      const content = readFileSyncSafe(path.resolve(candidate.path, e.path));
+      const content = readFileSyncSafe(path.resolve(baseDir, e.path));
       evidenceHashes.push(contentHash(content));
     } catch {
       evidenceHashes.push("MISSING:" + e.path);
@@ -517,7 +518,7 @@ export async function approveCandidate(
   candidate: LegacyCandidate,
   options: { root: string; batch: string },
 ): Promise<{ approved: boolean; reason?: string; subjectHash?: string }> {
-  const currentHash = computeSubjectHash(candidate);
+  const currentHash = computeSubjectHash(candidate, options.root);
   // Check if candidate state is ready
   if (candidate.state !== "ready") {
     // Validate that the transition to "ready" would be legal
@@ -538,7 +539,7 @@ export async function applyCandidate(
     return { applied: false, reason: "Candidate not approved — subjectHash required" };
   }
   // Verify subject hash matches current state
-  const currentHash = computeSubjectHash(candidate);
+  const currentHash = computeSubjectHash(candidate, options.root);
   if (currentHash !== options.subjectHash) {
     return { applied: false, reason: "Subject hash mismatch — candidate changed after approval" };
   }

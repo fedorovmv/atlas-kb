@@ -383,11 +383,7 @@ export function validateReferenceStudy(card: MemoryCard): { errors: string[]; wa
     if (!existsSync(sourcePath)) {
       warnings.push(`Card "${card.meta.id}": reference study source path may not exist: ${sourceRef.path}`);
     } else if (sourceRef.treeHash) {
-      // Tree hash verification — F1 hashing.ts is available
-      // Note: treeHash is async but validateReferenceStudy is sync — we push a warning
-      // and the async verification happens in validateMemory() below
-      // For now, mark for async verification
-      (warnings as string[]).push(`Card "${card.meta.id}": treeHash set — verification pending`);
+      // treeHash present — async verification in validateMemory() handles mismatch/errors
     } else {
       // Existing reference cards without treeHash → WARNING (backward compat)
       warnings.push(`Card "${card.meta.id}": reference study source_ref has no treeHash — consider running 'repo-memory migrate' to auto-fill`);

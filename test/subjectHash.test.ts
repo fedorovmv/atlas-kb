@@ -1,6 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { computeSubjectHash, approveCandidate, applyCandidate } from "../src/core/legacyIngest.js";
 import type { LegacyCandidate } from "../src/schemas/legacyIngest.js";
+import { mkdtemp, writeFile, rm, mkdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 function makeCandidate(overrides: Partial<LegacyCandidate> = {}): LegacyCandidate {
   return {
@@ -40,6 +43,37 @@ describe("computeSubjectHash", () => {
     const c1 = makeCandidate({ path: "a.md" });
     const c2 = makeCandidate({ path: "b.md" });
     expect(computeSubjectHash(c1)).not.toBe(computeSubjectHash(c2));
+  });
+
+  it("resolves evidence relative to root, not candidate.path", async () => {
+    // Create a temp directory that acts as project root
+    const root = await mkdtemp(path.join(tmpdir(), "subject-hash-test-"));
+    try {
+      // Create evidence file at <root>/src/service.ts
+      const evidenceContent = "export const service = 'test';";
+      const evidencePath = path.join(root, "src", "service.ts");
+      await mkdir(path.dirname(evidencePath), { recursive: true });
+      await writeFile(evidencePath, evidenceContent, "utf8");
+
+      // Candidate has path "legacy/old.md" (NOT where evidence lives)
+      // Evidence references "src/service.ts" (relative to root)
+      const candidate = makeCandidate({
+        path: "legacy/old.md",
+        evidence: [{ path: "src/service.ts", supports: "true" }],
+      });
+
+      // With root, evidence should be found (resolved relative to root)
+      const hashWithRoot = computeSubjectHash(candidate, root);
+      expect(hashWithRoot).not.toContain("MISSING");
+
+      // Without root: evidence resolves relative to cwd — likely MISSING
+      // unless cwd happens to have src/service.ts
+      const hashWithoutRoot = computeSubjectHash(candidate);
+      // The two hashes should differ because file resolution differs
+      expect(hashWithRoot).not.toBe(hashWithoutRoot);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
 

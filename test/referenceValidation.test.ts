@@ -87,6 +87,18 @@ describe("validateReferenceStudy", () => {
     expect(result.errors).toHaveLength(0);
     expect(result.warnings).toHaveLength(0);
   });
+
+  it("existing source path WITH treeHash → no 'verification pending' warning (R2-5 fix)", () => {
+    const sourcePath = "src/index.ts";
+    const card = makeReferenceCard({
+      meta: { ...makeReferenceCard().meta, source_refs: [{ path: sourcePath, treeHash: "abc123" }] } as MemoryCard["meta"],
+    });
+    const result = validateReferenceStudy(card);
+    // Should NOT contain "verification pending" warning — that was removed in R2-5
+    expect(result.warnings.every(w => !w.includes("verification pending"))).toBe(true);
+    // Should NOT have any treeHash-related errors from validateReferenceStudy (async check lives in validateMemory)
+    expect(result.errors.every(e => !e.includes("treeHash"))).toBe(true);
+  });
 });
 
 describe("validateMemory reference integration", () => {
@@ -120,6 +132,64 @@ source_refs:
 
     const result = await validateMemory({ root: tmpDir });
     expect(result.errors.some(e => e.includes("missing required section"))).toBe(true);
+  });
+
+  it("reference card with matching treeHash → no pending warning, only async ERROR on mismatch (R2-5)", async () => {
+    const memoryRoot = path.join(tmpDir, ".ai", "memory");
+    await mkdir(memoryRoot, { recursive: true });
+    const srcDir = path.join(tmpDir, "src");
+    await mkdir(srcDir, { recursive: true });
+    await writeFile(path.join(srcDir, "index.ts"), "export const x = 1;", "utf8");
+
+ // We don't control hashing output, so just verify no "verification pending" warning appears
+    const cardContent = `---
+entity_type: reference
+id: hash-ref
+title: Hash Ref
+status: current
+authority: reviewed_memory
+evidence_level: code_confirmed
+stability: stable
+source_confidence: high
+last_reviewed: "2026-07-12"
+review_required: false
+knowledge_types: ["current_behavior"]
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+source_refs:
+  - path: src/index.ts
+    treeHash: definitely_not_the_real_hash
+---
+# Hash Ref
+## Behaviors carried over
+Content.
+
+## Behaviors intentionally not carried over
+Content.
+
+## Invariants and state transitions
+Content.
+
+## Failure/retry/cancellation/recovery
+Content.
+
+## Compatibility/operational constraints
+Content.
+
+## Derived scenarios and tests
+Content.
+`;
+    await writeFile(path.join(memoryRoot, "hash-ref.md"), cardContent, "utf8");
+
+    const result = await validateMemory({ root: tmpDir });
+    // No "verification pending" warning should appear anywhere
+    const allMessages = [...result.errors, ...result.warnings];
+    expect(allMessages.every(m => !m.includes("verification pending"))).toBe(true);
+    // Mismatch should produce ERROR (from async check in validateMemory)
+    expect(result.errors.some(e => e.includes("tree hash mismatch"))).toBe(true);
   });
 
   it("non-reference cards NOT affected by reference validation", async () => {
