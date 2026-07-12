@@ -277,7 +277,7 @@ Status: accepted
     const cards = await loadMemoryCards({ root: dest });
     const updatedCard = cards.find((c) => c.meta.id === report.changedClaimEvidence![0].cardId);
     expect(updatedCard).toBeDefined();
-    const claim = updatedCard!.meta.claims?.[0];
+    const claim = updatedCard!.meta.claims?.find((c) => c.text.includes("access_filter.go") || c.text.includes("filtering logic"));
     expect(claim).toBeDefined();
     expect(claim!.evidence.status).toBe("not_found");
     expect(claim!.last_checked).toBeDefined();

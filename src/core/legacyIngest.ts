@@ -111,6 +111,52 @@ function classifyByContent(content: string): { classification: string; confidenc
     }
   }
 
+  // Proposal/spec/decision patterns (English + Russian)
+  const proposalPatterns = [
+    // English
+    "## proposal", "## proposed", "## context",
+    "## alternatives", "## consequences", "## current behavior", "## proposed behavior",
+    // Russian
+    "## цель", "## решение", "## предложение", "## контекст", "## альтернативы",
+    "## последствия", "## текущее поведение", "## предлагаемое поведение",
+    "## архитектур", "## описание", "## проблема", "## задача",
+  ];
+  for (const pat of proposalPatterns) {
+    if (lower.includes(pat)) {
+      matches.push(pat);
+      confidence += 0.3;
+      break;
+    }
+  }
+
+  // Architecture/design patterns
+  const archPatterns = [
+    "## architecture", "## design", "## components", "## data flow", "## dependencies",
+    "## схема", "## компоненты", "## поток данных", "## зависимости",
+    "## диаграмма", "## mermaid",
+  ];
+  for (const pat of archPatterns) {
+    if (lower.includes(pat)) {
+      matches.push(pat);
+      confidence += 0.3;
+      break;
+    }
+  }
+
+  // Reference/guide patterns (English + Russian)
+  const referencePatterns = [
+    "## где смотреть", "## инварианты",
+    "## алгоритм", "## формула", "## scoring", "## ranking",
+    "## search", "## indexing",
+  ];
+  for (const pat of referencePatterns) {
+    if (lower.includes(pat)) {
+      matches.push(pat);
+      confidence += 0.3;
+      break;
+    }
+  }
+
   return { classification: "unknown", confidence, matches };
 }
 
@@ -132,6 +178,16 @@ function classifyByPath(relPath: string): { classification: string; confidence: 
 
   if (/openspec/.test(lower)) {
     return { classification: "openspec-requirement", confidence: 0.2, signal: "openspec-path" };
+  }
+
+  // Proposal/spec/analysis path patterns
+  if (/proposal|\/spec|spec-|architecture|analysis|design|plan/.test(lower)) {
+    return { classification: "kb-decision", confidence: 0.2, signal: "proposal-spec-path" };
+  }
+
+  // Guide/reference path patterns
+  if (/guide|tutorial|howto|how-to|reference/.test(lower)) {
+    return { classification: "kb-reference", confidence: 0.2, signal: "guide-path" };
   }
 
   return { classification: "unknown", confidence: 0, signal: "" };
@@ -175,6 +231,47 @@ function heuristicClassify(relPath: string, content: string): Sig {
       "## avoidance": "kb-gotcha",
       "## gotcha": "kb-gotcha",
       "## common mistake": "kb-gotcha",
+      // proposal/spec/decision patterns
+      "## proposal": "kb-decision",
+      "## proposed": "kb-decision",
+      "## context": "kb-decision",
+      "## alternatives": "kb-decision",
+      "## consequences": "kb-decision",
+      "## current behavior": "kb-reference",
+      "## proposed behavior": "kb-decision",
+      "## цель": "kb-decision",
+      "## решение": "kb-decision",
+      "## предложение": "kb-decision",
+      "## контекст": "kb-decision",
+      "## альтернативы": "kb-decision",
+      "## последствия": "kb-decision",
+      "## текущее поведение": "kb-reference",
+      "## предлагаемое поведение": "kb-decision",
+      "## архитектур": "kb-decision",
+      "## описание": "kb-reference",
+      "## проблема": "kb-decision",
+      "## задача": "kb-decision",
+      // architecture patterns
+      "## architecture": "kb-decision",
+      "## design": "kb-decision",
+      "## components": "kb-reference",
+      "## data flow": "kb-reference",
+      "## dependencies": "kb-reference",
+      "## схема": "kb-decision",
+      "## компоненты": "kb-reference",
+      "## поток данных": "kb-reference",
+      "## зависимости": "kb-reference",
+      "## диаграмма": "kb-decision",
+      "## mermaid": "kb-decision",
+      // reference/guide patterns
+      "## где смотреть": "kb-reference",
+      "## инварианты": "kb-reference",
+      "## алгоритм": "kb-reference",
+      "## формула": "kb-reference",
+      "## scoring": "kb-reference",
+      "## ranking": "kb-reference",
+      "## search": "kb-reference",
+      "## indexing": "kb-reference",
     };
 
     confidence += contentResult.confidence;

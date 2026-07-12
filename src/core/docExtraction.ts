@@ -134,7 +134,39 @@ export function extractFirstParagraph(content: string): string {
 }
 
 /**
+ * Detect common scaffold/template boilerplate in README content.
+ * Returns true if the text looks like a generated template, not real project documentation.
+ */
+export function isBoilerplate(text: string): boolean {
+  const lower = text.toLowerCase();
+  const boilerplateMarkers = [
+    // Vite / Create React App
+    "this template provides a minimal setup",
+    "vite with hmr",
+    "create react app",
+    "npm create vite",
+    "npm run dev",
+    // Next.js
+    "create-next-app",
+    "next.js starter",
+    // Generic scaffolds
+    "this project was bootstrapped with",
+    "getting started with",
+    "edit it and save",
+    // Go templates
+    "go module template",
+  ];
+  const hasMarker = boilerplateMarkers.some((m) => lower.includes(m));
+  if (!hasMarker) return false;
+  // Also check if the text is primarily scaffold instructions
+  const scaffoldInstructions =
+    lower.includes("npm run") || lower.includes("yarn") || lower.includes("pnpm") || lower.includes("go run");
+  return hasMarker || (scaffoldInstructions && text.length < 300);
+}
+
+/**
  * Read a doc and extract a summary — first meaningful paragraph or overview section.
+ * Filters out scaffold/template boilerplate.
  */
 export async function readDocSummary(root: string, relPath: string): Promise<string> {
   try {
@@ -144,11 +176,11 @@ export async function readDocSummary(root: string, relPath: string): Promise<str
 
     // Try Overview / Summary / Description first
     const overview = findSection(sections, ["overview", "summary", "description", "about"]);
-    if (overview) return truncate(overview, 500);
+    if (overview && !isBoilerplate(overview)) return truncate(overview, 500);
 
-    // Fallback: first paragraph
+    // Fallback: first paragraph (skip boilerplate)
     const intro = extractFirstParagraph(raw);
-    if (intro) return truncate(intro, 500);
+    if (intro && !isBoilerplate(intro)) return truncate(intro, 500);
 
     return "";
   } catch {

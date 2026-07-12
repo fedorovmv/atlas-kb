@@ -66,18 +66,16 @@ export function extractClaims(specContent: string, specPath: string): Claim[] {
     if (headingMatch) {
       const isSubheading = line.startsWith("###");
       if (isSubheading && currentSection.includes("alternative")) {
+        // Subheadings under "alternatives" section ARE claims (they name alternatives)
         currentAlternative = headingMatch[1];
         claimNum++;
         claims.push(makeClaim(claimNum, headingMatch[1], "design_rationale", specPath));
         continue;
       }
+      // Regular headings set the current section but are NOT claims themselves.
+      // Only content under headings (bullets, numbered items, prose) becomes claims.
       currentAlternative = null;
       currentSection = headingMatch[1].toLowerCase();
-      claimNum++;
-      const type = inferClaimTypeFromSection(currentSection, headingMatch[1]);
-      if (type) {
-        claims.push(makeClaim(claimNum, headingMatch[1], type, specPath));
-      }
       continue;
     }
 

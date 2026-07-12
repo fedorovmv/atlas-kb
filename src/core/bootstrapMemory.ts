@@ -5,7 +5,7 @@ import matter from "gray-matter";
 import { discoverProject } from "./discoverProject.js";
 import { resolveRoot, resolveMemoryRoot, toPosixPath } from "./paths.js";
 import { frontmatterYaml, today } from "./utils.js";
-import { readDocSections, readDocSummary, findSection, findContent, extractSections, extractFirstParagraph } from "./docExtraction.js";
+import { readDocSections, readDocSummary, findSection, findContent, extractSections, extractFirstParagraph, isBoilerplate } from "./docExtraction.js";
 import { detectSpecRelations } from "./specRelations.js";
 import { loadMemoryCards } from "./loadMemory.js";
 import { classifyRuntimeTier } from "./runtimeTier.js";
@@ -329,10 +329,15 @@ async function renderModuleCard(
     },
     runtime_tier: tier,
   });
-  const responsibility = docResponsibilities || docOverview || docSummary ||
+  // Filter boilerplate — if doc content looks like a template, use fallback instead
+  const cleanResponsibilities = docResponsibilities && !isBoilerplate(docResponsibilities) ? docResponsibilities : "";
+  const cleanOverview = docOverview && !isBoilerplate(docOverview) ? docOverview : "";
+  const cleanSummary = docSummary && !isBoilerplate(docSummary) ? docSummary : "";
+
+  const responsibility = cleanResponsibilities || cleanOverview || cleanSummary ||
     `Module with ${mod.codeFiles.length} code files, ${mod.testFiles.length} test files. Topics: ${mod.topics.join(", ")}. Read code_refs and source_refs for details.`;
   const nonResponsibilities = "Needs review — infer from code boundaries, imports, sibling modules.";
-  const currentBehavior = docSummary || "Needs review — read code_refs for actual behavior.";
+  const currentBehavior = cleanSummary || "Needs review — read code_refs for actual behavior.";
 
   const body = [
     `# ${mod.title}`,

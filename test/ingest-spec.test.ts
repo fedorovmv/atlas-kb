@@ -532,11 +532,11 @@ This section restates the same requirement:
 });
 
 describe("rationale extraction", () => {
-  it("detects design_rationale from ## Problem heading", () => {
+  it("detects design_rationale from ## Problem section", () => {
     const claims = extractClaims("# Spec\n## Problem\nThe registry must not be an orchestrator\n", "test.md");
     const rationale = claims.find((c) => c.type === "design_rationale");
     expect(rationale).toBeDefined();
-    expect(rationale!.text).toMatch(/problem/i);
+    expect(rationale!.text).toMatch(/registry must not be an orchestrator/i);
   });
 
   it("detects design_rationale from ## Constraints", () => {

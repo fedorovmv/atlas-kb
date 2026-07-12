@@ -349,12 +349,15 @@ export function semanticRepairCard(
     cm.targetCards.includes(card.meta.id),
   );
   if (relevantMaps.length === 0 && boilerplateSections.size > 0) {
+    // No content maps target this card — skip repair, but don't quarantine.
+    // Card remains a stub for LLM enrichment.
     return {
       cardId: card.meta.id,
       repaired: false,
       filledSections: [],
-      quarantined: true,
-      reason: "No content maps available for this card",
+      quarantined: false,
+      reason:
+        "No content maps available for this card — skipped, not quarantined",
     };
   }
 

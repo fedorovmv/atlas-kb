@@ -472,7 +472,7 @@ Real rationale about why this was chosen.
     expect(result.quarantined).toBe(false);
   });
 
-  it("quarantines when no content maps for card", () => {
+  it("skips repair when no content maps for card (no quarantine)", () => {
     const card = makeCard({
       metaPartial: { id: "no-maps-card" },
       body: `
@@ -487,15 +487,15 @@ Real rationale content.
 `,
     });
 
-    // No content maps for this card
+    // No content maps for this card — skip, don't quarantine
     const result = semanticRepairCard(card, []);
     expect(result.cardId).toBe("no-maps-card");
     expect(result.repaired).toBe(false);
-    expect(result.quarantined).toBe(true);
+    expect(result.quarantined).toBe(false);
     expect(result.reason).toBeDefined();
   });
 
-  it("quarantines when >50% sections are boilerplate and no content to fill", () => {
+  it("skips when >50% sections are boilerplate and no content to fill (no quarantine)", () => {
     const card = makeCard({
       metaPartial: { id: "mostly-bp" },
       body: `
@@ -512,9 +512,9 @@ Requires review rationale.
 Real alternatives content here.
 `,
     });
-    // No content map — can't fill sections → quarantine
+    // No content map — can't fill sections → skip, don't quarantine
     const result = semanticRepairCard(card, []);
-    expect(result.quarantined).toBe(true);
+    expect(result.quarantined).toBe(false);
     expect(result.reason).toContain("No content maps");
   });
 });
