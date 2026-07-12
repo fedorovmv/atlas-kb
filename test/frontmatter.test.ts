@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MemoryFrontmatterSchema } from "../src/schemas/frontmatter.js";
+import { z } from "zod";
+import { MemoryFrontmatterSchema, EntityTypeSchema, RuntimeTierSchema, SourceStatusSchema } from "../src/schemas/frontmatter.js";
 
 const baseFrontmatter = {
   entity_type: "module" as const,
@@ -69,5 +70,124 @@ describe("MemoryFrontmatterSchema claims", () => {
     if (!result.success) {
       expect(result.error.errors[0].path).toContain("id");
     }
+  });
+});
+
+describe("EntityTypeSchema validates all 20 values", () => {
+  const allEntityTypes = [
+    // existing 11
+    "module", "scenario", "decision", "proposal", "historical",
+    "conflict", "open_question", "architecture", "product_map",
+    "ontology", "readme",
+    // new 9
+    "flow", "ops", "gotchas", "task_routing", "testing",
+    "reference", "project", "routing", "index",
+  ];
+
+  it("validates all 20 entity type values", () => {
+    for (const type of allEntityTypes) {
+      const result = EntityTypeSchema.safeParse(type);
+      expect(result.success, `entity_type "${type}" should be valid`).toBe(true);
+      if (result.success) {
+        expect(result.data).toBe(type);
+      }
+    }
+  });
+
+  it("rejects invalid entity type", () => {
+    const result = EntityTypeSchema.safeParse("invalid_type");
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("RuntimeTierSchema", () => {
+  const validTiers = ["production", "demo", "shared", "mixed", "historical", "unknown"];
+
+  it("validates all valid runtime tier values", () => {
+    for (const tier of validTiers) {
+      const result = RuntimeTierSchema.safeParse(tier);
+      expect(result.success, `runtime_tier "${tier}" should be valid`).toBe(true);
+    }
+  });
+
+  it("rejects invalid runtime tier", () => {
+    const result = RuntimeTierSchema.safeParse("invalid_tier");
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("SourceStatusSchema", () => {
+  const validStatuses = ["current", "active-rationale", "partially-active", "superseded", "historical-only", "unknown"];
+
+  it("validates all valid source status values", () => {
+    for (const status of validStatuses) {
+      const result = SourceStatusSchema.safeParse(status);
+      expect(result.success, `source_status "${status}" should be valid`).toBe(true);
+    }
+  });
+
+  it("rejects invalid source status", () => {
+    const result = SourceStatusSchema.safeParse("invalid_status");
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("MemoryFrontmatterSchema with runtime_tier", () => {
+  it("parses card with runtime_tier valid → ok", () => {
+    const result = MemoryFrontmatterSchema.parse({
+      ...baseFrontmatter,
+      runtime_tier: "production",
+    });
+    expect(result.runtime_tier).toBe("production");
+  });
+
+  it("parses card with runtime_tier invalid → ZodError", () => {
+    const result = MemoryFrontmatterSchema.safeParse({
+      ...baseFrontmatter,
+      runtime_tier: "invalid",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(z.ZodError);
+    }
+  });
+
+  it("parses card without runtime_tier → ok (optional)", () => {
+    const result = MemoryFrontmatterSchema.parse(baseFrontmatter);
+    expect(result.runtime_tier).toBeUndefined();
+  });
+
+  it("parses card with source_status valid → ok", () => {
+    const result = MemoryFrontmatterSchema.parse({
+      ...baseFrontmatter,
+      source_status: "current",
+    });
+    expect(result.source_status).toBe("current");
+  });
+
+  it("parses card without source_status → ok (optional)", () => {
+    const result = MemoryFrontmatterSchema.parse(baseFrontmatter);
+    expect(result.source_status).toBeUndefined();
+  });
+
+  it("parses card with source_status invalid → ZodError", () => {
+    const result = MemoryFrontmatterSchema.safeParse({
+      ...baseFrontmatter,
+      source_status: "invalid",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(z.ZodError);
+    }
+  });
+
+  it("parses card with both runtime_tier and source_status → ok", () => {
+    const result = MemoryFrontmatterSchema.parse({
+      ...baseFrontmatter,
+      runtime_tier: "production",
+      source_status: "active-rationale",
+    });
+    expect(result.runtime_tier).toBe("production");
+    expect(result.source_status).toBe("active-rationale");
   });
 });

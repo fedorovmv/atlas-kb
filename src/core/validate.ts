@@ -1,5 +1,5 @@
 import path from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import fg from "fast-glob";
 import matter from "gray-matter";
 import { readFile } from "node:fs/promises";
@@ -8,8 +8,14 @@ import { MemoryFrontmatterSchema } from "../schemas/frontmatter.js";
 import type { MemoryCard, RepoMemoryOptions, ValidationResult } from "./types.js";
 import { findMemoryMarkdownFiles, loadMemoryCards } from "./loadMemory.js";
 import { RELATION_FIELDS } from "./relations.js";
-import { resolveRoot } from "./paths.js";
+import { resolveRoot, resolveMemoryRoot } from "./paths.js";
 import { hasQualityEvidenceSection } from "./evidenceSection.js";
+import { validateCardSections } from "./cardSections.js";
+import { checkRuntimeTierMismatch } from "./runtimeTier.js";
+import { SourceCoverageSchema } from "../schemas/sourceCoverage.js";
+import { validateSourceCoverage } from "./sourceCoverage.js";
+import { readFileIfExists } from "./utils.js";
+import { checkDispatchAdvisory } from "./dispatch.js";
 
 // Known frontmatter keys — anything else is likely a typo
 const KNOWN_FRONTMATTER_KEYS = new Set([
@@ -21,6 +27,7 @@ const KNOWN_FRONTMATTER_KEYS = new Set([
   "affects_modules", "affects_scenarios", "affects_decisions",
   "code_refs", "test_refs", "source_refs",
   "usage_policy", "claims",
+  "runtime_tier", "source_status",
 ]);
 
 /** Simple Levenshtein distance for typo suggestion. */
@@ -44,8 +51,70 @@ function formatZodError(error: z.ZodError) {
   return error.issues.map((item) => `${item.path.join(".") || "frontmatter"}: ${item.message}`).join("; ");
 }
 
+export function checkStructural(memoryRoot: string, cards: MemoryCard[]): { errors: string[]; warnings: string[] } {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const requiredTopLevel = [
+    "MEMORY.md", "PROJECT.md", "MODULES.md", "ARCHITECTURE.md",
+    "TASK_ROUTING.md", "FLOWS.md", "TESTING.md", "OPS.md",
+    "GOTCHAS.md", "DECISIONS.md",
+  ];
+  for (const file of requiredTopLevel) {
+    if (!existsSync(path.join(memoryRoot, file))) {
+      errors.push(`Missing required top-level file: ${file}`);
+    }
+  }
+
+  const requiredSubdirs = ["modules", "flows", "decisions", "architecture"];
+  for (const dir of requiredSubdirs) {
+    if (!existsSync(path.join(memoryRoot, dir))) {
+      errors.push(`Missing required subdirectory: ${dir}/`);
+    }
+  }
+
+  const modulesPath = path.join(memoryRoot, "MODULES.md");
+  if (existsSync(modulesPath)) {
+    const content = readFileSync(modulesPath, "utf-8");
+    if (!/production/i.test(content) || !/demo/i.test(content)) {
+      warnings.push("MODULES.md should have production/demo/shared tier split");
+    }
+  }
+
+  const archPath = path.join(memoryRoot, "ARCHITECTURE.md");
+  const archDir = path.join(memoryRoot, "architecture");
+  if (existsSync(archPath)) {
+    const content = readFileSync(archPath, "utf-8");
+    if (!/Architecture overview/i.test(content) && !existsSync(archDir)) {
+      warnings.push('ARCHITECTURE.md should have "Architecture overview" section or architecture/*.md files');
+    }
+  }
+
+  return { errors, warnings };
+}
+
+export function checkMarkdownLinks(cards: MemoryCard[], memoryRoot: string): { errors: string[]; warnings: string[] } {
+  const errors: string[] = [];
+  for (const card of cards) {
+    const linkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
+    let match;
+    while ((match = linkPattern.exec(card.body)) !== null) {
+      const linkPath = match[2];
+      if (/^https?:\/\//.test(linkPath)) continue;
+      if (linkPath.startsWith("#")) continue;
+      const cardDir = path.dirname(card.path);
+      const resolved = path.resolve(cardDir, linkPath);
+      if (!existsSync(resolved)) {
+        errors.push(`Card "${card.meta.id}": broken markdown link "${linkPath}"`);
+      }
+    }
+  }
+  return { errors, warnings: [] };
+}
+
 export async function validateMemory(options: RepoMemoryOptions = {}): Promise<ValidationResult> {
   const root = resolveRoot(options);
+  const memoryRoot = resolveMemoryRoot(options);
   const errors: string[] = [];
   const warnings: string[] = [];
   const files = await findMemoryMarkdownFiles(options);
@@ -161,6 +230,84 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
         warnings.push(`${card.relativePath}: referenced path/glob does not exist: ${ref.path}`);
       }
     }
+  }
+
+  // Card sections validation — skip cards still needing review or auto-generated from weak evidence
+  for (const card of cards) {
+    if (card.meta.review_required || card.meta.evidence_level === "spec_only") continue;
+    const sectionResult = validateCardSections(card);
+    for (const err of sectionResult.errors) {
+      errors.push(err);
+    }
+    if (options.strictWarnings) {
+      for (const warn of sectionResult.warnings) {
+        errors.push(warn);
+      }
+    } else {
+      for (const warn of sectionResult.warnings) {
+        warnings.push(warn);
+      }
+    }
+  }
+
+  // Runtime tier mismatch warnings
+  for (const card of cards) {
+    const tierWarnings = checkRuntimeTierMismatch(card);
+    warnings.push(...tierWarnings);
+  }
+
+  // Source coverage validation (if --require-source-coverage)
+  if (options.requireSourceCoverage) {
+    const memoryRoot = resolveMemoryRoot(options);
+    const coveragePath = path.join(memoryRoot, "source-coverage.json");
+    const coverageContent = await readFileIfExists(coveragePath);
+    if (!coverageContent) {
+      errors.push("source-coverage.json not found (required by --require-source-coverage)");
+    } else {
+      try {
+        const coverage = SourceCoverageSchema.parse(JSON.parse(coverageContent));
+        const covResult = validateSourceCoverage(coverage, cards);
+        errors.push(...covResult.errors);
+        warnings.push(...covResult.warnings);
+      } catch (e) {
+        errors.push(`source-coverage.json: invalid schema: ${(e as Error).message}`);
+      }
+    }
+  }
+
+  // Specialist dispatch advisory (if --check-dispatch, warnings only)
+  if (options.checkDispatch) {
+    const advisory = await checkDispatchAdvisory({ root });
+    warnings.push(...advisory.warnings);
+  }
+
+  // Contract-first checks (structural completeness + markdown links)
+  if (options.checkContract) {
+    const structuralResult = checkStructural(memoryRoot, cards);
+    errors.push(...structuralResult.errors);
+    warnings.push(...structuralResult.warnings);
+
+    const linkResult = checkMarkdownLinks(cards, memoryRoot);
+    errors.push(...linkResult.errors);
+  }
+
+  // Long code blocks (25+ lines)
+  for (const card of cards) {
+    const codeBlockPattern = /```[\s\S]*?```/g;
+    const matches = card.body.match(codeBlockPattern) ?? [];
+    for (const block of matches) {
+      const lines = block.split("\n").length - 2;
+      if (lines > 25) {
+        warnings.push(`Card "${card.meta.id}": code block with ${lines} lines (consider summarizing)`);
+      }
+    }
+  }
+
+  // Error budget
+  const maxErrors = options.maxErrors ?? 50;
+  if (errors.length > maxErrors) {
+    errors.splice(maxErrors);
+    errors.push(`... truncated at ${maxErrors} errors (use --max-errors to increase)`);
   }
 
   return { ok: errors.length === 0, errors, warnings };

@@ -8,12 +8,22 @@ import { frontmatterYaml, today } from "./utils.js";
 import { readDocSections, readDocSummary, findSection, findContent, extractSections, extractFirstParagraph } from "./docExtraction.js";
 import { detectSpecRelations } from "./specRelations.js";
 import { loadMemoryCards } from "./loadMemory.js";
+import { classifyRuntimeTier } from "./runtimeTier.js";
+import { createInitialCoverage, triageCoverage, triageSources } from "./sourceCoverage.js";
 import type { DiscoveryReport, CandidateModule, FileRecord } from "../schemas/discovery.js";
+import type { MemoryFrontmatter } from "../schemas/frontmatter.js";
+import type { MemoryCard } from "./types.js";
 
 export type BootstrapResult = {
   written: string[];
   skipped: string[];
   report: DiscoveryReport;
+  topLevelCreated: string[];
+  subdirsCreated: string[];
+  coverageCreated?: string;      // NEW: path to source-coverage.json
+  triageUpdated?: number;        // NEW: how many unknown -> concrete
+  triageStillUnknown?: number;   // NEW: how many still unknown
+  contentMapPath?: string;       // NEW: path to source-content-map.jsonl
 };
 
 // --- Skip logic ---
@@ -41,6 +51,8 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
   const report = await discoverProject({ root, memoryRoot });
   const written: string[] = [];
   const skipped: string[] = [];
+  const topLevelCreated: string[] = [];
+  const subdirsCreated: string[] = [];
 
   // Helper: write or skip. Skip enriched cards even with --force to prevent data loss.
   const writeCard = async (relativePath: string, content: string) => {
@@ -59,6 +71,50 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     }
     written.push(rel);
   };
+
+  // --- Create top-level index cards if they don't exist ---
+  const todayStr = today();
+
+  const createIndexCard = async (fileName: string, template: string) => {
+    const target = path.join(memoryRoot, fileName);
+    if (existsSync(target)) {
+      const skipReason = await shouldSkipExisting(target, options.force ?? false);
+      if (skipReason) {
+        skipped.push(`${fileName} (${skipReason})`);
+        return;
+      }
+    }
+    const content = template.replace("PLACEHOLDER_DATE", todayStr);
+    if (!options.dryRun) {
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, content, "utf8");
+    }
+    written.push(toPosixPath(path.relative(root, target)));
+    topLevelCreated.push(fileName);
+  };
+
+  await createIndexCard("MEMORY.md", MEMORY_INDEX_TEMPLATE);
+  await createIndexCard("MODULES.md", MODULES_INDEX_TEMPLATE);
+  await createIndexCard("DECISIONS.md", DECISIONS_INDEX_TEMPLATE);
+  await createIndexCard("ARCHITECTURE.md", ARCHITECTURE_INDEX_TEMPLATE);
+
+  // --- Create subdirectories with .gitkeep if they don't exist ---
+  const createSubdir = async (subdirName: string) => {
+    const gitkeepPath = path.join(memoryRoot, subdirName, ".gitkeep");
+    const dirPath = path.join(memoryRoot, subdirName);
+    if (!existsSync(dirPath) || !existsSync(gitkeepPath)) {
+      if (!options.dryRun) {
+        await mkdir(dirPath, { recursive: true });
+        await writeFile(gitkeepPath, "", "utf8");
+      }
+      const relDir = toPosixPath(path.relative(root, dirPath));
+      subdirsCreated.push(relDir);
+      written.push(toPosixPath(path.relative(root, gitkeepPath)));
+    }
+  };
+
+  await createSubdir("flows");
+  await createSubdir("architecture");
 
   // Module cards from candidate modules (confidence >= medium)
   for (const mod of report.candidateModules) {
@@ -80,7 +136,7 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
       if (!docOverview) docOverview = findContent(sections, raw, ["overview", "description", "about", "summary"]) ?? "";
     }
 
-    const card = await renderModuleCard(mod, status, evidenceLevel, docSummary, docResponsibilities, docOverview);
+    const card = await renderModuleCard(mod, status, evidenceLevel, docSummary, docResponsibilities, docOverview, report.files);
     await writeCard(`modules/${mod.id}.md`, card);
   }
 
@@ -186,6 +242,13 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     }
   }
 
+  // Create source-coverage.json from triage
+  const triage = await triageSources({ root, buildDir: path.join(memoryRoot, "..", "memory-build", "latest"), dryRun: options.dryRun });
+  const coverageFile = "source-coverage.json";
+  if (!options.dryRun) {
+    // Already written by triageSources
+  }
+
   // Ensure reconciliation dir exists
   const conflictsPath = path.join(memoryRoot, "reconciliation", "conflicts.md");
   const questionsPath = path.join(memoryRoot, "reconciliation", "open-questions.md");
@@ -196,7 +259,7 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     await writeCard("reconciliation/open-questions.md", RECONCILIATION_QUESTIONS_TEMPLATE);
   }
 
-  return { written, skipped, report };
+  return { written, skipped, report, topLevelCreated, subdirsCreated, coverageCreated: coverageFile, triageUpdated: triage.updated, triageStillUnknown: triage.stillUnknown, contentMapPath: triage.contentMapPath };
 }
 
 // --- Card renderers ---
@@ -208,8 +271,40 @@ async function renderModuleCard(
   docSummary: string,
   docResponsibilities: string,
   docOverview: string,
+  discoveryFiles: FileRecord[],
 ): Promise<string> {
   const todayStr = today();
+
+  // Classify runtime tier from code refs and discovery data
+  const allRefPaths = [...mod.codeFiles, ...mod.testFiles, ...mod.demoFiles];
+  const tierCard: MemoryCard = {
+    path: mod.id,
+    relativePath: mod.id,
+    meta: {
+      entity_type: "module",
+      id: mod.id,
+      title: mod.title,
+      status: status as unknown as MemoryFrontmatter["status"],
+      authority: "reviewed_memory",
+      evidence_level: evidenceLevel as unknown as MemoryFrontmatter["evidence_level"],
+      stability: "stable",
+      source_confidence: "high",
+      last_reviewed: "2026-01-01",
+      review_required: false,
+      knowledge_types: ["current_behavior"] as MemoryFrontmatter["knowledge_types"],
+      usage_policy: {
+        can_answer_current_behavior: true,
+        can_generate_code_from: true,
+        can_use_as_rationale: true,
+        requires_code_check_before_change: true,
+      },
+      code_refs: allRefPaths.map((p) => ({ path: p })),
+    } as MemoryFrontmatter,
+    body: "",
+    raw: "",
+  };
+  const tier = classifyRuntimeTier(tierCard, discoveryFiles);
+
   const fm = frontmatterYaml({
     entity_type: "module",
     id: mod.id,
@@ -232,9 +327,8 @@ async function renderModuleCard(
       can_use_as_rationale: true,
       requires_code_check_before_change: true,
     },
+    runtime_tier: tier,
   });
-
-  // Use real doc content if available, fallback to heuristic description
   const responsibility = docResponsibilities || docOverview || docSummary ||
     `Module with ${mod.codeFiles.length} code files, ${mod.testFiles.length} test files. Topics: ${mod.topics.join(", ")}. Read code_refs and source_refs for details.`;
   const nonResponsibilities = "Needs review — infer from code boundaries, imports, sibling modules.";
@@ -331,7 +425,7 @@ function renderDecisionCard(
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Context\n${context || "Needs review — what problem triggered this decision?"}\n\n## Problem\n${problem || "Needs review — what specific problem was solved?"}\n\n## Decision\n${decisionText || "Needs review — what was decided?"}\n\n## Rationale\n${rationale || d.rationale}\n\n## Alternatives considered\n${alternatives || "Needs review — what alternatives were evaluated?"}\n\n## Rejected alternatives\n${alternatives ? "See alternatives above." : "Needs review — what was rejected and why?"}\n\n## Consequences/trade-offs\n${consequences || "Needs review — what trade-offs were accepted?"}\n\n## Current behavior evidence\nNeeds review — does the decision still hold against current code?\n`;
+  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Context\n${context || "Needs review — what problem triggered this decision?"}\n\n## Problem\n${problem || "Needs review — what specific problem was solved?"}\n\n## Decision\n${decisionText || "Needs review — what was decided?"}\n\n## Rationale\n${rationale || d.rationale}\n\n## Alternatives considered\n${alternatives || "Needs review — what alternatives were evaluated?"}\n\n## Rejected alternatives\n${alternatives ? "See alternatives above." : "Needs review — what was rejected and why?"}\n\n## Consequences\n${consequences || "Needs review — what trade-offs were accepted?"}\n\n## Current behavior evidence\nNeeds review — does the decision still hold against current code?\n\n## Affected modules\nNeeds review — which modules are affected by this decision?\n\n## Affected scenarios\nNeeds review — which scenarios are affected by this decision?\n`;
 }
 
 function renderHistoricalCard(
@@ -480,4 +574,147 @@ usage_policy:
 # Open questions
 
 Record unresolved questions here instead of letting the agent invent answers.
+`;
+
+// --- Index card templates ---
+
+const MEMORY_INDEX_TEMPLATE = `---
+entity_type: index
+id: memory-index
+title: Memory Bank Index
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: evolving
+source_confidence: high
+last_reviewed: "PLACEHOLDER_DATE"
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: false
+  requires_warning: false
+---
+
+# Memory Bank Index
+
+## Overview
+<!-- LLM: краткое описание продукта -->
+
+## Module index
+<!-- LLM: список модулей со ссылками на modules/*.md -->
+
+## Architecture index
+<!-- LLM: ссылки на architecture/*.md -->
+
+## Flow index
+<!-- LLM: ссылки на flows/*.md -->
+
+## Decision index
+<!-- LLM: ссылки на decisions/*.md -->
+`;
+
+const MODULES_INDEX_TEMPLATE = `---
+entity_type: index
+id: modules-index
+title: Modules Index
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: evolving
+source_confidence: high
+last_reviewed: "PLACEHOLDER_DATE"
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: false
+  requires_warning: false
+---
+
+# Modules Index
+
+## Production modules
+<!-- LLM: runtime_tier=production модули со ссылками на modules/*.md -->
+
+## Demo modules
+<!-- LLM: runtime_tier=demo модули со ссылками на modules/*.md -->
+
+## Shared modules
+<!-- LLM: runtime_tier=shared модули со ссылками на modules/*.md -->
+
+## Historical modules
+<!-- LLM: runtime_tier=historical модули (архивные) -->
+`;
+
+const DECISIONS_INDEX_TEMPLATE = `---
+entity_type: index
+id: decisions-index
+title: Decisions Index
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: evolving
+source_confidence: high
+last_reviewed: "PLACEHOLDER_DATE"
+review_required: false
+knowledge_types:
+  - design_rationale
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: false
+  requires_warning: false
+---
+
+# Decisions Index
+
+## Active decisions
+<!-- LLM: ссылки на decisions/*.md — текущие архитектурные решения -->
+
+## Superseded decisions
+<!-- LLM: ссылки на decisions/*.md или historical/*.md — перезапсенные решения -->
+`;
+
+const ARCHITECTURE_INDEX_TEMPLATE = `---
+entity_type: architecture
+id: architecture-index
+title: Architecture Index
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: evolving
+source_confidence: high
+last_reviewed: "PLACEHOLDER_DATE"
+review_required: false
+knowledge_types:
+  - design_rationale
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  can_use_as_example: false
+  requires_code_check_before_change: false
+  requires_warning: false
+---
+
+# Architecture Index
+
+<!-- LLM: общая картина архитектуры проекта -->
+
+## Architecture overview
+<!-- LLM: ссылки на architecture/*.md — архитектурные карточки по подмодулям -->
+
+## System interactions
+<!-- LLM: описание взаимодействия между подсистемами -->
 `;

@@ -94,3 +94,13 @@ export const updateCard = tool({
     return runMemory(["update", args.id, ...bodyArgs, ...setArgs, "--json"]);
   },
 });
+
+export const triage = tool({
+  description: "Run automatic source triage.",
+  args: {
+    root: tool.schema.string().optional().describe("Repository root path"),
+  },
+  async execute(args) {
+    return runMemory(["triage", ...(args.root ? ["--root", args.root] : []), "--json"]);
+  },
+});

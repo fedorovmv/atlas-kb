@@ -3,7 +3,9 @@ import yaml from "js-yaml";
 import { loadMemoryCards, findCardById } from "./loadMemory.js";
 import { resolveRoot } from "./paths.js";
 import { hasEvidenceSection } from "./evidenceSection.js";
-import type { RepoMemoryOptions } from "./types.js";
+import { validateCardSections } from "./cardSections.js";
+import type { RepoMemoryOptions, MemoryCard } from "./types.js";
+import type { MemoryFrontmatter } from "../schemas/frontmatter.js";
 
 export type UpdateOptions = RepoMemoryOptions & {
   body?: string;
@@ -80,6 +82,13 @@ export async function updateMemoryCard(id: string, options: UpdateOptions): Prom
   } catch (err) {
     await unlink(tmpPath).catch(() => {});
     throw err;
+  }
+
+  // Soft warning for missing required sections — body may be in-progress
+  const updatedCard: MemoryCard = { ...card, body: newBody, meta: newMeta as MemoryFrontmatter };
+  const sectionResult = validateCardSections(updatedCard);
+  if (sectionResult.missingRequired.length > 0) {
+    console.warn(`Warning: card "${id}" is missing required sections: ${sectionResult.missingRequired.join(", ")}`);
   }
 
   return { id, path: card.relativePath, updated: true, changes };

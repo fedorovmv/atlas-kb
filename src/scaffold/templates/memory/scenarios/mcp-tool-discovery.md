@@ -36,6 +36,31 @@ usage_policy:
 
 TBD. Fill this after checking current MCP Gateway code and specs.
 
-## Open questions
+## Actors
 
-- Should MCP tools and A2A agent cards share one metadata envelope?
+TBD.
+
+## Flow
+
+TBD.
+
+## Constraints
+
+TBD.
+
+## Error cases
+
+TBD.
+
+## Related modules
+
+- mcp-gateway
+- agent-tool-registry
+
+## Related tests
+
+TBD.
+
+## Rationale
+
+TBD.

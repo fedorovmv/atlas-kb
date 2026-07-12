@@ -2,6 +2,7 @@ import { z } from "zod";
 import { StoredClaimSchema } from "./claim.js";
 
 export const EntityTypeSchema = z.enum([
+  // существующие (11)
   "module",
   "scenario",
   "decision",
@@ -13,6 +14,16 @@ export const EntityTypeSchema = z.enum([
   "product_map",
   "ontology",
   "readme",
+  // новые из v3 (9)
+  "flow",
+  "ops",
+  "gotchas",
+  "task_routing",
+  "testing",
+  "reference",
+  "project",
+  "routing",
+  "index",
 ]);
 
 export const StatusSchema = z.enum([
@@ -53,6 +64,26 @@ export const StabilitySchema = z.enum([
 ]);
 
 export const ConfidenceSchema = z.enum(["high", "medium", "low", "unknown"]);
+
+export const RuntimeTierSchema = z.enum([
+  "production",
+  "demo",
+  "shared",
+  "mixed",
+  "historical",
+  "unknown",
+]);
+export type RuntimeTier = z.infer<typeof RuntimeTierSchema>;
+
+export const SourceStatusSchema = z.enum([
+  "current",
+  "active-rationale",
+  "partially-active",
+  "superseded",
+  "historical-only",
+  "unknown",
+]);
+export type SourceStatus = z.infer<typeof SourceStatusSchema>;
 
 export const KnowledgeTypeSchema = z.enum([
   "current_behavior",
@@ -119,6 +150,9 @@ export const MemoryFrontmatterSchema = z.object({
   usage_policy: UsagePolicySchema,
 
   claims: z.array(StoredClaimSchema).optional().default([]),
+
+  runtime_tier: RuntimeTierSchema.optional(),
+  source_status: SourceStatusSchema.optional(),
 }).passthrough();
 
 export type MemoryFrontmatter = z.infer<typeof MemoryFrontmatterSchema>;

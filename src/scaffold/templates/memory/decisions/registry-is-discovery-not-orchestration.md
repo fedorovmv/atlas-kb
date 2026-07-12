@@ -51,6 +51,11 @@ This boundary keeps the component simple and avoids mixing metadata discovery, b
 
 ## Alternatives considered
 
+- Registry as metadata store only (without filtering)
+- Registry as runtime orchestrator
+
+## Rejected alternatives
+
 ### Registry as runtime orchestrator
 
 Status: rejected.
@@ -62,3 +67,15 @@ Reason: this mixes discovery and runtime responsibilities and creates incorrect 
 - Agent selection remains outside registry.
 - Runtime checks must be described separately.
 - Code changes around registry must preserve this boundary unless a new decision supersedes it.
+
+## Current behavior evidence
+
+- FilterCardsForCaller in internal/registry/access_filter.go enforces discovery-only behavior.
+
+## Affected modules
+
+- agent-tool-registry
+
+## Affected scenarios
+
+- a2a-agent-discovery

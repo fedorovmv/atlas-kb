@@ -1,8 +1,15 @@
 import { validateMemory as validate, checkEnrichmentStatus } from "../core/validate.js";
 import { loadMemoryCardsBestEffort } from "../core/loadMemory.js";
 
-export async function validateMemoryCommand(options: { root?: string; json?: boolean; strictWarnings?: boolean } = {}) {
-  const result = await validate({ root: options.root });
+export async function validateMemoryCommand(options: { root?: string; json?: boolean; strictWarnings?: boolean; requireSourceCoverage?: boolean; checkDispatch?: boolean; checkContract?: boolean; maxErrors?: number } = {}) {
+  const result = await validate({
+    root: options.root,
+    strictWarnings: options.strictWarnings,
+    requireSourceCoverage: options.requireSourceCoverage,
+    checkDispatch: options.checkDispatch,
+    checkContract: options.checkContract,
+    maxErrors: options.maxErrors,
+  });
 
   // Enrichment status check
   const cards = await loadMemoryCardsBestEffort({ root: options.root });

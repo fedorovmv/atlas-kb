@@ -14,6 +14,12 @@ function loadTemplate(relPath: string): string {
 export const MEMORY_GUARD_PLUGIN_TEMPLATE = loadTemplate("plugins/memory-guard.js");
 
 export const scaffoldFiles: ScaffoldFile[] = [
+  { path: ".ai/memory/MEMORY.md", content: loadTemplate("memory/MEMORY.md") },
+  { path: ".ai/memory/MODULES.md", content: loadTemplate("memory/MODULES.md") },
+  { path: ".ai/memory/DECISIONS.md", content: loadTemplate("memory/DECISIONS.md") },
+  { path: ".ai/memory/ARCHITECTURE.md", content: loadTemplate("memory/ARCHITECTURE.md") },
+  { path: ".ai/memory/flows/.gitkeep", content: loadTemplate("memory/flows/.gitkeep") },
+  { path: ".ai/memory/architecture/.gitkeep", content: loadTemplate("memory/architecture/.gitkeep") },
   { path: ".ai/memory/README.md", content: loadTemplate("memory/README.md") },
   { path: ".ai/memory/ontology.md", content: loadTemplate("memory/ontology.md") },
   { path: ".ai/memory/product-map.md", content: loadTemplate("memory/product-map.md") },
@@ -28,6 +34,8 @@ export const scaffoldFiles: ScaffoldFile[] = [
   { path: ".ai/memory-tool/config/source-priority.yaml", content: loadTemplate("config/source-priority.yaml") },
   { path: ".ai/memory-tool/config/model-routing.yaml", content: loadTemplate("config/model-routing.yaml") },
   { path: ".ai/memory-tool/config/code-map.yaml", content: loadTemplate("config/code-map.yaml") },
+  { path: ".ai/docs/.gitkeep", content: loadTemplate("docs/.gitkeep") },
+  { path: ".ai/drafts/.gitkeep", content: loadTemplate("drafts/.gitkeep") },
   { path: ".opencode/skills/memory-bank/SKILL.md", content: loadTemplate("skills/memory-bank.md") },
   { path: ".opencode/skills/memory-ingest-spec/SKILL.md", content: loadTemplate("skills/memory-ingest-spec.md") },
   { path: ".opencode/skills/memory-reconcile/SKILL.md", content: loadTemplate("skills/memory-reconcile.md") },

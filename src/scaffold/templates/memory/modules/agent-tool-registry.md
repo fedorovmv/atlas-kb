@@ -44,11 +44,11 @@ usage_policy:
 
 # Agent & Tool Registry
 
-## Current responsibility
+## Responsibilities
 
 Registry stores and exposes agent/tool metadata for discovery and filters availability according to service identity and access policy.
 
-## Not responsible for
+## Non-responsibilities
 
 - Choosing the target agent
 - Business orchestration
@@ -58,23 +58,35 @@ Registry stores and exposes agent/tool metadata for discovery and filters availa
 
 Calling agents use discovery metadata to find available targets. Runtime calls are performed through the mesh/runtime path, not by the registry itself.
 
-## Why this boundary exists
+## Related scenarios
 
-Registry remains a discovery component to avoid mixing metadata storage, target selection, and runtime orchestration.
+- a2a-agent-discovery
 
-## Related code
+## Related decisions
+
+- registry-is-discovery-not-orchestration
+
+## Code references
 
 - `internal/registry`
 - `pkg/agentcard`
 
-## Related tests
+## Test references
 
 - `tests/agent-registry`
 
-## Code evidence
+## Known risks
 
-- FilterCardsForCaller function at internal/registry/access_filter.go:5 (FilterCardsForCaller)
+- Filter logic may need updates as access policies evolve.
 
 ## Open questions
 
 - Which checks belong to discovery time and which belong to runtime time?
+
+## Why these boundaries
+
+Registry remains a discovery component to avoid mixing metadata storage, target selection, and runtime orchestration.
+
+## Code evidence
+
+- FilterCardsForCaller function at internal/registry/access_filter.go:5 (FilterCardsForCaller)

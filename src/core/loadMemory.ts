@@ -6,6 +6,11 @@ import { MemoryFrontmatterSchema } from "../schemas/frontmatter.js";
 import type { MemoryCard, RepoMemoryOptions } from "./types.js";
 import { resolveMemoryRoot, resolveRoot, toPosixPath } from "./paths.js";
 
+/**
+ * Scans .ai/memory/ for Markdown files.
+ * Note: .ai/drafts/ is intentionally excluded — drafts are a separate directory
+ * managed by the docs/drafts workflow and should not appear in memory context.
+ */
 export async function findMemoryMarkdownFiles(options: RepoMemoryOptions = {}) {
   const root = resolveRoot(options);
   const memoryRoot = resolveMemoryRoot(options);

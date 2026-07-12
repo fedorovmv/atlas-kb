@@ -12,6 +12,11 @@ export type RepoMemoryOptions = {
   root?: string;
   memoryRoot?: string;
   staleProposalDays?: number;
+  requireSourceCoverage?: boolean;
+  checkDispatch?: boolean;
+  checkContract?: boolean;
+  maxErrors?: number;
+  strictWarnings?: boolean;
 };
 
 export type ValidationResult = {

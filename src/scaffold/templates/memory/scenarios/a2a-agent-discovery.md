@@ -36,6 +36,11 @@ usage_policy:
 
 A calling agent discovers available agent cards before invoking a target service through the mesh.
 
+## Actors
+
+- Calling agent
+- Registry
+
 ## Flow
 
 1. Calling agent requests available agent cards.
@@ -48,3 +53,19 @@ A calling agent discovers available agent cards before invoking a target service
 - Registry does not choose the target agent.
 - Registry does not execute target calls.
 - Historical specs cannot override current runtime behavior.
+
+## Error cases
+
+TBD.
+
+## Related modules
+
+- agent-tool-registry
+
+## Related tests
+
+TBD.
+
+## Rationale
+
+Discovery-first pattern ensures separation between metadata and runtime execution.

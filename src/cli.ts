@@ -11,6 +11,8 @@ import { bootstrapMemoryCommand } from "./commands/bootstrap.js";
 import { ingestSpecCommand } from "./commands/ingestSpec.js";
 import { reconcileMemoryCommand } from "./commands/reconcile.js";
 import { updateMemoryCommand } from "./commands/update.js";
+import { triageCommand } from "./commands/triage.js";
+import { planCommand } from "./commands/plan.js";
 
 const program = new Command();
 
@@ -77,9 +79,21 @@ program
   .description("Validate memory frontmatter, policy invariants and relations")
   .option("--json", "print JSON", false)
   .option("--strict-warnings", "treat warnings as failures", false)
+  .option("--require-source-coverage", "require source-coverage.json", false)
+  .option("--check-dispatch", "check dispatch advisory (warnings only)", false)
+  .option("--check-contract", "check structural completeness and markdown links", false)
+  .option("--max-errors <n>", "max errors before truncation", "50")
   .action(async (opts) => {
     const root = program.opts().root;
-    await validateMemoryCommand({ root, json: opts.json, strictWarnings: opts.strictWarnings });
+    await validateMemoryCommand({
+      root,
+      json: opts.json,
+      strictWarnings: opts.strictWarnings,
+      requireSourceCoverage: opts.requireSourceCoverage,
+      checkDispatch: opts.checkDispatch,
+      checkContract: opts.checkContract,
+      maxErrors: parseInt(opts.maxErrors, 10),
+    });
   });
 
 program
@@ -135,6 +149,27 @@ program
   .action(async (id, opts) => {
     const root = program.opts().root;
     await updateMemoryCommand(id, { root, body: opts.body, bodyFile: opts.bodyFile, set: opts.set, json: opts.json });
+  });
+
+program
+  .command("triage")
+  .description("Run automatic source triage")
+  .option("--build-dir <dir>", "Build directory")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = program.opts().root;
+    await triageCommand({ root, ...opts });
+  });
+
+program
+  .command("plan")
+  .description("Generate card plan from discovery")
+  .option("--build-dir <dir>", "Build directory")
+  .option("--scaffold-modules", "Create module/architecture stubs", false)
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = program.opts().root;
+    await planCommand({ root, ...opts });
   });
 
 try {

@@ -677,4 +677,404 @@ usage_policy:
     expect(typoWarnings[0]).toContain("did you mean 'evidence_level'?");
     await rm(root, { recursive: true, force: true });
   });
+
+  it("errors for decision without required sections → section errors present", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/decisions");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "missing-sections.md"),
+      `---
+entity_type: decision
+id: missing-sections-decision
+title: Missing Sections Decision
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - design_rationale
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Missing Sections
+
+No required sections at all.
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    expect(result.ok).toBe(false);
+    const sectionErrors = result.errors.filter((e) => e.includes("missing-sections-decision") && e.includes("missing required section"));
+    expect(sectionErrors.length).toBeGreaterThan(0);
+  });
+
+  it("strict-warnings mode: missing recommended sections become errors", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    // A module card with all required sections but no recommended ones
+    await writeFile(
+      path.join(dir, "module-no-recommended.md"),
+      `---
+entity_type: module
+id: module-no-recommended
+title: Module No Recommended
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Module No Recommended
+
+## Responsibilities
+content
+## Non-responsibilities
+content
+## Current behavior
+content
+## Related scenarios
+content
+## Related decisions
+content
+## Code references
+content
+## Test references
+content
+## Known risks
+content
+## Open questions
+content
+## Why these boundaries
+content
+`,
+      "utf8",
+    );
+
+    // Without strict-warnings: warnings only
+    const normalResult = await validateMemory({ root, strictWarnings: false });
+    const modWarnings = normalResult.warnings.filter((w) => w.includes("module-no-recommended") && w.includes("missing recommended section"));
+    expect(modWarnings.length).toBeGreaterThan(0);
+    const normalModErrors = normalResult.errors.filter((e) => e.includes("module-no-recommended"));
+    expect(normalModErrors.length).toBe(0);
+
+    // With strict-warnings: warnings → errors
+    const strictResult = await validateMemory({ root, strictWarnings: true });
+    const strictModErrors = strictResult.errors.filter((e) => e.includes("module-no-recommended") && e.includes("missing recommended section"));
+    expect(strictModErrors.length).toBeGreaterThan(0);
+  });
+
+  it("validate --require-source-coverage without source-coverage.json -> error", async () => {
+    const root = await createTempProject();
+    const result = await validateMemory({ root, requireSourceCoverage: true });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes("source-coverage.json not found"))).toBe(true);
+  });
+
+  it("validate --require-source-coverage with valid coverage -> ok", async () => {
+    const root = await createTempProject();
+    const memoryRoot = path.join(root, ".ai/memory");
+
+    // Create a valid source-coverage.json (empty entries = no violations)
+    const coverage = {
+      entries: [],
+      counts: {},
+    };
+    await writeFile(
+      path.join(memoryRoot, "source-coverage.json"),
+      JSON.stringify(coverage, null, 2),
+      "utf8",
+    );
+    const result = await validateMemory({ root, requireSourceCoverage: true });
+    // coverage has no entries, so no validation errors from validateSourceCoverage
+    expect(result.errors.some((e) => e.includes("source-coverage"))).toBe(false);
+  });
+
+  it("validate --require-source-coverage with invalid coverage -> error", async () => {
+    const root = await createTempProject();
+    const memoryRoot = path.join(root, ".ai/memory");
+
+    // Create invalid source-coverage.json (unknown disposition after triage)
+    const coverage = {
+      entries: [
+        { path: "docs/api.md", disposition: "unknown", targetCards: [] },
+      ],
+      counts: { unknown: 1 },
+    };
+    await writeFile(
+      path.join(memoryRoot, "source-coverage.json"),
+      JSON.stringify(coverage, null, 2),
+      "utf8",
+    );
+    const result = await validateMemory({ root, requireSourceCoverage: true });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes("unknown"))).toBe(true);
+  });
+
+  // ── C4: max-errors truncation ──────────────────────────────────────────
+
+  it("validate --max-errors 5 → truncation after 5 errors", async () => {
+    const root = await createTempProject();
+    const modulesDir = path.join(root, ".ai", "memory", "modules");
+    await mkdir(modulesDir, { recursive: true });
+
+    // Create 10 cards that each produce an error (heuristic_match + status=current)
+    for (let i = 0; i < 10; i++) {
+      await writeFile(
+        path.join(modulesDir, `bad-module-${i}.md`),
+        `---
+entity_type: module
+id: bad-module-${i}
+title: Bad Module ${i}
+status: current
+authority: reviewed_memory
+evidence_level: heuristic_match
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Bad Module ${i}
+
+## Responsibilities
+content
+## Non-responsibilities
+content
+## Current behavior
+content
+## Related scenarios
+content
+## Related decisions
+content
+## Code references
+content
+## Test references
+content
+## Known risks
+content
+## Open questions
+content
+## Why these boundaries
+content
+`,
+        "utf8",
+      );
+    }
+
+    const result = await validateMemory({ root, maxErrors: 5 });
+    // Errors should be truncated at 5 + a truncation message
+    expect(result.errors.length).toBeLessThanOrEqual(7); // 5 errors + 1 truncation msg
+    expect(result.errors.some((e) => e.includes("truncated at 5 errors"))).toBe(true);
+  });
+
+  // ── C4: structural checks (checkContract) ──────────────────────────────
+
+  it("validate on missing top-level file → error with checkContract", async () => {
+    const root = await createTempProject();
+    // Delete MEMORY.md to trigger missing top-level file error
+    await rm(path.join(root, ".ai", "memory", "MEMORY.md"));
+    const result = await validateMemory({ root, checkContract: true });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes("Missing required top-level file") && e.includes("MEMORY.md"))).toBe(true);
+  });
+
+  it("validate on missing subdir → error with checkContract", async () => {
+    const root = await createTempProject();
+    // Delete modules/ subdir to trigger missing subdirectory error
+    await rm(path.join(root, ".ai", "memory", "modules"), { recursive: true });
+    const result = await validateMemory({ root, checkContract: true });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes("Missing required subdirectory") && e.includes("modules"))).toBe(true);
+  });
+
+  // ── C4: broken markdown links (checkContract) ──────────────────────────
+
+  it("validate on broken markdown link → error with checkContract", async () => {
+    const root = await createTempProject();
+    const modulesDir = path.join(root, ".ai", "memory", "modules");
+    await mkdir(modulesDir, { recursive: true });
+    await writeFile(
+      path.join(modulesDir, "broken-link.md"),
+      `---
+entity_type: module
+id: broken-link
+title: Broken Link
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Broken Link
+
+Check [this](nonexistent.md) file for details.
+
+## Responsibilities
+content
+## Non-responsibilities
+content
+## Current behavior
+content
+## Related scenarios
+content
+## Related decisions
+content
+## Code references
+content
+## Test references
+content
+## Known risks
+content
+## Open questions
+content
+## Why these boundaries
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root, checkContract: true });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.toLowerCase().includes("broken markdown link"))).toBe(true);
+  });
+
+  // ── C4: long code blocks warning ───────────────────────────────────────
+
+  it("validate on code block > 25 lines → warning", async () => {
+    const root = await createTempProject();
+    const modulesDir = path.join(root, ".ai", "memory", "modules");
+    await mkdir(modulesDir, { recursive: true });
+
+    // Build a 30-line code block
+    const codeLines = Array.from({ length: 30 }, (_, i) => `  // line ${i + 1}`).join("\n");
+    await writeFile(
+      path.join(modulesDir, "long-code-block.md"),
+      `---
+entity_type: module
+id: long-code-block
+title: Long Code Block
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Long Code Block
+
+\`\`\`typescript
+${codeLines}
+\`\`\`
+
+## Responsibilities
+content
+## Non-responsibilities
+content
+## Current behavior
+content
+## Related scenarios
+content
+## Related decisions
+content
+## Code references
+content
+## Test references
+content
+## Known risks
+content
+## Open questions
+content
+## Why these boundaries
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const codeBlockWarnings = result.warnings.filter((w) => w.toLowerCase().includes("code block"));
+    expect(codeBlockWarnings.length).toBeGreaterThan(0);
+    expect(codeBlockWarnings[0]).toContain("lines");
+  });
+
+  // ── C4: MODULES.md tier split warning ──────────────────────────────────
+
+  it("validate on MODULES.md without tier split → warning", async () => {
+    const root = await createTempProject();
+    // Overwrite MODULES.md with content that has no production/demo split
+    await writeFile(
+      path.join(root, ".ai", "memory", "MODULES.md"),
+      `---
+entity_type: top-level
+id: modules
+title: Module Overview
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: false
+---
+
+# Module Overview
+
+Here are the modules.
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root, checkContract: true });
+    const tierWarnings = result.warnings.filter((w) => w.toLowerCase().includes("production") && w.toLowerCase().includes("demo"));
+    expect(tierWarnings.length).toBeGreaterThan(0);
+    expect(tierWarnings[0]).toContain("tier split");
+  });
 });

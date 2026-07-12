@@ -38,10 +38,42 @@ usage_policy:
 
 # MCP Gateway
 
-## Current responsibility
+## Responsibilities
 
 TBD. Fill this after checking current code and product documentation.
 
-## Why this boundary exists
+## Non-responsibilities
+
+TBD.
+
+## Current behavior
+
+TBD.
+
+## Related scenarios
+
+- mcp-tool-discovery
+
+## Related decisions
+
+- registry-is-discovery-not-orchestration
+
+## Code references
+
+- `internal/mcp`
+
+## Test references
+
+TBD.
+
+## Known risks
+
+TBD.
+
+## Open questions
+
+TBD.
+
+## Why these boundaries
 
 TBD.

@@ -252,4 +252,76 @@ No test evidence here.
       updateMemoryCard("card-6", { root, fields: { evidence_level: "test_confirmed" } }),
     ).rejects.toThrow(/Test evidence/);
   });
+
+  it("updateMemoryCard with body without required sections → warning in stderr, update succeeds", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "card-sections.md"),
+      `---
+entity_type: module
+id: card-sections
+title: Card Sections
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Card Sections
+
+## Responsibilities
+content
+## Non-responsibilities
+content
+## Current behavior
+content
+## Related scenarios
+content
+## Related decisions
+content
+## Code references
+content
+## Test references
+content
+## Known risks
+content
+## Open questions
+content
+## Why these boundaries
+content
+`,
+      "utf8",
+    );
+
+    // Capture stderr
+    const stdErr: string[] = [];
+    const origWarn = console.warn;
+    console.warn = (...args: unknown[]) => stdErr.push(args.join(" "));
+
+    try {
+      // Replace body with content missing required sections
+      const result = await updateMemoryCard("card-sections", {
+        root,
+        body: "# Updated\n\nSimple body without required sections.",
+      });
+      expect(result.updated).toBe(true);
+      // Should have warned about missing sections
+      const sectionWarnings = stdErr.filter((w) => w.includes("missing required sections"));
+      expect(sectionWarnings.length).toBeGreaterThan(0);
+    } finally {
+      console.warn = origWarn;
+    }
+  });
 });
