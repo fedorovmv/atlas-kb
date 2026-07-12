@@ -25,7 +25,9 @@ CLI — deterministic heuristic, не semantic understanding. Инструмен
 - semantic deduplication claims ("MUST filter" = "shall filter") — memory-analyst делает advisory, не auto-merge;
 - связывание rationale с current decisions — semantic matching, v0.4+;
 - обновление decision card при появлении новой спеки — reconcile extension, v0.4+;
-- различение explicit vs inferred rationale — LLM judgment (memory-analyst помечает, но не автоматически).
+- различение explicit vs inferred rationale — LLM judgment (memory-analyst помечает, но не автоматически);
+- claim re-extraction — CLI `extractClaims` пропускает numbered requirements, prose без modal verbs, embedded constraints. memory-analyst инструктирован re-extract, но это advisory — зависит от запуска analyst step;
+- promotion `heuristic_match` → `code_confirmed` — только memory-coder после semantic verification. Без coder step cards остаются `heuristic_match` (не могут стать `current`).
 
 ### By design (не планируется)
 
@@ -63,7 +65,7 @@ CLI — deterministic heuristic, не semantic understanding. Инструмен
 
 ### Validation — форма + policy, не content truth
 
-Проверяет frontmatter schema, relations, evidence format (`at <path>:<line>` pattern), dangerous policies. Не проверяет фактическую истинность содержимого — LLM memory-reviewer делает quality rubric + re-read verification.
+Проверяет frontmatter schema, relations, evidence format (`at <path>:<line>` pattern), dangerous policies, `heuristic_match + current → ERROR` (требует LLM promotion к `code_confirmed`). Не проверяет фактическую истинность содержимого — LLM memory-reviewer делает quality rubric + re-read verification.
 
 ### Claim linking — keyword match
 
@@ -94,7 +96,9 @@ LLM может сформулировать причины, которых не 
 - bootstrap создаёт preliminary cards с `needs_review`;
 - current behavior не заполняется без code evidence;
 - старые спеки не превращаются в current behavior (validate rejects);
+- `heuristic_match` cards не могут стать `current` без LLM promotion (validate rejects);
 - context pack может вернуть лишние cards (lexical score);
 - claim extraction — keyword-based, не semantic (LLM делает semantic поверх);
 - evidence check — basename match, не symbol analysis (LLM memory-coder делает semantic verification);
+- read-only команды (ls, show, related, context, reconcile) работают с валидными cards при битой frontmatter (best-effort), write команды — strict;
 - пользователь должен смотреть diff перед принятием памяти.
