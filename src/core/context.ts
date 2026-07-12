@@ -1,6 +1,11 @@
 import path from "node:path";
 import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import type { ContextPack, MemoryCard, RepoMemoryOptions } from "./types.js";
+import { fileHash } from "./hashing.js";
+
+const execFileAsync = promisify(execFile);
 import { loadMemoryCardsBestEffort } from "./loadMemory.js";
 import { getDirectRelatedIds } from "./relations.js";
 import { scoreCard } from "./score.js";
@@ -163,5 +168,43 @@ export async function buildMemoryContext(query: string, options: RepoMemoryOptio
     ...selected.flatMap((card) => [``, `### ${card.meta.title} — \`${card.relativePath}\``, compactExcerpt(card.body)]),
   ].join("\n");
 
-  return { query, selected, related, codeRefs, testRefs, markdown };
+  // F1: optional freshness tracking
+  const pack: ContextPack = {
+    query,
+    selected,
+    related,
+    codeRefs,
+    testRefs,
+    markdown,
+    generatedAt: new Date().toISOString(),
+  };
+
+  if (options.trackFreshness) {
+    // Try to get git HEAD
+    try {
+      const { stdout } = await execFileAsync("git", ["rev-parse", "HEAD"], {
+        cwd: options.root ?? process.cwd(),
+      });
+      pack.repositoryHead = stdout.trim();
+    } catch {
+      // Not a git repo — skip
+    }
+
+    // Hash selected memory card source files
+    const hashes: Record<string, string> = {};
+    const root = options.root ?? process.cwd();
+    for (const card of selected) {
+      try {
+        const h = await fileHash(card.path);
+        hashes[card.relativePath] = h;
+      } catch {
+        // Skip files that can't be read
+      }
+    }
+    if (Object.keys(hashes).length > 0) {
+      pack.sourceHashes = hashes;
+    }
+  }
+
+  return pack;
 }

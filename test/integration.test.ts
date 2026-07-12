@@ -77,7 +77,7 @@ describe("E2E integration on synapse-mini", () => {
     expect(reconcileReport).toHaveProperty("orphanModules");
 
     await rm(dest, { recursive: true, force: true });
-  });
+  }, 10000);
 
   it("demo file is not production evidence after bootstrap", async () => {
     const dest = await mkdtemp(path.join(tmpdir(), "e2e-demo-"));

@@ -23,3 +23,14 @@ export * from "./schemas/sourceCoverage.js";
 export * from "./core/sourceCoverage.js";
 export * from "./schemas/dispatch.js";
 export * from "./core/dispatch.js";
+// Wave 1 — gap-closure exports
+export * from "./schemas/semanticRepair.js";
+export * from "./core/semanticRepair.js";
+export * from "./schemas/legacyIngest.js";
+export * from "./core/legacyIngest.js";
+export * from "./schemas/artifactIndex.js";
+export * from "./core/artifactIndex.js";
+export * from "./core/hashing.js";
+// Wave 2
+export * from "./core/compaction.js";
+export * from "./core/overview.js";

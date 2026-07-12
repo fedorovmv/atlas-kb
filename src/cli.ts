@@ -13,6 +13,12 @@ import { reconcileMemoryCommand } from "./commands/reconcile.js";
 import { updateMemoryCommand } from "./commands/update.js";
 import { triageCommand } from "./commands/triage.js";
 import { planCommand } from "./commands/plan.js";
+import { artifactsSearchCommand } from "./commands/artifactsSearch.js";
+import { contextCheckCommand } from "./commands/contextCheck.js";
+import { compactCommand } from "./commands/compact.js";
+import { renderCommand } from "./commands/render.js";
+import { semanticRepairCommand } from "./commands/semanticRepair.js";
+import { legacyIngestCommand, legacyListCommand, legacyStatusCommand, legacyScaffoldCommand, legacyCheckCommand, legacyReviewPackCommand, legacyApproveCommand, legacyApplyCommand, legacyFinalizeCommand } from "./commands/legacyIngest.js";
 
 const program = new Command();
 
@@ -170,6 +176,162 @@ program
   .action(async (opts) => {
     const root = program.opts().root;
     await planCommand({ root, ...opts });
+  });
+
+program
+  .command("artifacts-search <query>")
+  .description("Search artifact index")
+  .option("--root <path>", "repository root", undefined)
+  .option("--limit <n>", "max results", "8")
+  .option("--json", "JSON output", false)
+  .action(async (query, opts) => {
+    const root = opts.root ?? program.opts().root;
+    await artifactsSearchCommand({ root, query, limit: parseInt(opts.limit, 10), json: opts.json });
+  });
+
+program
+  .command("context-check")
+  .description("Check context pack freshness")
+  .option("--root <path>", "repository root", undefined)
+  .option("--query <text>", "query for context pack", "")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await contextCheckCommand({ root, query: opts.query, json: opts.json });
+  });
+
+program
+  .command("compact")
+  .description("Build bounded compaction of memory context")
+  .option("--root <path>", "repository root", undefined)
+  .option("--max-chars <n>", "max chars", "12000")
+  .option("--no-truncate", "error instead of truncating", false)
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await compactCommand({ root, maxChars: parseInt(opts.maxChars, 10), noTruncate: opts.noTruncate, json: opts.json });
+  });
+
+program
+  .command("render")
+  .description("Render OVERVIEW.md from memory bank")
+  .option("--root <path>", "repository root", undefined)
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await renderCommand({ root, json: opts.json });
+  });
+
+program
+  .command("semantic-repair")
+  .description("Run semantic repair on memory cards")
+  .option("--root <path>", "repository root", undefined)
+  .option("--build-dir <dir>", "build directory")
+  .option("--run-check", "run validate after repair", false)
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await semanticRepairCommand({ root, buildDir: opts.buildDir, runCheck: opts.runCheck, json: opts.json });
+  });
+
+// Legacy ingestion commands (E4)
+program
+  .command("legacy-ingest <sources...>")
+  .description("Ingest legacy documents into classification pipeline")
+  .option("--root <path>", "repository root", undefined)
+  .option("--batch <name>", "batch name")
+  .option("--json", "JSON output", false)
+  .action(async (sources, opts) => {
+    const root = opts.root ?? program.opts().root;
+    await legacyIngestCommand({ root, sources, batch: opts.batch, json: opts.json });
+  });
+
+program
+  .command("legacy-list")
+  .description("List legacy candidates in batch")
+  .option("--root <path>", "repository root", undefined)
+  .option("--batch <name>", "batch name", "default")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await legacyListCommand({ root, batch: opts.batch, json: opts.json });
+  });
+
+program
+  .command("legacy-status")
+  .description("Show legacy batch status")
+  .option("--root <path>", "repository root", undefined)
+  .option("--batch <name>", "batch name", "default")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await legacyStatusCommand({ root, batch: opts.batch, json: opts.json });
+  });
+
+program
+  .command("legacy-scaffold")
+  .description("Scaffold staged legacy docs")
+  .option("--root <path>", "repository root", undefined)
+  .option("--batch <name>", "batch name", "default")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await legacyScaffoldCommand({ root, batch: opts.batch, json: opts.json });
+  });
+
+program
+  .command("legacy-check")
+  .description("Validate legacy candidate evidence")
+  .option("--root <path>", "repository root", undefined)
+  .option("--batch <name>", "batch name", "default")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await legacyCheckCommand({ root, batch: opts.batch, json: opts.json });
+  });
+
+program
+  .command("legacy-review-pack")
+  .description("Generate review pack for legacy batch")
+  .option("--root <path>", "repository root", undefined)
+  .option("--batch <name>", "batch name", "default")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await legacyReviewPackCommand({ root, batch: opts.batch, json: opts.json });
+  });
+
+program
+  .command("legacy-approve <id>")
+  .description("Approve a legacy candidate")
+  .option("--root <path>", "repository root", undefined)
+  .option("--batch <name>", "batch name", "default")
+  .option("--json", "JSON output", false)
+  .action(async (id, opts) => {
+    const root = opts.root ?? program.opts().root;
+    await legacyApproveCommand(id, { root, batch: opts.batch, json: opts.json });
+  });
+
+program
+  .command("legacy-apply")
+  .description("Apply approved legacy candidates")
+  .option("--root <path>", "repository root", undefined)
+  .option("--batch <name>", "batch name", "default")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await legacyApplyCommand({ root, batch: opts.batch, json: opts.json });
+  });
+
+program
+  .command("legacy-finalize")
+  .description("Finalize legacy batch")
+  .option("--root <path>", "repository root", undefined)
+  .option("--batch <name>", "batch name", "default")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = opts.root ?? program.opts().root;
+    await legacyFinalizeCommand({ root, batch: opts.batch, json: opts.json });
   });
 
 try {

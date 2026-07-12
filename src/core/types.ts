@@ -17,6 +17,7 @@ export type RepoMemoryOptions = {
   checkContract?: boolean;
   maxErrors?: number;
   strictWarnings?: boolean;
+  trackFreshness?: boolean;
 };
 
 export type ValidationResult = {
@@ -32,4 +33,8 @@ export type ContextPack = {
   codeRefs: string[];
   testRefs: string[];
   markdown: string;
+  // F1: optional freshness tracking
+  repositoryHead?: string;
+  sourceHashes?: Record<string, string>;
+  generatedAt?: string;
 };

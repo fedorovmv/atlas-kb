@@ -31,17 +31,20 @@ function findTargetCards(file: FileRecord, cards: MemoryCard[]): string[] {
   for (const card of cards) {
     // Match by source_refs, code_refs, test_refs
     for (const ref of card.meta.source_refs ?? []) {
-      if (ref.path.toLowerCase().includes(fileBase) || fileBase.includes(ref.path.toLowerCase().split("/").pop()!)) {
+      const refLower = ref.path.toLowerCase();
+      if (fileBase.includes(refLower) || refLower.includes(fileBase)) {
         results.push(card.relativePath);
       }
     }
     for (const ref of card.meta.code_refs ?? []) {
-      if (ref.path.toLowerCase().includes(fileBase) || fileBase.includes(ref.path.toLowerCase().split("/").pop()!)) {
+      const refLower = ref.path.toLowerCase();
+      if (fileBase.includes(refLower) || refLower.includes(fileBase)) {
         results.push(card.relativePath);
       }
     }
     for (const ref of card.meta.test_refs ?? []) {
-      if (ref.path.toLowerCase().includes(fileBase) || fileBase.includes(ref.path.toLowerCase().split("/").pop()!)) {
+      const refLower = ref.path.toLowerCase();
+      if (fileBase.includes(refLower) || refLower.includes(fileBase)) {
         results.push(card.relativePath);
       }
     }

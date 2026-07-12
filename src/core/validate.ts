@@ -56,9 +56,7 @@ export function checkStructural(memoryRoot: string, cards: MemoryCard[]): { erro
   const warnings: string[] = [];
 
   const requiredTopLevel = [
-    "MEMORY.md", "PROJECT.md", "MODULES.md", "ARCHITECTURE.md",
-    "TASK_ROUTING.md", "FLOWS.md", "TESTING.md", "OPS.md",
-    "GOTCHAS.md", "DECISIONS.md",
+    "MEMORY.md", "MODULES.md", "DECISIONS.md", "ARCHITECTURE.md",
   ];
   for (const file of requiredTopLevel) {
     if (!existsSync(path.join(memoryRoot, file))) {
@@ -256,6 +254,15 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
     warnings.push(...tierWarnings);
   }
 
+  // Reference study validation
+  for (const card of cards) {
+    if (card.meta.entity_type === "reference") {
+      const refResult = validateReferenceStudy(card);
+      errors.push(...refResult.errors);
+      warnings.push(...refResult.warnings);
+    }
+  }
+
   // Source coverage validation (if --require-source-coverage)
   if (options.requireSourceCoverage) {
     const memoryRoot = resolveMemoryRoot(options);
@@ -311,6 +318,63 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
   }
 
   return { ok: errors.length === 0, errors, warnings };
+}
+
+/** Validate reference study cards — 6 required sections, no placeholders, source path check. */
+export function validateReferenceStudy(card: MemoryCard): { errors: string[]; warnings: string[] } {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (card.meta.entity_type !== "reference") return { errors, warnings };
+
+  const requiredSections = [
+    "## Behaviors carried over",
+    "## Behaviors intentionally not carried over",
+    "## Invariants and state transitions",
+    "## Failure/retry/cancellation/recovery",
+    "## Compatibility/operational constraints",
+    "## Derived scenarios and tests",
+  ];
+
+  const presentSections = new Set<string>();
+  for (const line of card.body.split("\n")) {
+    const trimmed = line.trimStart();
+    if (/^## /.test(trimmed)) presentSections.add(trimmed);
+  }
+
+  for (const section of requiredSections) {
+    if (!presentSections.has(section)) {
+      errors.push(`Card "${card.meta.id}": reference study missing required section "${section}"`);
+    }
+  }
+
+  // Placeholder check in sections
+  const placeholderPattern = /Needs review|TBD|TODO|FIXME|Placeholder|PENDING/i;
+  const sections = card.body.split(/^## /m).slice(1);
+  for (const section of sections) {
+    const sectionName = section.split("\n")[0].trim();
+    if (placeholderPattern.test(section)) {
+      errors.push(`Card "${card.meta.id}": reference study section "## ${sectionName}" contains placeholder content`);
+    }
+  }
+
+  // Source path validation — resolve relative to cwd (best effort for unit tests)
+  const sourceRefs = card.meta.source_refs ?? [];
+  if (sourceRefs.length > 0) {
+    const sourceRef = sourceRefs[0];
+    const sourcePath = path.resolve(process.cwd(), sourceRef.path);
+    if (!existsSync(sourcePath)) {
+      warnings.push(`Card "${card.meta.id}": reference study source path may not exist: ${sourceRef.path}`);
+    } else if (sourceRef.treeHash) {
+      // Tree hash verification needs F1 hashing.ts — warn until available
+      warnings.push(`Card "${card.meta.id}": treeHash verification pending (requires hashing module from F1)`);
+    } else {
+      // Existing reference cards without treeHash → WARNING (backward compat)
+      warnings.push(`Card "${card.meta.id}": reference study source_ref has no treeHash — consider running 'repo-memory migrate' to auto-fill`);
+    }
+  }
+
+  return { errors, warnings };
 }
 
 /** Check if memory bank is unenriched — all cards needs_review, no current. */

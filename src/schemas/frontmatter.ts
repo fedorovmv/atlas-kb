@@ -99,6 +99,7 @@ export const RefSchema = z.object({
   path: z.string().min(1),
   kind: z.string().optional(),
   role: z.string().optional(),
+  treeHash: z.string().optional(),
 });
 
 export const UsagePolicySchema = z.object({
