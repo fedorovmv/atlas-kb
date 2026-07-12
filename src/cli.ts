@@ -25,7 +25,7 @@ const program = new Command();
 program
   .name("repo-memory")
   .description("Markdown/frontmatter repository memory bank tool for coding agents")
-  .version("0.1.0")
+  .version("0.6.0")
   .option("--root <path>", "repository root", process.cwd());
 
 program

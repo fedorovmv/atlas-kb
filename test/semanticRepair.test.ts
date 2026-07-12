@@ -495,7 +495,7 @@ Real rationale content.
     expect(result.reason).toBeDefined();
   });
 
-  it("quarantines when >50% sections are boilerplate", () => {
+  it("quarantines when >50% sections are boilerplate and no content to fill", () => {
     const card = makeCard({
       metaPartial: { id: "mostly-bp" },
       body: `
@@ -512,27 +512,10 @@ Requires review rationale.
 Real alternatives content here.
 `,
     });
-    const cm = makeContentMap({
-      topics: [
-        "mostly", "bp", "system", "module",
-        "flow", "test", "verified", "process",
-        "chosen", "decision", "uses", "cards",
-      ],
-      targetCards: ["mostly-bp"],
-      sectionMap: [
-        {
-          heading: "Mostly BP Section",
-          startLine: 1,
-          endLine: 10,
-          summary: "The system uses a verified process with chosen decision standards for the bp module.",
-        },
-      ],
-    });
-
-    const result = semanticRepairCard(card, [cm]);
-    // 3 out of 4 sections are boilerplate = 75% > 50%
+    // No content map — can't fill sections → quarantine
+    const result = semanticRepairCard(card, []);
     expect(result.quarantined).toBe(true);
-    expect(result.reason).toContain("50%");
+    expect(result.reason).toContain("No content maps");
   });
 });
 

@@ -344,37 +344,6 @@ export function semanticRepairCard(
   // Extract scoped sentences
   const sentences = extractCardScopedSentences(card, contentMaps);
 
-  // Fill boilerplate sections
-  const filledSections: string[] = [];
-  const usedSentenceIndices = new Set<number>();
-
-  for (const section of boilerplateSections) {
-    // Pick unused sentences for this section
-    const sectionSentences = sentences.filter((_, i) => !usedSentenceIndices.has(i));
-    if (sectionSentences.length > 0) {
-      // Take top sentences for this section
-      const picked = sectionSentences.slice(0, 3);
-      filledSections.push(section);
-      picked.forEach((_) => {
-        for (let i = 0; i < sentences.length; i++) {
-          if (!usedSentenceIndices.has(i)) {
-            usedSentenceIndices.add(i);
-            break;
-          }
-        }
-      });
-    }
-  }
-
-  // Determine if the card should be quarantined
-  // Quarantine only if >50% of card sections are boilerplate
-  const allSections = getSectionNames(card.body);
-  const boilerplateRatio =
-    allSections.length > 0
-      ? boilerplateSections.size / allSections.length
-      : 0;
-  const quarantined = boilerplateRatio > 0.5;
-
   // Also quarantine if no content maps available for this card
   const relevantMaps = contentMaps.filter((cm) =>
     cm.targetCards.includes(card.meta.id),
@@ -389,7 +358,37 @@ export function semanticRepairCard(
     };
   }
 
+  // Fill boilerplate sections — actually modify the body
+  const filledSections: string[] = [];
+  let newBody = card.body;
+  let usedSentences = 0;
+
+  for (const sectionName of boilerplateSections) {
+    const available = sentences.slice(usedSentences, usedSentences + 3);
+    if (available.length > 0) {
+      const sectionContent = available.map((s) => s.text).join(" ");
+      // Replace the boilerplate content under this section heading
+      const sectionRegex = new RegExp(`(## ${sectionName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\n[^#]*`, "m");
+      newBody = newBody.replace(sectionRegex, `$1\n${sectionContent}\n`);
+      filledSections.push(sectionName);
+      usedSentences += available.length;
+    }
+  }
+
+  // Determine if the card should be quarantined
+  const allSections = getSectionNames(card.body);
+  const boilerplateRatio =
+    allSections.length > 0
+      ? boilerplateSections.size / allSections.length
+      : 0;
+  const quarantined = boilerplateRatio > 0.5 && filledSections.length === 0;
+
   const repaired = filledSections.length > 0;
+
+  // Apply the modified body to the card
+  if (repaired) {
+    card.body = newBody;
+  }
 
   return {
     cardId: card.meta.id,

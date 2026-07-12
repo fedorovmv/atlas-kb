@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import fg from "fast-glob";
@@ -473,7 +474,26 @@ export function evidenceValid(candidate: LegacyCandidate, root: string): { valid
 
 // ── Subject hash binding (E3) ─────────────────────────────────────────────────────
 
+function readFileSyncSafe(filePath: string): string {
+  try {
+    return readFileSync(filePath, "utf8");
+  } catch {
+    return "";
+  }
+}
+
 export function computeSubjectHash(candidate: LegacyCandidate): string {
+  // Read evidence file contents and hash them
+  const evidenceHashes: string[] = [];
+  for (const e of candidate.evidence) {
+    try {
+      const content = readFileSyncSafe(path.resolve(candidate.path, e.path));
+      evidenceHashes.push(contentHash(content));
+    } catch {
+      evidenceHashes.push("MISSING:" + e.path);
+    }
+  }
+
   const hashInput: Record<string, unknown> = {
     classification: candidate.classification,
     state: candidate.state,
@@ -481,7 +501,7 @@ export function computeSubjectHash(candidate: LegacyCandidate): string {
     target: candidate.targetPath ?? "",
     staged: candidate.stagedPath ?? "",
     paths: [candidate.path, ...candidate.evidence.map((e) => e.path)].sort(),
-    evidenceSHA256s: candidate.evidence.map((e) => contentHash(e.path)).sort(),
+    evidenceSHA256s: evidenceHashes.sort(),
   };
   // Stable serialization: sort keys then stringify
   const sortedKeys = Object.keys(hashInput).sort();
@@ -500,6 +520,10 @@ export async function approveCandidate(
   const currentHash = computeSubjectHash(candidate);
   // Check if candidate state is ready
   if (candidate.state !== "ready") {
+    // Validate that the transition to "ready" would be legal
+    if (!validateStateTransition(candidate.state, "ready")) {
+      return { approved: false, reason: `Illegal state transition: '${candidate.state}' → 'ready'` };
+    }
     return { approved: false, reason: `Candidate state is '${candidate.state}', must be 'ready'` };
   }
   return { approved: true, subjectHash: currentHash };

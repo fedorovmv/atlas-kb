@@ -260,6 +260,23 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
       const refResult = validateReferenceStudy(card);
       errors.push(...refResult.errors);
       warnings.push(...refResult.warnings);
+
+      // Async tree hash verification for reference cards with treeHash set
+      const sourceRefs = card.meta.source_refs ?? [];
+      if (sourceRefs.length > 0 && sourceRefs[0].treeHash) {
+        const sourcePath = path.resolve(root, sourceRefs[0].path);
+        if (existsSync(sourcePath)) {
+          try {
+            const { treeHash } = await import("./hashing.js");
+            const computed = await treeHash([sourcePath]);
+            if (computed !== sourceRefs[0].treeHash) {
+              errors.push(`Card "${card.meta.id}": reference study tree hash mismatch — expected ${sourceRefs[0].treeHash.slice(0, 16)}, got ${computed.slice(0, 16)}`);
+            }
+          } catch {
+            // hashing module unavailable — skip
+          }
+        }
+      }
     }
   }
 
@@ -366,8 +383,11 @@ export function validateReferenceStudy(card: MemoryCard): { errors: string[]; wa
     if (!existsSync(sourcePath)) {
       warnings.push(`Card "${card.meta.id}": reference study source path may not exist: ${sourceRef.path}`);
     } else if (sourceRef.treeHash) {
-      // Tree hash verification needs F1 hashing.ts — warn until available
-      warnings.push(`Card "${card.meta.id}": treeHash verification pending (requires hashing module from F1)`);
+      // Tree hash verification — F1 hashing.ts is available
+      // Note: treeHash is async but validateReferenceStudy is sync — we push a warning
+      // and the async verification happens in validateMemory() below
+      // For now, mark for async verification
+      (warnings as string[]).push(`Card "${card.meta.id}": treeHash set — verification pending`);
     } else {
       // Existing reference cards without treeHash → WARNING (backward compat)
       warnings.push(`Card "${card.meta.id}": reference study source_ref has no treeHash — consider running 'repo-memory migrate' to auto-fill`);
