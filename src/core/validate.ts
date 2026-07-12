@@ -81,8 +81,12 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
       errors.push(`${card.relativePath}: current file must not mix proposed_behavior in knowledge_types`);
     }
 
-    if (m.status === "current" && ["spec_only", "inferred", "unknown"].includes(m.evidence_level)) {
-      warnings.push(`${card.relativePath}: current file has weak evidence_level=${m.evidence_level}`);
+    if (m.status === "current" && ["spec_only", "inferred", "unknown", "heuristic_match"].includes(m.evidence_level)) {
+      if (m.evidence_level === "heuristic_match") {
+        errors.push(`${card.relativePath}: current file has evidence_level=heuristic_match — requires code_confirmed or test_confirmed (LLM verification needed)`);
+      } else {
+        warnings.push(`${card.relativePath}: current file has weak evidence_level=${m.evidence_level}`);
+      }
     }
 
     if (m.status === "current" && m.review_required) {

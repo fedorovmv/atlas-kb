@@ -715,7 +715,7 @@ Then read related module, scenario, decision, code and test references.
 
 ## Critical rules
 
-- Current behavior must be confirmed by code, tests, contracts, or reviewed memory.
+- Current behavior must be confirmed by code, tests, contracts, or reviewed memory. CLI heuristic_match is a candidate, not confirmation.
 - New specs are proposed behavior, not current behavior.
 - Historical specs may preserve rationale but must not override current code.
 - Demo code is example-only unless explicitly marked otherwise.
@@ -1048,10 +1048,12 @@ When given a memory card path (after memory-extractor has filled content):
       Example:
       - Test TestFilterCardsForCaller at tests/registry/access_filter_test.go:8 covers caller-based filtering
 5. Update frontmatter:
-   - \`evidence_level\`: \`code_confirmed\` if you verified specific symbols in code that match the card's claims.
-   - \`evidence_level\`: \`test_confirmed\` if tests cover the behavior but code is not directly readable.
-   - \`evidence_level\`: \`reviewed_doc\` if only docs were verified, not code.
-   - \`evidence_level\`: \`inferred\` if behavior was inferred from structure but not symbol-verified.
+    - \`evidence_level\`: \`code_confirmed\` if you verified specific symbols in code that match the card's claims.
+    - \`evidence_level\`: \`test_confirmed\` if tests cover the behavior but code is not directly readable.
+    - \`evidence_level\`: \`reviewed_doc\` if only docs were verified, not code.
+    - \`evidence_level\`: \`inferred\` if behavior was inferred from structure but not symbol-verified.
+    - If a card has \`evidence_level: heuristic_match\` — CLI found keyword-matching code files. You MUST read those files and verify the symbols actually implement the claims before promoting to \`code_confirmed\`.
+    - \`heuristic_match\` = CLI candidate, NOT confirmation. Only set \`code_confirmed\` after you read and verified the code.
    - \`last_reviewed\`: today's date.
 6. If code_refs point to files that don't contain what the card claims:
    - Set \`status: conflict\`.
@@ -1132,7 +1134,8 @@ After memory-extractor and memory-coder have processed cards:
 6. Check cross-card consistency:
    - No two \`current\` cards claim contradictory behavior for the same module.
    - \`related_*\` links point to existing card ids.
-   - No \`current\` card has \`evidence_level: spec_only\` (this is a validation error).
+    - For each card with \`evidence_level=heuristic_match\`: do NOT promote to \`current\`. This is CLI keyword match, not verified. Require memory-coder to promote to \`code_confirmed\` first.
+    - No \`current\` card has \`evidence_level: spec_only\` (this is a validation error).
 7. Use the \`updateCard\` tool to save changes: pass \`id\`, \`body\` (if you filled rationale/alternatives for decision cards), \`setStatus\` (current or needs_review), \`setReviewRequired\`, \`setLastReviewed\`. NEVER use Write tool — it corrupts YAML frontmatter.
 
 ## Rules

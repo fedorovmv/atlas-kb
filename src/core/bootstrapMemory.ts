@@ -43,8 +43,8 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     if (mod.confidence === "low" && mod.codeFiles.length === 0) continue;
     const hasCode = mod.codeFiles.length > 0;
     const hasTest = mod.testFiles.length > 0;
-    const status = hasCode && hasTest ? "current" : "needs_review";
-    const evidenceLevel = hasCode && hasTest ? "code_confirmed" : hasCode ? "code_confirmed" : "inferred";
+    const status = "needs_review";
+    const evidenceLevel = hasCode ? "heuristic_match" : "inferred";
     const card = renderModuleCard(mod, status, evidenceLevel);
     await writeCard(`modules/${mod.id}.md`, card);
   }

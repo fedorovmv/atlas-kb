@@ -28,12 +28,12 @@ export function classifySpecActuality(
 
   // accepted/implemented with code evidence
   const accepted = /status:\s*accepted|status:\s*implemented|\baccepted\b|\bimplemented\b/.test(contentLower);
-  const confirmedCount = evidence.filter((e) => e.status === "confirmed_by_code" || e.status === "confirmed_by_test").length;
+  const heuristicCount = evidence.filter((e) => e.status === "heuristic_code_match" || e.status === "heuristic_test_match").length;
   const specTopics = extractSpecTopics(spec.path, spec.content);
   const topicMatch = discovery.candidateModules.some((m) => m.topics.some((t) => specTopics.includes(t.toLowerCase())) || specTopics.some((t) => m.topics.includes(t.toLowerCase())));
 
-  if (accepted && confirmedCount >= 1 && topicMatch) return "current_confirmed";
-  if (confirmedCount >= 1 && topicMatch) return "partially_confirmed";
+  if (accepted && heuristicCount >= 1 && topicMatch) return "partially_confirmed";
+  if (heuristicCount >= 1 && topicMatch) return "partially_confirmed";
 
   // conflict
   const conflictEvidence = evidence.some((e) => e.status === "conflicts_with_code");
@@ -43,7 +43,7 @@ export function classifySpecActuality(
   // draft/proposal
   const draftPath = ["proposals", "cr"].some((s) => pathSegments.includes(s));
   const draftContent = /status:\s*draft|\bdraft\b/.test(contentLower);
-  if ((draftPath || draftContent) && confirmedCount === 0) return "proposed_unconfirmed";
+  if ((draftPath || draftContent) && heuristicCount === 0) return "proposed_unconfirmed";
 
   return "unknown_needs_review";
 }
@@ -168,16 +168,16 @@ export function checkEvidence(claims: Claim[], discovery: DiscoveryReport): Evid
     let files: string[];
 
     if (codeMatches.length >= 1 && testMatches.length >= 1) {
-      status = "confirmed_by_code";
-      confidence = "high";
+      status = "heuristic_code_match";
+      confidence = "medium";
       files = [...codeMatches, ...testMatches].map((f) => f.path);
     } else if (codeMatches.length >= 1) {
-      status = "confirmed_by_code";
-      confidence = "medium";
+      status = "heuristic_code_match";
+      confidence = "low";
       files = codeMatches.map((f) => f.path);
     } else if (testMatches.length >= 1) {
-      status = "confirmed_by_test";
-      confidence = "medium";
+      status = "heuristic_test_match";
+      confidence = "low";
       files = testMatches.map((f) => f.path);
     } else if (docMatches.length >= 1) {
       status = "documented_only";

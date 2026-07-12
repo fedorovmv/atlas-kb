@@ -73,7 +73,7 @@ describe("spec classification and claim extraction", () => {
       candidateModules: [],
     };
     const evidence = checkEvidence(claims, discovery);
-    expect(evidence[0].status).toBe("confirmed_by_code");
+    expect(evidence[0].status).toBe("heuristic_code_match");
   });
 
   it("checkEvidence returns not_found for unknown claim", async () => {
@@ -141,8 +141,8 @@ Status: implemented
     expect(Array.isArray(meta.claims)).toBe(true);
     expect(meta.claims.length).toBeGreaterThan(0);
 
-    // At least one claim should have evidence with confirmed status
-    const confirmedClaim = meta.claims.find((c: any) => c.evidence?.status === "confirmed_by_code");
+    // At least one claim should have evidence with heuristic match status
+    const confirmedClaim = meta.claims.find((c: any) => c.evidence?.status === "heuristic_code_match");
     expect(confirmedClaim).toBeDefined();
     expect(confirmedClaim.last_checked).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });

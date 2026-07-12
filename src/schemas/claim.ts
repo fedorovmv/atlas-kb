@@ -15,6 +15,8 @@ export const EvidenceStatusSchema = z.enum([
   "confirmed_by_contract",
   "supported_by_decision",
   "documented_only",
+  "heuristic_code_match",
+  "heuristic_test_match",
   "not_found",
   "conflicts_with_code",
   "not_checked",

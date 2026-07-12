@@ -173,7 +173,7 @@ Status: accepted
     const changed = report.changedClaimEvidence ?? [];
     expect(changed.length).toBeGreaterThan(0);
     const firstChange = changed[0];
-    expect(firstChange.oldStatus).toEqual("confirmed_by_code");
+    expect(firstChange.oldStatus).toEqual("heuristic_code_match");
     // After deleting code+test files, spec still matches → documented_only (not not_found)
     expect(["documented_only", "not_found"]).toContain(firstChange.newStatus);
 

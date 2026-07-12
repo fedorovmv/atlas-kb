@@ -38,6 +38,7 @@ export const EvidenceLevelSchema = z.enum([
   "test_confirmed",
   "contract_confirmed",
   "reviewed_doc",
+  "heuristic_match",
   "spec_only",
   "inferred",
   "unknown",

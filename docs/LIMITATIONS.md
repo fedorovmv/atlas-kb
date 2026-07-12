@@ -45,7 +45,7 @@ CLI — deterministic heuristic, не semantic understanding. Инструмен
 
 ### Spec classification — keyword-based evidence
 
-`checkEvidence` — keyword match (basename tokens), не symbol analysis. Может дать false positive (claim содержит "registry", файл `registry.go` → confirmed, хотя функция может делать другое). LLM memory-coder делает semantic verification поверх CLI skeleton.
+`checkEvidence` — keyword match (basename tokens), не symbol analysis. CLI ставит `heuristic_code_match` / `heuristic_test_match` (не `confirmed`). LLM memory-coder превращает `heuristic_match` → `code_confirmed` после semantic verification. False positive ограничен: CLI не подтверждает, только кандидатирует.
 
 ### Cross-document comparison — Jaccard, не semantic
 
@@ -69,7 +69,7 @@ CLI — deterministic heuristic, не semantic understanding. Инструмен
 
 Bootstrap создаёт аккуратные Markdown файлы, которые выглядят убедительно, но содержат preliminary выводы.
 
-Митигация: `review_required: true`, evidence-gated `code_confirmed` (validate ERROR + updateCard THROW без `## Code evidence` секции с `at <path>:<line>` форматом), LLM review.
+Митигация: `review_required: true`, evidence-gated `code_confirmed` (validate ERROR + updateCard THROW без `## Code evidence` секции), CLI ставит только `heuristic_match` (не `code_confirmed`), LLM review.
 
 ### Rationale додуман
 
