@@ -52,3 +52,19 @@ export const scaffoldFiles: ScaffoldFile[] = [
   { path: ".opencode/plugins/memory-guard.js", content: MEMORY_GUARD_PLUGIN_TEMPLATE },
   { path: "AGENTS.md", content: loadTemplate("AGENTS.md") },
 ];
+
+export function getHookTemplates(): ScaffoldFile[] {
+  return [
+    { path: ".git/hooks/pre-commit", content: loadTemplate("githooks/pre-commit") },
+    { path: ".git/hooks/pre-push", content: loadTemplate("githooks/pre-push") },
+    { path: ".git/hooks/post-checkout", content: loadTemplate("githooks/post-checkout") },
+    { path: ".git/hooks/post-merge", content: loadTemplate("githooks/post-merge") },
+  ];
+}
+
+export function getCiTemplate(): ScaffoldFile {
+  return {
+    path: ".github/workflows/memory-bank.yml",
+    content: loadTemplate(".github/workflows/memory-bank.yml"),
+  };
+}

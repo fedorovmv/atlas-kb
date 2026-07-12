@@ -1,0 +1,10 @@
+#!/bin/sh
+# Memory Bank search index rebuild (non-blocking)
+if [ -f "./node_modules/.bin/repo-memory" ]; then
+  MEMORY_CMD="./node_modules/.bin/repo-memory"
+else
+  MEMORY_CMD="npx repo-memory"
+fi
+echo "Rebuilding memory search index..."
+$MEMORY_CMD artifacts-search "." --root . > /dev/null 2>&1 &
+exit 0

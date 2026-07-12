@@ -1,0 +1,15 @@
+#!/bin/sh
+# Memory Bank pre-commit validation
+if [ -f "./node_modules/.bin/repo-memory" ]; then
+  MEMORY_CMD="./node_modules/.bin/repo-memory"
+else
+  MEMORY_CMD="npx repo-memory"
+fi
+echo "Running memory bank validation..."
+$MEMORY_CMD validate --root .
+if [ $? -ne 0 ]; then
+  echo "❌ Memory validation failed. Fix errors or use --no-verify to skip."
+  exit 1
+fi
+echo "✅ Memory validation passed"
+exit 0

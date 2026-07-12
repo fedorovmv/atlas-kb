@@ -1,9 +1,9 @@
 import path from "node:path";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, chmod } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { scaffoldFiles } from "../scaffold/templates.js";
+import { scaffoldFiles, getHookTemplates, getCiTemplate } from "../scaffold/templates.js";
 
-export async function initMemory(options: { root?: string; force?: boolean; dryRun?: boolean } = {}) {
+export async function initMemory(options: { root?: string; force?: boolean; dryRun?: boolean; installHooks?: boolean; installCi?: boolean } = {}) {
   const root = path.resolve(options.root ?? process.cwd());
   const written: string[] = [];
   const skipped: string[] = [];
@@ -19,6 +19,36 @@ export async function initMemory(options: { root?: string; force?: boolean; dryR
       await writeFile(target, file.content, "utf8");
     }
     written.push(file.path);
+  }
+
+  // Install git hooks
+  if (options.installHooks) {
+    const gitDir = path.join(root, ".git");
+    if (!existsSync(gitDir)) {
+      console.warn("⚠️  No .git directory found. Skipping hooks installation.");
+    } else {
+      const hookTemplates = getHookTemplates();
+      for (const hook of hookTemplates) {
+        const target = path.join(root, hook.path);
+        if (!options.dryRun) {
+          await mkdir(path.dirname(target), { recursive: true });
+          await writeFile(target, hook.content, "utf8");
+          await chmod(target, 0o755);
+        }
+        written.push(hook.path);
+      }
+    }
+  }
+
+  // Install CI
+  if (options.installCi) {
+    const ciTemplate = getCiTemplate();
+    const target = path.join(root, ciTemplate.path);
+    if (!options.dryRun) {
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, ciTemplate.content, "utf8");
+    }
+    written.push(ciTemplate.path);
   }
 
   // Create memory-contract.json

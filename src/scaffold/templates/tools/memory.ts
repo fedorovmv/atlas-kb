@@ -104,3 +104,49 @@ export const triage = tool({
     return runMemory(["triage", ...(args.root ? ["--root", args.root] : []), "--json"]);
   },
 });
+
+export const legacyIngest = tool({
+  description: "Run legacy document classification and ingestion pipeline.",
+  args: {
+    sources: tool.schema.array(tool.schema.string()).describe("Document sources to ingest"),
+    batch: tool.schema.string().optional().describe("Batch identifier"),
+  },
+  async execute(args) {
+    return runMemory([
+      "legacy-ingest",
+      ...args.sources,
+      ...(args.batch ? ["--batch", args.batch] : []),
+      "--json",
+    ]);
+  },
+});
+
+export const compact = tool({
+  description: "Build a compact memory summary for bounded context (12KB max by default).",
+  args: {
+    root: tool.schema.string().optional().describe("Repository root path"),
+    maxChars: tool.schema.number().optional().describe("Maximum character count (default 12288)"),
+  },
+  async execute(args) {
+    const flags: string[] = [];
+    if (args.root) flags.push("--root", args.root);
+    if (args.maxChars) flags.push("--max-chars", String(args.maxChars));
+    return runMemory(["compact", ...flags, "--json"]);
+  },
+});
+
+export const artifactSearch = tool({
+  description: "Search artifact index with scoring (4 points title, 1 point haystack).",
+  args: {
+    query: tool.schema.string().describe("Search query string"),
+    limit: tool.schema.number().optional().describe("Maximum number of results"),
+  },
+  async execute(args) {
+    return runMemory([
+      "artifacts-search",
+      args.query,
+      ...(args.limit ? ["--limit", String(args.limit)] : []),
+      "--json",
+    ]);
+  },
+});

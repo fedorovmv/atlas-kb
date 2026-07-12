@@ -1291,22 +1291,22 @@ v3 имеет 10 top-level memory файлов. ts-kb-flow сейчас имее
 
 > **Decisions**: F6 (SQLite FTS5) DROPPEN per Oracle review — lexical scoring sufficient for small-medium repos. C2/C3 still deferred. E2 depends on D1 for stub detection (BOILERPLATE_PATTERNS reuse).
 
-### Phase 3 — P2 (Workflow & integration) ⏳ PLANNED
+### Phase 3 — P2 (Workflow & integration) ✅ COMPLETE
 
 **Цель**: Workflow orchestration, git hooks, CI, OpenSpec.
-**Целевая версия**: v0.7.0
+**Целевая версия**: v0.7.0 | **Тестов**: 385→456 | **Council**: pending
 
 | Эпик | Домен | Зависимости | Статус |
 |---|---|---|---|
-| G1. Adaptive workflow modes | G | F4 | PENDING |
-| G2. Session isolation | G | — | PENDING |
-| G3. Route command | G | G1 | PENDING |
-| G4. Model routing profiles | G | — | PENDING |
-| H1. Git hooks | H | C4 | PENDING |
-| H2. CI integration | H | C4 | PENDING |
-| H3. OpenSpec (опционально) | H | — | PENDING |
+| G1. Adaptive workflow modes | G | F4 | ✅ |
+| G2. Session isolation | G | — | ✅ |
+| G3. Route command | G | G1 | ✅ |
+| G4. Model routing profiles | G | — | ✅ |
+| H1. Git hooks | H | C4 | ✅ |
+| H2. CI integration | H | C4 | ✅ |
+| H3. OpenSpec (опционально) | H | — | ✅ |
 
-> **Notes**: Phase 3 зависит от F4 (artifact index — complete) и C4 (contract-first validate — complete). Все зависимости удовлетворены.
+> **Notes**: Phase 3 зависит от F4 (artifact index — complete) и C4 (contract-first validate — complete). Все зависимости удовлетворены. Integration debt (3 OpenCode tools) — COMPLETE.
 
 ---
 
@@ -1402,16 +1402,16 @@ v3 имеет 10 top-level memory файлов. ts-kb-flow сейчас имее
 
 ## 8. Метрики успеха
 
-| Метрика | Цель | Phase 1 | Phase 2 | Текущее |
-|---|---|---|---|---|
-| v3-фичей перенесено | 30/30 эпиков | 9/9 ✅ | 12/12 (F6 dropped) ✅ | 21/22 |
-| Тестов | ≥ 250 | 259 | 385 | 385 ✅ |
-| CLI-команд | ≥ 25 | 13 | 27 | 27 ✅ |
-| OpenCode tools | ≥ 12 | 7 | 7 | 7 (3 pending integration) |
-| Card types | 20+ | 20 | 20 | 20 ✅ |
-| Версия | — | v0.5.0 | v0.6.0 | v0.6.0 |
-| Документация | Каждый эпик | ✅ | ✅ | ✅ |
-| Миграция | migrate-from-v3 | — | — | Phase 3 |
+| Метрика | Цель | Phase 1 | Phase 2 | Phase 3 | Текущее |
+|---|---|---|---|---|---|
+| v3-фичей перенесено | 30/30 эпиков | 9/9 ✅ | 12/12 (F6 dropped) ✅ | 7/7 ✅ | 28/29 |
+| Тестов | ≥ 250 | 259 | 385 | 456 | 456 ✅ |
+| CLI-команд | ≥ 25 | 13 | 27 | 36 | 36 ✅ |
+| OpenCode tools | ≥ 12 | 7 | 7 | 10 | 10 ✅ |
+| Card types | 20+ | 20 | 20 | 20 | 20 ✅ |
+| Версия | — | v0.5.0 | v0.6.0 | v0.7.0 | v0.7.0 |
+| Документация | Каждый эпик | ✅ | ✅ | ✅ | ✅ |
+| Миграция | migrate-from-v3 | — | — | Phase 4 | Phase 4 |
 
 > **Note**: OpenCode tools (7) не достигли цели (≥12) — 3 новых tool template (legacyIngest, compact, artifactSearch) не добавлены в `tools/memory.ts`. Запланировано в Phase 3 integration task.
 

@@ -34,3 +34,11 @@ export * from "./core/hashing.js";
 // Wave 2
 export * from "./core/compaction.js";
 export * from "./core/overview.js";
+// Phase 3 — workflow modes, session tracking, model routing
+export * from "./schemas/workflow.js";
+export * from "./schemas/session.js";
+export * from "./schemas/modelRouting.js";
+export * from "./core/changeSurface.js";
+export * from "./core/routeWorkflow.js";
+export * from "./core/sessionTracking.js";
+export * from "./core/modelRouting.js";

@@ -1,6 +1,6 @@
 {
   "name": "repo-memory-opencode-kit",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Markdown/frontmatter memory bank CLI, OpenCode skills, commands, agents and tools for coding-agent project memory.",
   "private": true,
   "type": "module",

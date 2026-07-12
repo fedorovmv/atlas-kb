@@ -77,4 +77,34 @@ describe("renderOverview", () => {
     expect(content).toContain("scen-1");
     expect(content).toContain("Login Flow");
   });
+
+  it("no route manifest → N/A for route reasons", async () => {
+    const result = await renderOverview({ root: tmpDir });
+    const content = await readFile(result.overviewPath, "utf8");
+    expect(content).toContain("## Route reasons\nN/A");
+  });
+
+  it("valid route manifest → shows mode/type/reasons", async () => {
+    const buildDir = path.join(tmpDir, ".ai/memory-build/latest");
+    await mkdir(buildDir, { recursive: true });
+    const manifest = {
+      surface: { changedFiles: ["src/foo.ts"], components: ["src"], risks: [], type: "bugfix", behaviorChange: true },
+      result: { mode: "direct", reasons: ["Bounded change, low risk"], type: "bugfix", risks: [], behaviorChange: true },
+    };
+    await writeFile(path.join(buildDir, "route-manifest.json"), JSON.stringify(manifest), "utf8");
+    const result = await renderOverview({ root: tmpDir });
+    const content = await readFile(result.overviewPath, "utf8");
+    expect(content).toContain("Mode: DIRECT");
+    expect(content).toContain("Type: bugfix");
+    expect(content).toContain("Bounded change, low risk");
+  });
+
+  it("invalid manifest JSON → N/A (route manifest invalid)", async () => {
+    const buildDir = path.join(tmpDir, ".ai/memory-build/latest");
+    await mkdir(buildDir, { recursive: true });
+    await writeFile(path.join(buildDir, "route-manifest.json"), "{ invalid json }", "utf8");
+    const result = await renderOverview({ root: tmpDir });
+    const content = await readFile(result.overviewPath, "utf8");
+    expect(content).toContain("N/A (route manifest invalid)");
+  });
 });

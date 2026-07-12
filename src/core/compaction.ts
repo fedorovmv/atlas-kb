@@ -1,5 +1,6 @@
 import { loadMemoryCardsBestEffort } from "./loadMemory.js";
 import { resolveRoot } from "./paths.js";
+import { loadSessions, getActiveSessionSummary } from "./sessionTracking.js";
 
 export interface CompactionResult {
   content: string;
@@ -30,7 +31,9 @@ export async function buildCompaction(options: {
   sections.push("");
   sections.push("## Route reasons\nN/A");
   sections.push("");
-  sections.push("## Active lane\nN/A");
+  const sessions = await loadSessions(root);
+  const activeLane = getActiveSessionSummary(sessions);
+  sections.push(`## Active lane\n${activeLane}`);
   sections.push("");
   sections.push("## Approvals\nN/A");
   sections.push("");

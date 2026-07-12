@@ -213,3 +213,68 @@ Status: accepted
     expect(report.appliedFixes.claimsUpdated.length).toBeGreaterThan(0);
   });
 });
+
+describe("CLI Phase 3 commands", () => {
+  it("CLI route: --json outputs valid JSON", async () => {
+    const root = await createTempProject();
+    try {
+      const output = runCli(root, ["route", "--json"]);
+      const parsed = JSON.parse(output);
+      expect(parsed).toHaveProperty("mode");
+      expect(parsed).toHaveProperty("reasons");
+      expect(parsed).toHaveProperty("type");
+      expect(parsed).toHaveProperty("risks");
+      expect(parsed).toHaveProperty("behaviorChange");
+    } catch (e: any) {
+      // If there's no git history, route command might fail — that's acceptable
+      // as long as --json output is valid when it succeeds
+      if (e.status !== 0) throw e;
+    }
+  });
+
+  it("CLI session-open: creates lane (--json)", async () => {
+    const root = await createTempProject();
+    const output = runCli(root, ["session-open", "--lane-key", "test-lane", "--phase", "implementation", "--session-id", "sess-1", "--json"]);
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveProperty("opened");
+    expect(parsed.opened).toBe("test-lane");
+  });
+
+  it("CLI session-close: updates status (--json)", async () => {
+    const root = await createTempProject();
+    runCli(root, ["session-open", "--lane-key", "test-lane", "--phase", "implementation", "--session-id", "sess-1"]);
+    const output = runCli(root, ["session-close", "--lane-key", "test-lane", "--status", "completed", "--json"]);
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveProperty("closed");
+    expect(parsed.closed).toBe("test-lane");
+    expect(parsed.status).toBe("completed");
+  });
+
+  it("CLI profile: no args → shows current profile", async () => {
+    const root = await createTempProject();
+    try {
+      const output = runCli(root, ["profile"]);
+      expect(output).toContain("Active profile:");
+    } catch (e: any) {
+      // profile command may fail if no model-routing config exists — acceptable for CLI-level testing
+      if (e.status !== 0) throw e;
+    }
+  });
+
+  it("CLI profile quality: switches profile", async () => {
+    const root = await createTempProject();
+    try {
+      const output = runCli(root, ["profile", "quality"]);
+      expect(output).toContain("Profile switched to: quality");
+    } catch (e: any) {
+      if (e.status !== 0) throw e;
+    }
+  });
+
+  it("CLI openspec-status: delegates or graceful message", () => {
+    const root = loadSynapseMini();
+    const output = runCli(root, ["openspec-status"]);
+    // Either openspec is installed (delegates) or not installed (graceful message)
+    expect(output.length).toBeGreaterThan(0);
+  });
+});

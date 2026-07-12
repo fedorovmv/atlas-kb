@@ -19,13 +19,17 @@ import { compactCommand } from "./commands/compact.js";
 import { renderCommand } from "./commands/render.js";
 import { semanticRepairCommand } from "./commands/semanticRepair.js";
 import { legacyIngestCommand, legacyListCommand, legacyStatusCommand, legacyScaffoldCommand, legacyCheckCommand, legacyReviewPackCommand, legacyApproveCommand, legacyApplyCommand, legacyFinalizeCommand } from "./commands/legacyIngest.js";
+import { routeCommand } from "./commands/route.js";
+import { sessionOpenCommand, sessionCloseCommand } from "./commands/session.js";
+import { profileCommand } from "./commands/profile.js";
+import { openspecNewCommand, openspecStatusCommand, openspecCheckCommand, openspecArchiveCommand } from "./commands/openspec.js";
 
 const program = new Command();
 
 program
   .name("repo-memory")
   .description("Markdown/frontmatter repository memory bank tool for coding agents")
-  .version("0.6.0")
+  .version("0.7.0")
   .option("--root <path>", "repository root", process.cwd());
 
 program
@@ -33,9 +37,11 @@ program
   .description("Create .ai/memory and .opencode scaffold in the target project")
   .option("--force", "overwrite existing files", false)
   .option("--dry-run", "show what would be written without writing", false)
+  .option("--install-hooks", "install git hooks", false)
+  .option("--install-ci", "install CI workflow", false)
   .action(async (opts) => {
     const root = program.opts().root;
-    await initMemory({ root, force: opts.force, dryRun: opts.dryRun });
+    await initMemory({ root, force: opts.force, dryRun: opts.dryRun, installHooks: opts.installHooks, installCi: opts.installCi });
   });
 
 program
@@ -332,6 +338,89 @@ program
   .action(async (opts) => {
     const root = opts.root ?? program.opts().root;
     await legacyFinalizeCommand({ root, batch: opts.batch, json: opts.json });
+  });
+
+// G1 — Workflow routing
+program
+  .command("route")
+  .description("Analyze change surface and determine workflow mode")
+  .option("--base-ref <ref>", "Base git ref for diff", "HEAD~1")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = program.opts().root;
+    await routeCommand({ root, baseRef: opts.baseRef, json: opts.json });
+  });
+
+// G2 — Session tracking
+program
+  .command("session-open")
+  .description("Open a new execution session lane")
+  .requiredOption("--lane-key <key>", "Lane key")
+  .requiredOption("--phase <phase>", "Phase (implementation/correction/review:*)")
+  .requiredOption("--session-id <id>", "Session ID")
+  .option("--plan-task-id <id>", "Plan task ID")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = program.opts().root;
+    await sessionOpenCommand({ root, laneKey: opts.laneKey, phase: opts.phase, sessionId: opts.sessionId, planTaskId: opts.planTaskId, json: opts.json });
+  });
+
+program
+  .command("session-close")
+  .description("Close an execution session lane")
+  .requiredOption("--lane-key <key>", "Lane key")
+  .requiredOption("--status <status>", "Status (completed/failed)")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = program.opts().root;
+    await sessionCloseCommand({ root, laneKey: opts.laneKey, status: opts.status, json: opts.json });
+  });
+
+// G4 — Model routing profiles
+program
+  .command("profile [profile]")
+  .description("Show or switch model routing profile (quality/balanced/economy)")
+  .option("--json", "JSON output", false)
+  .action(async (profile, opts) => {
+    const root = program.opts().root;
+    await profileCommand({ root, profile, json: opts.json });
+  });
+
+// H3 — OpenSpec integration
+program
+  .command("openspec-new [name]")
+  .description("Create new OpenSpec artifact")
+  .option("--json", "JSON output", false)
+  .action(async (name, opts) => {
+    const root = program.opts().root;
+    await openspecNewCommand({ root, name, json: opts.json });
+  });
+
+program
+  .command("openspec-status")
+  .description("Show OpenSpec artifact status")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = program.opts().root;
+    await openspecStatusCommand({ root, json: opts.json });
+  });
+
+program
+  .command("openspec-check")
+  .description("Validate OpenSpec artifacts")
+  .option("--json", "JSON output", false)
+  .action(async (opts) => {
+    const root = program.opts().root;
+    await openspecCheckCommand({ root, json: opts.json });
+  });
+
+program
+  .command("openspec-archive <name>")
+  .description("Archive OpenSpec artifact")
+  .option("--json", "JSON output", false)
+  .action(async (name, opts) => {
+    const root = program.opts().root;
+    await openspecArchiveCommand({ root, name, json: opts.json });
   });
 
 try {

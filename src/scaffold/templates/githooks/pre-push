@@ -1,0 +1,15 @@
+#!/bin/sh
+# Memory Bank pre-push validation (strict)
+if [ -f "./node_modules/.bin/repo-memory" ]; then
+  MEMORY_CMD="./node_modules/.bin/repo-memory"
+else
+  MEMORY_CMD="npx repo-memory"
+fi
+echo "Running strict memory bank validation..."
+$MEMORY_CMD validate --root . --strict-warnings
+if [ $? -ne 0 ]; then
+  echo "❌ Strict validation failed. Fix warnings or use --no-verify to skip."
+  exit 1
+fi
+echo "✅ Strict validation passed"
+exit 0
