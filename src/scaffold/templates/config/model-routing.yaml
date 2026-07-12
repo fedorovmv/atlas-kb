@@ -1,0 +1,25 @@
+models:
+  extractor:
+    provider_model: qwen-3.6-27b
+    purpose: cheap structured extraction and classification
+  coder:
+    provider_model: qwen-coder-next
+    purpose: codebase search, code evidence, tests, markdown patches
+  reviewer:
+    provider_model: qwen-thinking-large
+    purpose: rationale, conflicts, design decisions, final review
+  analyst:
+    provider_model: deepseek-v4-flash
+    purpose: spec analysis, rationale extraction, semantic claim matching, decision card enrichment
+routing:
+  document_classification: extractor
+  fact_extraction: extractor
+  rationale_extraction: analyst
+  spec_analysis: analyst
+  semantic_claim_matching: analyst
+  decision_card_enrichment: analyst
+  partial_implementation_detection: analyst
+  code_evidence_check: coder
+  memory_patch_generation: coder
+  conflict_resolution: reviewer
+  final_review: reviewer

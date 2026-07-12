@@ -8,7 +8,7 @@
     "repo-memory": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && cp -r src/scaffold/templates dist/scaffold/templates",
     "test": "vitest run",
     "test:watch": "vitest",
     "memory": "tsx src/cli.ts",
