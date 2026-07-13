@@ -174,13 +174,21 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     // Read source file for content
     let scenarioGoal = "";
     let scenarioFlow = "";
+    let scenarioActors = "";
+    let scenarioConstraints = "";
+    let scenarioErrors = "";
+    let scenarioRationale = "";
     for (const srcPath of scenario.sourceFiles) {
       const sections = await readDocSections(root, srcPath);
       if (!scenarioGoal) scenarioGoal = findSection(sections, ["goal", "overview", "summary", "description", "purpose", "background", "цель", "задача", "описание", "назначение", "контекст"]) ?? "";
       if (!scenarioFlow) scenarioFlow = findSection(sections, ["flow", "process", "steps", "how it works", "workflow", "procedure", "поток", "процесс", "шаги", "сценарий", "алгоритм"]) ?? "";
+      if (!scenarioActors) scenarioActors = findSection(sections, ["actors", "participants", "components involved", "участники", "компоненты", "стороны"]) ?? "";
+      if (!scenarioConstraints) scenarioConstraints = findSection(sections, ["constraints", "limitations", "restrictions", "ограничения", "лимиты", "условия"]) ?? "";
+      if (!scenarioErrors) scenarioErrors = findSection(sections, ["error cases", "errors", "failure", "fallback", "сценарии ошибок", "ошибки", "отказ", "fallback"]) ?? "";
+      if (!scenarioRationale) scenarioRationale = findSection(sections, ["rationale", "why", "motivation", "обоснование", "почему", "причины"]) ?? "";
       if (scenarioGoal && scenarioFlow) break;
     }
-    await writeCard(`scenarios/${scenario.slug}.md`, renderScenarioCard(scenario, scenarioGoal, scenarioFlow));
+    await writeCard(`scenarios/${scenario.slug}.md`, renderScenarioCard(scenario, scenarioGoal, scenarioFlow, scenarioActors, scenarioConstraints, scenarioErrors, scenarioRationale));
   }
 
   // Decision cards from explicit rationale sections
@@ -193,10 +201,13 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     const problem = findContent(sections, raw, ["problem", "issue", "pain point", "challenge", "motivation", "goal", "проблема", "задача", "цель"]);
     const decisionText = findContent(sections, raw, ["decision", "solution", "approach", "design", "proposed solution", "architecture", "решение", "архитектура", "подход", "дизайн"]);
     const rationale = findContent(sections, raw, ["rationale", "why", "justification", "reasoning", "motivation", "обоснование", "почему", "причины"]);
-    const alternatives = findContent(sections, raw, ["alternatives", "options considered", "rejected", "prior approach", "альтернативы", "варианты"]);
-    const consequences = findContent(sections, raw, ["consequences", "trade-offs", "tradeoffs", "implications", "risks", "constraints", "ограничения", "последствия", "риски"]);
+    const alternatives = findContent(sections, raw, ["alternatives", "options considered", "rejected", "prior approach", "альтернативы", "варианты", "отклонённые", "отвергнутые"]);
+    const consequences = findContent(sections, raw, ["consequences", "trade-offs", "tradeoffs", "implications", "последствия", "компромиссы"]);
+    const rejectedAlt = findContent(sections, raw, ["rejected", "declined", "dismissed", "отклонённые", "отвергнутые", "отклонено"]);
+    const affectedModules = findContent(sections, raw, ["affected modules", "affected components", "changed modules", "затронутые модули", "изменяемые модули", "компоненты"]);
+    const affectedScenarios = findContent(sections, raw, ["affected scenarios", "affected flows", "changed scenarios", "затронутые сценарии", "изменяемые сценарии", "потоки"]);
 
-    await writeCard(`decisions/${decision.id}.md`, renderDecisionCard(decision, context, problem, decisionText, rationale, alternatives, consequences));
+    await writeCard(`decisions/${decision.id}.md`, renderDecisionCard(decision, context, problem, decisionText, rationale, alternatives, consequences, rejectedAlt, affectedModules, affectedScenarios));
   }
 
   // Historical/proposal cards from spec files
@@ -217,11 +228,18 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     const requirements = findContent(sections, specContent, ["requirements", "claims", "behavior", "specification", "требования", "поведение", "описание", "архитектура"]);
     const rationale = findContent(sections, specContent, ["rationale", "why", "decision", "alternatives", "обоснование", "решение", "альтернативы"]);
     const status = findContent(sections, specContent, ["status", "state", "статус", "состояние"]);
+    const affectedModules = findContent(sections, specContent, ["affected modules", "affected components", "changed modules", "затронутые модули", "изменяемые модули", "компоненты"]);
+    const affectedScenarios = findContent(sections, specContent, ["affected scenarios", "affected flows", "changed scenarios", "затронутые сценарии", "изменяемые сценарии", "потоки"]);
+    const currentCodeCheck = findContent(sections, specContent, ["current code", "current implementation", "existing code", "текущий код", "существующий код", "текущая реализация"]);
+    const claims = findContent(sections, specContent, ["claims", "assertions", "requirements", "утверждения", "требования"]);
 
     if (finalIsLegacy) {
-      await writeCard(`historical/${slug}.md`, renderHistoricalCard(file, `historical-${slug}`, intro, problem, rationale, status));
+      const priorApproach = findContent(sections, specContent, ["prior approach", "previous solution", "old approach", "предыдущий подход", "старое решение", "было раньше"]);
+      const obsoleteIdeas = findContent(sections, specContent, ["obsolete", "deprecated", "outdated", "no longer", "устаревшие", "неприменимо", "больше не"]);
+      const survivedDecisions = findContent(sections, specContent, ["survived", "carried forward", "kept", "выжившие", "перенесены", "сохранены"]);
+      await writeCard(`historical/${slug}.md`, renderHistoricalCard(file, `historical-${slug}`, intro, problem, rationale, status, priorApproach, obsoleteIdeas, survivedDecisions));
     } else {
-      await writeCard(`proposals/${slug}.md`, renderProposalCard(file, `proposal-${slug}`, intro, problem, requirements, rationale));
+      await writeCard(`proposals/${slug}.md`, renderProposalCard(file, `proposal-${slug}`, intro, problem, requirements, rationale, affectedModules, affectedScenarios, currentCodeCheck, claims));
     }
   }
 
@@ -402,7 +420,7 @@ async function renderModuleCard(
   return `---\n${fm}\n---\n\n${body}\n`;
 }
 
-function renderScenarioCard(s: { id: string; title: string; topics: string[]; sourceFiles: string[] }, goalContent: string, flowContent: string): string {
+function renderScenarioCard(s: { id: string; title: string; topics: string[]; sourceFiles: string[] }, goalContent: string, flowContent: string, actorsContent: string, constraintsContent: string, errorsContent: string, rationaleContent: string): string {
   const todayStr = today();
   const fm = frontmatterYaml({
     entity_type: "scenario",
@@ -425,7 +443,7 @@ function renderScenarioCard(s: { id: string; title: string; topics: string[]; so
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${s.title}\n\n## Цель\n${goalContent || "Требует ревью — прочитайте source_refs для описания цели."}\n\n## Участники\nТребует ревью — определите участников из кода/тестов/документации.\n\n## Поток выполнения\n${flowContent || "Требует ревью — прочитайте source_refs и код для описания потока."}\n\n## Ограничения\nТребует ревью — определите ограничения, лимиты, условия ошибок.\n\n## Сценарии ошибок\nТребует ревью — определите известные сценарии ошибок.\n\n## Свидетельства из кода\nНе проверено — memory-coder должен подтвердить поток по коду.\n\n## Свидетельства из тестов\nНе проверено — memory-coder должен подтвердить покрытие тестами для этого сценария.\n\n## Обоснование\nТребует ревью — почему существует этот сценарий, а не другой?\n`;
+  return `---\n${fm}\n---\n\n# ${s.title}\n\n## Цель\n${goalContent || "Требует ревью — прочитайте source_refs для описания цели."}\n\n## Участники\n${actorsContent || "Требует ревью — определите участников из кода/тестов/документации."}\n\n## Поток выполнения\n${flowContent || "Требует ревью — прочитайте source_refs и код для описания потока."}\n\n## Ограничения\n${constraintsContent || "Требует ревью — определите ограничения, лимиты, условия ошибок."}\n\n## Сценарии ошибок\n${errorsContent || "Требует ревью — определите известные сценарии ошибок."}\n\n## Свидетельства из кода\nНе проверено — memory-coder должен подтвердить поток по коду.\n\n## Свидетельства из тестов\nНе проверено — memory-coder должен подтвердить покрытие тестами для этого сценария.\n\n## Обоснование\n${rationaleContent || "Требует ревью — почему существует этот сценарий, а не другой?"}\n`;
 }
 
 function renderDecisionCard(
@@ -436,6 +454,9 @@ function renderDecisionCard(
   rationale: string | null,
   alternatives: string | null,
   consequences: string | null,
+  rejectedAlt: string | null,
+  affectedModules: string | null,
+  affectedScenarios: string | null,
 ): string {
   const todayStr = today();
   const fm = frontmatterYaml({
@@ -458,7 +479,7 @@ function renderDecisionCard(
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Контекст\n${context || "Требует ревью — какая проблема привела к этому решению?"}\n\n## Проблема\n${problem || "Требует ревью — какая конкретная проблема решена?"}\n\n## Решение\n${decisionText || "Требует ревью — что было решено?"}\n\n## Обоснование\n${rationale || d.rationale}\n\n## Рассмотренные альтернативы\n${alternatives || "Требует ревью — какие альтернативы были рассмотрены?"}\n\n## Отклонённые альтернативы\n${alternatives ? "См. альтернативы выше." : "Требует ревью — что было отклонено и почему?"}\n\n## Последствия\n${consequences || "Требует ревью — какие компромиссы были приняты?"}\n\n## Свидетельства текущего поведения\nТребует ревью — действительно ли решение актуально для текущего кода?\n\n## Затронутые модули\nТребует ревью — какие модули затронуты этим решением?\n\n## Затронутые сценарии\nТребует ревью — какие сценарии затронуты этим решением?\n`;
+  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Контекст\n${context || "Требует ревью — какая проблема привела к этому решению?"}\n\n## Проблема\n${problem || "Требует ревью — какая конкретная проблема решена?"}\n\n## Решение\n${decisionText || "Требует ревью — что было решено?"}\n\n## Обоснование\n${rationale || d.rationale}\n\n## Рассмотренные альтернативы\n${alternatives || "Требует ревью — какие альтернативы были рассмотрены?"}\n\n## Отклонённые альтернативы\n${rejectedAlt || (alternatives ? "См. альтернативы выше." : "Требует ревью — что было отклонено и почему?")}\n\n## Последствия\n${consequences || "Требует ревью — какие компромиссы были приняты?"}\n\n## Свидетельства текущего поведения\nТребует ревью — действительно ли решение актуально для текущего кода?\n\n## Затронутые модули\n${affectedModules || "Требует ревью — какие модули затронуты этим решением?"}\n\n## Затронутые сценарии\n${affectedScenarios || "Требует ревью — какие сценарии затронуты этим решением?"}\n`;
 }
 
 function renderHistoricalCard(
@@ -468,6 +489,9 @@ function renderHistoricalCard(
   problem: string | null,
   rationale: string | null,
   status: string | null,
+  priorApproach: string | null,
+  obsoleteIdeas: string | null,
+  survivedDecisions: string | null,
 ): string {
   const todayStr = today();
   const fm = frontmatterYaml({
@@ -490,7 +514,7 @@ function renderHistoricalCard(
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${file.basename} (historical)\n\n## Краткое описание\n${intro || "Устаревшая спецификация сохранена для контекста обоснования. Не руководство по реализации."}\n\n## Статус\n${status || "Устаревшее/историческое."}\n\n## Решаемая проблема\n${problem || "Требует ревью — какую проблему пытался решить этот подход?"}\n\n## Предыдущий подход\nУстаревшая спецификация сохранена для контекста обоснования. Не руководство по реализации.\n\n## Актуальное обоснование\n${rationale || "Требует ревью — какие части обоснования остаются актуальными?"}\n\n## Устаревшие/неподтверждённые идеи\nТребует ревью — что больше не применимо?\n\n## Выжившие решения\nТребует ревью — какие решения из этой спецификации перенесены?\n\n## Ссылки на текущие решения\nТребует ревью — ссылки на текущие карточки решений, заменяющие эту.\n`;
+  return `---\n${fm}\n---\n\n# ${file.basename} (historical)\n\n## Краткое описание\n${intro || "Устаревшая спецификация сохранена для контекста обоснования. Не руководство по реализации."}\n\n## Статус\n${status || "Устаревшее/историческое."}\n\n## Решаемая проблема\n${problem || "Требует ревью — какую проблему пытался решить этот подход?"}\n\n## Предыдущий подход\n${priorApproach || "Устаревшая спецификация сохранена для контекста обоснования. Не руководство по реализации."}\n\n## Актуальное обоснование\n${rationale || "Требует ревью — какие части обоснования остаются актуальными?"}\n\n## Устаревшие/неподтверждённые идеи\n${obsoleteIdeas || "Требует ревью — что больше не применимо?"}\n\n## Выжившие решения\n${survivedDecisions || "Требует ревью — какие решения из этой спецификации перенесены?"}\n\n## Ссылки на текущие решения\nТребует ревью — ссылки на текущие карточки решений, заменяющие эту.\n`;
 }
 
 function renderProposalCard(
@@ -500,6 +524,10 @@ function renderProposalCard(
   problem: string | null,
   requirements: string | null,
   rationale: string | null,
+  affectedModules: string | null,
+  affectedScenarios: string | null,
+  currentCodeCheck: string | null,
+  claims: string | null,
 ): string {
   const todayStr = today();
   const fm = frontmatterYaml({
@@ -522,7 +550,7 @@ function renderProposalCard(
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${file.basename} (proposal)\n\n## Исходная спецификация\n${file.path}\n\n## Краткое описание\n${intro || "Неподтверждённая спецификация — требует кодовых/тестовых свидетельств перед становлением текущим поведением."}\n\n## Проблема\n${problem || "Требует ревью — какую проблему решает это предложение?"}\n\n## Предлагаемое поведение\n${requirements || "Требует ревью — извлеките предлагаемое поведение из исходной спецификации."}\n\n## Обоснование из спецификации\n${rationale || "Требует ревью — извлеките обоснование из исходной спецификации."}\n\n## Затронутые модули\nТребует ревью — какие модули изменит это предложение?\n\n## Затронутые сценарии\nТребует ревью — какие сценарии изменит это предложение?\n\n## Проверка текущего кода\nТребует ревью — memory-coder должен проверить, частично ли предложение уже реализовано.\n\n## Подтверждённые/не найденные/конфликтующие утверждения\nТребует ревью — классифицируйте каждое утверждение из спецификации.\n\n## Предлагаемые обновления памяти\nТребует ревью — что должно измениться в текущей памяти, если предложение принято?\n\n## Решение по ревью\nТребует ревью — memory-reviewer решает: принять, отклонить или нужно больше свидетельств.\n`;
+  return `---\n${fm}\n---\n\n# ${file.basename} (proposal)\n\n## Исходная спецификация\n${file.path}\n\n## Краткое описание\n${intro || "Неподтверждённая спецификация — требует кодовых/тестовых свидетельств перед становлением текущим поведением."}\n\n## Проблема\n${problem || "Требует ревью — какую проблему решает это предложение?"}\n\n## Предлагаемое поведение\n${requirements || "Требует ревью — извлеките предлагаемое поведение из исходной спецификации."}\n\n## Обоснование из спецификации\n${rationale || "Требует ревью — извлеките обоснование из исходной спецификации."}\n\n## Затронутые модули\n${affectedModules || "Требует ревью — какие модули изменит это предложение?"}\n\n## Затронутые сценарии\n${affectedScenarios || "Требует ревью — какие сценарии изменит это предложение?"}\n\n## Проверка текущего кода\n${currentCodeCheck || "Требует ревью — memory-coder должен проверить, частично ли предложение уже реализовано."}\n\n## Подтверждённые/не найденные/конфликтующие утверждения\n${claims || "Требует ревью — классифицируйте каждое утверждение из спецификации."}\n\n## Предлагаемые обновления памяти\nТребует ревью — что должно измениться в текущей памяти, если предложение принято?\n\n## Решение по ревью\nТребует ревью — memory-reviewer решает: принять, отклонить или нужно больше свидетельств.\n`;
 }
 
 // --- Extractors ---

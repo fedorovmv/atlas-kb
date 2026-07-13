@@ -18,6 +18,7 @@ export async function readDocSections(root: string, relPath: string): Promise<Ma
 /**
  * Extract markdown sections by heading.
  * Handles ## and ### headings. Returns map of lowercase heading → content.
+ * Normalizes numbered headers: "## 1. Goal" → key "goal" (strips "1. " prefix).
  */
 export function extractSections(content: string): Map<string, string> {
   const sections = new Map<string, string>();
@@ -29,7 +30,7 @@ export function extractSections(content: string): Map<string, string> {
     const match = line.match(/^##+\s+(.+)$/);
     if (match) {
       if (currentHeading) {
-        sections.set(currentHeading.toLowerCase(), currentBody.join("\n").trim());
+        sections.set(normalizeHeading(currentHeading), currentBody.join("\n").trim());
       }
       currentHeading = match[1].trim();
       currentBody = [];
@@ -38,7 +39,7 @@ export function extractSections(content: string): Map<string, string> {
     }
   }
   if (currentHeading) {
-    sections.set(currentHeading.toLowerCase(), currentBody.join("\n").trim());
+    sections.set(normalizeHeading(currentHeading), currentBody.join("\n").trim());
   }
 
   // Also capture text before first heading (intro/overview)
@@ -52,17 +53,77 @@ export function extractSections(content: string): Map<string, string> {
 }
 
 /**
+ * Normalize heading: strip numbered prefixes ("1. ", "2) "),
+ * strip leading/trailing whitespace, lowercase.
+ */
+function normalizeHeading(heading: string): string {
+  return heading
+    .toLowerCase()
+    .replace(/^\d+[.)\s]+/, "") // strip "1. " or "2) " prefix
+    .trim();
+}
+
+/**
+ * Bilingual (EN↔RU) heading synonyms. When searching for a Russian heading,
+ * also match the English equivalent and vice versa.
+ */
+const BILINGUAL_SYNONYMS: Record<string, string[]> = {
+  "цель": ["goal", "purpose", "objective"],
+  "goal": ["цель", "назначение"],
+  "проблема": ["problem", "issue", "challenge"],
+  "problem": ["проблема", "задача"],
+  "решение": ["decision", "solution", "approach"],
+  "decision": ["решение", "подход"],
+  "обоснование": ["rationale", "why", "justification", "reasoning"],
+  "rationale": ["обоснование", "почему", "причины"],
+  "альтернативы": ["alternatives", "options"],
+  "alternatives": ["альтернативы", "варианты"],
+  "последствия": ["consequences", "trade-offs", "implications"],
+  "consequences": ["последствия", "компромиссы"],
+  "ограничения": ["constraints", "limitations", "restrictions", "global constraints"],
+  "constraints": ["ограничения", "лимиты", "условия"],
+  "участники": ["actors", "participants", "components"],
+  "actors": ["участники", "компоненты", "стороны"],
+  "поток": ["flow", "process", "steps", "workflow", "procedure"],
+  "flow": ["поток", "процесс", "шаги", "сценарий"],
+  "контекст": ["context", "background", "motivation"],
+  "context": ["контекст", "фон", "предыстория"],
+  "описание": ["description", "overview", "summary", "about"],
+  "description": ["описание", "обзор", "сводка"],
+  "статус": ["status", "state"],
+  "status": ["статус", "состояние"],
+  "требования": ["requirements", "claims", "behavior", "specification"],
+  "requirements": ["требования", "поведение", "спецификация"],
+  "ошибки": ["errors", "failure", "error cases", "fallback"],
+  "errors": ["ошибки", "отказ", "сценарии ошибок"],
+  "затронутые модули": ["affected modules", "affected components", "changed modules"],
+  "affected modules": ["затронутые модули", "изменяемые модули"],
+  "затронутые сценарии": ["affected scenarios", "affected flows", "changed scenarios"],
+  "affected scenarios": ["затронутые сценарии", "изменяемые сценарии"],
+};
+
+/**
  * Try multiple heading variants for a section.
- * E.g. "problem" matches "Problem", "## Problem", "Motivation", "Background".
+ * Also checks bilingual synonyms (EN↔RU).
  */
 export function findSection(sections: Map<string, string>, variants: string[]): string | null {
+  // Collect all variants including bilingual synonyms
+  const allVariants: string[] = [...variants];
   for (const v of variants) {
+    const key = v.toLowerCase();
+    if (BILINGUAL_SYNONYMS[key]) {
+      allVariants.push(...BILINGUAL_SYNONYMS[key]);
+    }
+  }
+
+  // 1. Exact match
+  for (const v of allVariants) {
     const key = v.toLowerCase();
     if (sections.has(key) && sections.get(key)!.length > 0) return sections.get(key)!;
   }
-  // Fuzzy: check if any heading contains the variant
+  // 2. Fuzzy: check if any heading contains the variant
   for (const [key, val] of sections) {
-    for (const v of variants) {
+    for (const v of allVariants) {
       if (key.includes(v.toLowerCase()) && val.length > 0) return val;
     }
   }
