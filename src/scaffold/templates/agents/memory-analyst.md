@@ -38,6 +38,13 @@ All H2 section headings in card body MUST be in Russian. The validator rejects E
 | ## Dependencies | ## Зависимости |
 | ## Data flow | ## Поток данных |
 | ## Related modules | ## Связанные модули |
+| ## Migrated behavior | ## Перенесённое поведение |
+| ## Non-migrated behavior | ## Намеренно не перенесённое поведение |
+| ## Invariants | ## Инварианты |
+| ## State transitions | ## Переходы состояний |
+| ## Error handling | ## Отказ/повтор/отмена/восстановление |
+| ## Compatibility | ## Совместимость |
+| ## Derived scenarios | ## Производные сценарии и тесты |
 
 The section CONTENT can be in English if the source is English — but the H2 HEADING must be Russian.
 
@@ -116,6 +123,16 @@ Report format for reviewer:
 - [ ] `## Связанные модули`: module card ids listed
 - [ ] Read corresponding module card (`.ai/memory/modules/<id>.md`) for context
 - [ ] Synthesis, not extraction — combine module behavior + code structure + docs
+
+**Reference cards:**
+- [ ] `## Перенесённое поведение`: describes what was migrated from legacy/external
+- [ ] `## Намеренно не перенесённое поведение`: what was NOT migrated + why
+- [ ] `## Инварианты и переходы состояний`: invariants preserved, state transitions
+- [ ] `## Отказ/повтор/отмена/восстановление`: error handling, retries, cancellation, recovery
+- [ ] `## Совместимость/операционные ограничения`: version constraints, environment limits
+- [ ] `## Производные сценарии и тесты`: use cases and tests derived from behavior
+- [ ] Read guide/reference docs from `source_refs`
+- [ ] Synthesis — combine guide docs + module behavior + operational knowledge
 
 ## Anti-patterns - DON'T write:
 - "This decision was made for technical reasons" - too vague

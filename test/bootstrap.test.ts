@@ -127,7 +127,7 @@ describe("bootstrap", () => {
     await rm(dest, { recursive: true, force: true });
   });
 
-  it("creates flows/ and architecture/ subdirectories with .gitkeep", async () => {
+  it("creates flows/, architecture/, reference/ subdirectories with .gitkeep", async () => {
     const dest = await mkdtemp(path.join(tmpdir(), "bootstrap-subdirs-"));
     await mkdir(path.join(dest, "internal/registry"), { recursive: true });
     await writeFile(path.join(dest, "internal/registry/access_filter.go"), "package registry\n\nfunc Filter() {}\n", "utf8");
@@ -136,15 +136,18 @@ describe("bootstrap", () => {
 
     // Check subdirectories were created
     expect(result.subdirsCreated).toBeDefined();
-    expect(result.subdirsCreated.length).toBe(2);
+    expect(result.subdirsCreated.length).toBe(3);
 
     // Verify actual filesystem
     const flowsGitkeep = path.join(dest, ".ai/memory/flows/.gitkeep");
     const archGitkeep = path.join(dest, ".ai/memory/architecture/.gitkeep");
+    const refGitkeep = path.join(dest, ".ai/memory/reference/.gitkeep");
     expect(existsSync(flowsGitkeep)).toBe(true);
     expect(existsSync(archGitkeep)).toBe(true);
+    expect(existsSync(refGitkeep)).toBe(true);
     expect(existsSync(path.join(dest, ".ai/memory/flows"))).toBe(true);
     expect(existsSync(path.join(dest, ".ai/memory/architecture"))).toBe(true);
+    expect(existsSync(path.join(dest, ".ai/memory/reference"))).toBe(true);
 
     await rm(dest, { recursive: true, force: true });
   });

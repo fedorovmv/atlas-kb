@@ -115,6 +115,7 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
 
   await createSubdir("flows");
   await createSubdir("architecture");
+  await createSubdir("reference");
   // Module cards from candidate modules (confidence >= medium)
   for (const mod of report.candidateModules) {
     if (mod.confidence === "low" && mod.codeFiles.length === 0) continue;
@@ -173,6 +174,21 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     if (mod.confidence === "low" && mod.codeFiles.length === 0) continue;
     const archCard = renderArchitectureCard(mod);
     await writeCard(`architecture/arch-${mod.id}.md`, archCard);
+  }
+
+  // Reference cards — one per module with guide-like docs
+  for (const mod of report.candidateModules) {
+    if (mod.docFiles.length === 0) continue;
+    // Only create reference card if module has guide-like docs (not specs)
+    const hasGuideDocs = mod.docFiles.some((f) => 
+      f.toLowerCase().includes("guide") || 
+      f.toLowerCase().includes("handbook") || 
+      f.toLowerCase().includes("reference") ||
+      f.toLowerCase().includes("usage")
+    );
+    if (!hasGuideDocs) continue;
+    const refCard = renderReferenceCard(mod);
+    await writeCard(`reference/ref-${mod.id}.md`, refCard);
   }
 
   // Scenario cards from spec/doc headings (deterministic extraction)
@@ -464,6 +480,50 @@ function renderArchitectureCard(mod: { id: string; title: string; codeFiles: str
     "",
     "## Связанные модули",
     "Требует ревью — список module card ids которые взаимодействуют с этим.",
+  ].join("\n");
+  return `---\n${fm}\n---\n\n${body}\n`;
+}
+
+function renderReferenceCard(mod: { id: string; title: string; docFiles: string[] }): string {
+  const todayStr = today();
+  const fm = frontmatterYaml({
+    entity_type: "reference",
+    id: `ref-${mod.id}`,
+    title: `Reference: ${mod.title}`,
+    status: "needs_review",
+    authority: "reviewed_memory",
+    evidence_level: "inferred",
+    stability: "stable",
+    source_confidence: "low",
+    last_reviewed: todayStr,
+    review_required: true,
+    knowledge_types: ["current_behavior", "design_rationale"],
+    source_refs: mod.docFiles.map((p) => ({ path: p, role: "current_doc" })),
+    usage_policy: {
+      can_answer_current_behavior: true,
+      can_generate_code_from: false,
+      can_use_as_rationale: true,
+      requires_code_check_before_change: true,
+    },
+  });
+  const body = [
+    "## Перенесённое поведение",
+    `Поведение из ${mod.title}. Требует ревью — опишите что перенесено из legacy или внешних систем.`,
+    "",
+    "## Намеренно не перенесённое поведение",
+    "Требует ревью — что сознательно не перенесено и почему.",
+    "",
+    "## Инварианты и переходы состояний",
+    "Требует ревью — какие инварианты сохраняются? какие состояния возможны?",
+    "",
+    "## Отказ/повтор/отмена/восстановление",
+    "Требует ревью — как система обрабатывает отказы, повторы, отмену операций.",
+    "",
+    "## Совместимость/операционные ограничения",
+    "Требует ревью — известные ограничения по совместимости, версии, окружение.",
+    "",
+    "## Производные сценарии и тесты",
+    "Требует ревью — какие сценарии использования и тесты вытекают из этого поведения.",
   ].join("\n");
   return `---\n${fm}\n---\n\n${body}\n`;
 }
