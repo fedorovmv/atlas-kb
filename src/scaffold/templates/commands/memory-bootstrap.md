@@ -24,10 +24,13 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
    Stage A: module cards      → extractor → coder → reviewer
    Stage B: scenario cards    → extractor → coder → reviewer
    Stage C: decision/proposal/historical cards → analyst → coder (proposals only) → reviewer
-   Stage D: architecture cards → analyst (synthesis) → reviewer
-   Stage E: reference cards → analyst (synthesis from guide docs) → reviewer
+   Stage D: architecture cards → analyst (synthesis) → auto: reviewer
+   Stage E: reference cards → analyst (synthesis from guide docs) → auto: reviewer
    Stage F: validate + summary
    ```
+
+   **Auto-reviewer dispatch (Stages D & E):**
+   After analyst completes enrichment for a stage, **automatically dispatch memory-reviewer** for all cards in that stage. Do NOT wait for manual trigger. Reviewer promotes cards from `needs_review` to `current` (if evidence is sufficient) or adds to `open-questions.md` (if content is incomplete).
 
    **Per-stage checkpoint:** after each stage, run `ls --status needs_review --json` filtered by entity_type. If count >0 — continue dispatching. Do NOT proceed to next stage until count is 0.
 
@@ -36,8 +39,8 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
    - **module cards** → for EACH module card: dispatch `memory-extractor` with that one card path (reads code_refs, fills Ответственность/Поведение) → then dispatch `memory-coder` with same card (verifies symbols, adds Свидетельства из кода) → then `memory-reviewer` (quality gate, promotes needs_review→current).
    - **decision/proposal/historical cards** → for EACH card: dispatch `memory-analyst` with that one card path (reads source_refs/specs, extracts Rationale/Alternatives/Consequences) → then `memory-coder` (for proposal cards: checks if proposed behavior is partially implemented) → then `memory-reviewer` (quality gate, promotes decision→current, keeps proposal→proposed).
    - **scenario cards** → for EACH scenario card: dispatch `memory-extractor` (reads source_refs, fills Цель/Участники/Поток выполнения/Связанные модули/Связанные тесты) → then `memory-coder` (verifies flow against code, fills Свидетельства из кода/тестов) → then `memory-reviewer`.
-   - **architecture cards** → for EACH architecture card: dispatch `memory-analyst` (reads module card + source_refs, synthesizes architecture overview/components/dependencies/data flow) → then `memory-reviewer` (quality gate).
-   - **reference cards** → for EACH reference card: dispatch `memory-analyst` (reads guide docs + module card, synthesizes reference content: migrated behavior, invariants, error handling, compatibility) → then `memory-reviewer` (quality gate).
+   - **architecture cards** → for EACH architecture card: dispatch `memory-analyst` (reads module card + source_refs, synthesizes architecture overview/components/dependencies/data flow) → then `memory-reviewer` (quality gate). **AUTO-DISPATCH**: after analyst completes ALL architecture cards, dispatch reviewer for the entire batch.
+   - **reference cards** → for EACH reference card: dispatch `memory-analyst` (reads guide docs + module card, synthesizes reference content: migrated behavior, invariants, error handling, compatibility) → then `memory-reviewer` (quality gate). **AUTO-DISPATCH**: after analyst completes ALL reference cards, dispatch reviewer for the entire batch.
 
    Subagent dispatch prompt template:
    ```

@@ -51,10 +51,13 @@ If the result contains ANY cards, the bootstrap is INCOMPLETE. You MUST continue
 Stage A: module cards      → extractor → coder → reviewer
 Stage B: scenario cards    → extractor → coder → reviewer
 Stage C: decision/proposal/historical cards → analyst → coder (proposals only) → reviewer
-Stage D: architecture cards → analyst (synthesis) → reviewer
-Stage E: reference cards → analyst (synthesis from guide docs) → reviewer
+Stage D: architecture cards → analyst (synthesis) → **auto: reviewer**
+Stage E: reference cards → analyst (synthesis from guide docs) → **auto: reviewer**
 Stage F: validate + summary
 ```
+
+**Auto-reviewer dispatch (Stages D & E):**
+After analyst completes enrichment for a stage, **automatically dispatch memory-reviewer** for all cards in that stage. Do NOT wait for manual trigger. Reviewer promotes cards from `needs_review` to `current` (if evidence is sufficient) or adds to `open-questions.md` (if content is incomplete).
 
 **Per-stage checkpoint (run after each stage):**
 ```bash
@@ -158,6 +161,13 @@ For each enriched module/scenario card (after extractor or analyst):
 - Architecture is **synthesis**, not extraction — you are creating architectural documentation by combining module behavior, code structure, and design docs.
 - Do NOT set `status: current` — only memory-reviewer can promote.
 
+**AUTO-DISPATCH REVIEWER:**
+After analyst completes ALL architecture cards, **automatically dispatch memory-reviewer** for the entire batch. Reviewer will:
+- Check each card for required sections
+- Promote to `current` if evidence is sufficient
+- Add incomplete cards to `open-questions.md`
+- Set `review_required: false` for completed cards
+
 #### 2e. Reference cards — memory-analyst (synthesis from guide docs)
 
 For each reference card:
@@ -172,6 +182,13 @@ For each reference card:
 - Fill in `## Производные сценарии и тесты` — use cases and tests derived from this behavior.
 - Reference is **synthesis** — combine guide docs, module behavior, and operational knowledge.
 - Do NOT set `status: current` — only memory-reviewer can promote.
+
+**AUTO-DISPATCH REVIEWER:**
+After analyst completes ALL reference cards, **automatically dispatch memory-reviewer** for the entire batch. Reviewer will:
+- Check each card for required sections (Перенесённое поведение, Инварианты, Отказ/повтор, etc.)
+- Promote to `current` if evidence is sufficient
+- Add incomplete cards to `open-questions.md`
+- Set `review_required: false` for completed cards
 
 #### 2f. Quality gate — memory-reviewer
 
