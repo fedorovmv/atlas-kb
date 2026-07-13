@@ -32,7 +32,7 @@ function makeReferenceCard(overrides: Partial<MemoryCard> = {}): MemoryCard {
     path: "/tmp/.ai/memory/reference/test-ref.md",
     relativePath: ".ai/memory/reference/test-ref.md",
     meta: { ...baseMeta, ...overrides.meta } as MemoryCard["meta"],
-    body: `## Behaviors carried over\nContent here.\n\n## Behaviors intentionally not carried over\nContent.\n\n## Invariants and state transitions\nContent.\n\n## Failure/retry/cancellation/recovery\nContent.\n\n## Compatibility/operational constraints\nContent.\n\n## Derived scenarios and tests\nContent.\n`,
+    body: `## Перенесённое поведение\nContent here.\n\n## Намеренно не перенесённое поведение\nContent.\n\n## Инварианты и переходы состояний\nContent.\n\n## Отказ/повтор/отмена/восстановление\nContent.\n\n## Совместимость/операционные ограничения\nContent.\n\n## Производные сценарии и тесты\nContent.\n`,
     raw: "",
     ...overrides,
   };
@@ -51,14 +51,14 @@ describe("validateReferenceStudy", () => {
   });
 
   it("missing section → error", () => {
-    const card = makeReferenceCard({ body: "## Behaviors carried over\nContent.\n" });
+    const card = makeReferenceCard({ body: "## Перенесённое поведение\nContent.\n" });
     const result = validateReferenceStudy(card);
     expect(result.errors.some(e => e.includes("missing required section"))).toBe(true);
   });
 
   it("placeholder → error", () => {
     const card = makeReferenceCard({
-      body: "## Behaviors carried over\nNeeds review.\n\n## Behaviors intentionally not carried over\nContent.\n\n## Invariants and state transitions\nContent.\n\n## Failure/retry/cancellation/recovery\nContent.\n\n## Compatibility/operational constraints\nContent.\n\n## Derived scenarios and tests\nContent.\n",
+      body: "## Перенесённое поведение\nNeeds review.\n\n## Намеренно не перенесённое поведение\nContent.\n\n## Инварианты и переходы состояний\nContent.\n\n## Отказ/повтор/отмена/восстановление\nContent.\n\n## Совместимость/операционные ограничения\nContent.\n\n## Производные сценарии и тесты\nContent.\n",
     });
     const result = validateReferenceStudy(card);
     expect(result.errors.some(e => e.includes("placeholder"))).toBe(true);
@@ -164,22 +164,22 @@ source_refs:
     treeHash: definitely_not_the_real_hash
 ---
 # Hash Ref
-## Behaviors carried over
+## Перенесённое поведение
 Content.
 
-## Behaviors intentionally not carried over
+## Намеренно не перенесённое поведение
 Content.
 
-## Invariants and state transitions
+## Инварианты и переходы состояний
 Content.
 
-## Failure/retry/cancellation/recovery
+## Отказ/повтор/отмена/восстановление
 Content.
 
-## Compatibility/operational constraints
+## Совместимость/операционные ограничения
 Content.
 
-## Derived scenarios and tests
+## Производные сценарии и тесты
 Content.
 `;
     await writeFile(path.join(memoryRoot, "hash-ref.md"), cardContent, "utf8");

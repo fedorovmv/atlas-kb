@@ -8,6 +8,7 @@ import { MemoryFrontmatterSchema } from "../schemas/frontmatter.js";
 import type { MemoryCard, RepoMemoryOptions, ValidationResult } from "./types.js";
 import { findMemoryMarkdownFiles, loadMemoryCards } from "./loadMemory.js";
 import { RELATION_FIELDS } from "./relations.js";
+import { CARD_SECTION_CONTRACTS } from "../schemas/cardSections.js";
 import { resolveRoot, resolveMemoryRoot } from "./paths.js";
 import { hasQualityEvidenceSection } from "./evidenceSection.js";
 import { validateCardSections } from "./cardSections.js";
@@ -344,14 +345,7 @@ export function validateReferenceStudy(card: MemoryCard): { errors: string[]; wa
 
   if (card.meta.entity_type !== "reference") return { errors, warnings };
 
-  const requiredSections = [
-    "## Behaviors carried over",
-    "## Behaviors intentionally not carried over",
-    "## Invariants and state transitions",
-    "## Failure/retry/cancellation/recovery",
-    "## Compatibility/operational constraints",
-    "## Derived scenarios and tests",
-  ];
+  const requiredSections = CARD_SECTION_CONTRACTS.reference.required;
 
   const presentSections = new Set<string>();
   for (const line of card.body.split("\n")) {
@@ -366,7 +360,7 @@ export function validateReferenceStudy(card: MemoryCard): { errors: string[]; wa
   }
 
   // Placeholder check in sections
-  const placeholderPattern = /Needs review|TBD|TODO|FIXME|Placeholder|PENDING/i;
+  const placeholderPattern = /Needs review|TBD|TODO|FIXME|Placeholder|PENDING|Требует ревью/i;
   const sections = card.body.split(/^## /m).slice(1);
   for (const section of sections) {
     const sectionName = section.split("\n")[0].trim();
