@@ -176,6 +176,10 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
     await writeCard(`architecture/arch-${mod.id}.md`, archCard);
   }
 
+  // System architecture card — high-level overview of all components
+  const systemArchCard = renderSystemArchitectureCard(report.candidateModules);
+  await writeCard('architecture/system.md', systemArchCard);
+
   // Reference cards — one per module with guide-like docs
   for (const mod of report.candidateModules) {
     if (mod.docFiles.length === 0) continue;
@@ -524,6 +528,54 @@ function renderReferenceCard(mod: { id: string; title: string; docFiles: string[
     "",
     "## Производные сценарии и тесты",
     "Требует ревью — какие сценарии использования и тесты вытекают из этого поведения.",
+  ].join("\n");
+  return `---\n${fm}\n---\n\n${body}\n`;
+}
+
+function renderSystemArchitectureCard(modules: Array<{ id: string; title: string; codeFiles: string[] }>): string {
+  const todayStr = today();
+  const componentList = modules
+    .filter((m) => m.codeFiles.length > 0)
+    .map((m) => `- **${m.title}** (\`modules/${m.id}.md\`) — требует описания ответственности`)
+    .join('\n');
+
+  const fm = frontmatterYaml({
+    entity_type: "architecture",
+    id: "system",
+    title: "Системная архитектура",
+    status: "needs_review",
+    authority: "reviewed_memory",
+    evidence_level: "inferred",
+    stability: "evolving",
+    source_confidence: "low",
+    last_reviewed: todayStr,
+    review_required: true,
+    knowledge_types: ["design_rationale"],
+    source_refs: [],
+    usage_policy: {
+      can_answer_current_behavior: false,
+      can_generate_code_from: false,
+      can_use_as_rationale: true,
+      requires_code_check_before_change: true,
+    },
+  });
+  const body = [
+    "## Обзор архитектуры",
+    "Требует ревью — высокоуровневое описание системы, границы компонентов, deployment.",
+    "",
+    "## Компоненты",
+    "Список модулей-компонентов системы:",
+    "",
+    componentList || "- Нет компонентов с кодом",
+    "",
+    "## Зависимости",
+    "Требует ревью — внешние зависимости (БД, API, message queues) и внутренние coupling points.",
+    "",
+    "## Поток данных",
+    "Требует ревью — как данные проходят через систему (ingress → processing → egress).",
+    "",
+    "## Связанные модули",
+    `Всего модулей: ${modules.length}. См. детали в \`modules/*.md\`.`,
   ].join("\n");
   return `---\n${fm}\n---\n\n${body}\n`;
 }

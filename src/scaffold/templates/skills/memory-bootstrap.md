@@ -137,14 +137,23 @@ For each enriched module/scenario card (after extractor or analyst):
 
 #### 2d. Architecture cards — memory-analyst (synthesis)
 
-For each architecture card:
+**System architecture card** (`architecture/system.md`):
+
+- Read all module cards (`.ai/memory/modules/*.md`).
+- Fill in `## Обзор архитектуры` — high-level system overview, component boundaries, deployment topology.
+- Fill in `## Компоненты` — list of components with responsibilities (from module cards).
+- Fill in `## Зависимости` — external dependencies (DBs, APIs, message queues) + internal coupling.
+- Fill in `## Поток данных` — data flow through system (ingress → processing → egress).
+- This is **system-level synthesis**, not per-package documentation.
+
+**Per-module architecture cards** (`architecture/arch-<id>.md`):
 
 - Read the corresponding module card (`.ai/memory/modules/<id>.md`).
 - Read the `source_refs` docs listed in the architecture card frontmatter.
-- Fill in `## Обзор архитектуры` — high-level structure, boundaries, design rationale.
+- Fill in `## Обзор архитектуры` — high-level structure, boundaries, design rationale for this component.
 - Fill in `## Компоненты` — main components with their responsibilities.
 - Fill in `## Зависимости` — external dependencies and internal coupling points.
-- Fill in `## Поток данных` — how data flows through this module.
+- Fill in `## Поток данных` — how data flows through this component.
 - Fill in `## Связанные модули` — list module card ids that interact with this one.
 - Architecture is **synthesis**, not extraction — you are creating architectural documentation by combining module behavior, code structure, and design docs.
 - Do NOT set `status: current` — only memory-reviewer can promote.
