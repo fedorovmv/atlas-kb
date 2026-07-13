@@ -1,11 +1,31 @@
 // Memory Guard Plugin — auto-inject memory context, track tool usage, advisory enforcement
 // Auto-scaffolded by repo-memory-opencode-kit
+//
+// Advisory enforcement: пишет warnings в лог-файл, НЕ в stdout/stderr,
+// чтобы не ломать TUI OpenCode.
+
+import { appendFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+
+const LOG_FILE = join(tmpdir(), "memory-guard.log");
+
+function logAdvisory(msg) {
+  try {
+    const ts = new Date().toISOString();
+    appendFileSync(LOG_FILE, `[${ts}] ${msg}\n`, "utf8");
+  } catch {
+    // silent fail — advisory logging must never break the session
+  }
+}
 
 const sessionTools = new Map();
 
 export const MemoryGuardPlugin = async ({ $, directory }) => {
   const memoryTools = ["context", "related", "discover", "validate", "memory_context", "bootstrap"];
-  const writeTools = ["Write", "Edit", "ast_grep_replace", "write", "edit", "bash"];
+  // Только реальные write-инструменты. bash НЕ включаем — это general execution
+  // (git, npm, запуск memory CLI), false positive на каждый shell-вызов.
+  const writeTools = ["Write", "Edit", "write", "edit", "ast_grep_replace"];
 
   return {
     // Track tool usage per session
@@ -28,7 +48,7 @@ export const MemoryGuardPlugin = async ({ $, directory }) => {
         if (!messageText || messageText.length < 5) return;
 
         // Run memory context CLI
-        const result = await `npm run memory -- context ${messageText.slice(0, 200)}`.quiet();
+        const result = await `.ai/memory-tool/bin/memory context ${messageText.slice(0, 200)}`.quiet();
         const context = await result.text();
         if (context && context.trim().length > 0) {
           output.parts.push({
@@ -37,12 +57,13 @@ export const MemoryGuardPlugin = async ({ $, directory }) => {
           });
         }
       } catch (e) {
-        // Graceful fail — don't crash session
-        console.error("[memory-guard] Context injection failed:", e?.message ?? e);
+        // Graceful fail — log to file, don't crash session, don't pollute TUI
+        logAdvisory(`Context injection failed: ${e?.message ?? e}`);
       }
     },
 
-    // Advisory: warn if write tool called without memory read
+    // Advisory: warn if write tool called without memory read.
+    // Пишет в лог-файл, НЕ в stdout/stderr — чтобы не ломать TUI OpenCode.
     "tool.execute.before": async (input, _output) => {
       if (!writeTools.includes(input.tool)) return;
 
@@ -50,8 +71,8 @@ export const MemoryGuardPlugin = async ({ $, directory }) => {
       const hasReadMemory = [...tools].some(t => memoryTools.includes(t.toLowerCase()));
 
       if (!hasReadMemory) {
-        console.warn(
-          "[memory-guard] Write tool '" + input.tool + "' called without prior memory context. " +
+        logAdvisory(
+          "Write tool '" + input.tool + "' called without prior memory context. " +
           "Consider running /memory-context first to avoid missing product context."
         );
       }

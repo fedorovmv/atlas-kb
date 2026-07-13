@@ -1,11 +1,37 @@
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, copyFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { initMemory } from "../src/commands/init.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const templatesDir = path.resolve(__dirname, "..", "src", "scaffold", "templates");
 
 export async function createTempProject() {
   const root = await mkdtemp(path.join(tmpdir(), "repo-memory-test-"));
   await initMemory({ root });
+
+  // Copy example scaffold cards (not in default scaffold, used as test fixtures)
+  await copyFile(
+    path.join(templatesDir, "memory/modules/agent-tool-registry.md"),
+    path.join(root, ".ai/memory/modules/agent-tool-registry.md"),
+  );
+  await copyFile(
+    path.join(templatesDir, "memory/modules/mcp-gateway.md"),
+    path.join(root, ".ai/memory/modules/mcp-gateway.md"),
+  );
+  await copyFile(
+    path.join(templatesDir, "memory/scenarios/a2a-agent-discovery.md"),
+    path.join(root, ".ai/memory/scenarios/a2a-agent-discovery.md"),
+  );
+  await copyFile(
+    path.join(templatesDir, "memory/scenarios/mcp-tool-discovery.md"),
+    path.join(root, ".ai/memory/scenarios/mcp-tool-discovery.md"),
+  );
+  await copyFile(
+    path.join(templatesDir, "memory/decisions/registry-is-discovery-not-orchestration.md"),
+    path.join(root, ".ai/memory/decisions/registry-is-discovery-not-orchestration.md"),
+  );
 
   await mkdir(path.join(root, "internal/registry"), { recursive: true });
   await mkdir(path.join(root, "pkg/agentcard"), { recursive: true });

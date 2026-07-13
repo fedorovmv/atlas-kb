@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, rm, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -107,5 +107,30 @@ describe("initMemory", () => {
     const updated = await readFile(contractPath, "utf-8");
     expect(updated).not.toBe('"not valid json for overwrite test"');
     expect(updated).toContain("requiredTopLevel");
+  });
+
+  it("generates .ai/memory-tool/bin/memory wrapper script", async () => {
+    await initMemory({ root: tmpDir });
+    const wrapperPath = path.join(tmpDir, ".ai", "memory-tool", "bin", "memory");
+    expect(existsSync(wrapperPath)).toBe(true);
+    const content = await readFile(wrapperPath, "utf-8");
+    expect(content).toContain("#!/usr/bin/env bash");
+    // Wrapper должен вызывать cli.js (dist) или cli.ts (src via tsx) из кита
+    expect(content).toMatch(/cli\.(js|ts)"/);
+    expect(content).toMatch(/exec (node|npx)/);
+  });
+
+  it("wrapper script is executable", async () => {
+    await initMemory({ root: tmpDir });
+    const wrapperPath = path.join(tmpDir, ".ai", "memory-tool", "bin", "memory");
+    const st = await stat(wrapperPath);
+    // Owner execute bit must be set (0o755)
+    expect(st.mode & 0o100).toBeTruthy();
+  });
+
+  it("dryRun does not create wrapper script", async () => {
+    await initMemory({ root: tmpDir, dryRun: true });
+    const wrapperPath = path.join(tmpDir, ".ai", "memory-tool", "bin", "memory");
+    expect(existsSync(wrapperPath)).toBe(false);
   });
 });

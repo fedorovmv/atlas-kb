@@ -14,7 +14,7 @@ Populate `.ai/memory` from project source, tests, docs, and specs in one workflo
 Run from project root:
 
 ```bash
-npm run memory -- bootstrap --root .
+.ai/memory-tool/bin/memory bootstrap --root .
 ```
 
 This creates skeleton cards: module cards with code_refs/test_refs/source_refs but placeholder content ("Needs review", "Preliminary responsibility"). It also creates `reconciliation/conflicts.md` and `reconciliation/open-questions.md`.
@@ -22,46 +22,97 @@ This creates skeleton cards: module cards with code_refs/test_refs/source_refs b
 Then get the list of cards that need enrichment:
 
 ```bash
-npm run memory -- ls --status needs_review --json
+.ai/memory-tool/bin/memory ls --status needs_review --json
 ```
 
 ### Phase 2 — LLM enrichment (agents)
 
-For each `needs_review` card from Phase 1, you (the orchestrating agent) MUST dispatch subagent work using model routing:
+For each `needs_review` card from Phase 1, you (the orchestrating agent) MUST dispatch subagent work using model routing.
 
-1. **memory-extractor** — for each module card:
-   - Read the code_refs and source_refs files listed in the card frontmatter.
-   - Read the card body.
-   - Fill in `## Responsibility` with a 2-4 sentence description of what this module does, inferred from code structure (exports, package names, function signatures, main types).
-   - Fill in `## Non-responsibilities` with what this module deliberately does NOT handle (inferred from what's imported/exported and what's in sibling modules).
-   - Fill in `## Current behavior` with a concise summary of the module's actual behavior from reading the code.
-   - Add `## Known risks` if the code has obvious risk patterns (TODO/FIXME, deprecated markers, unsafe operations, missing error handling).
-   - Set `source_confidence: medium` if code was readable and consistent, `low` if sparse or ambiguous.
-   - Do NOT set `evidence_level: code_confirmed` unless you actually read and understood the code.
+**CRITICAL — one card per subagent dispatch.** Never bundle multiple cards into a single subagent task. Each subagent gets exactly one card, reads its source_refs/code_refs, fills content, returns. This keeps context bounded and quality high.
 
-2. **memory-coder** — for each module card:
-   - Read the test_refs files.
-   - Verify that code_refs paths exist and the functions/types mentioned in the card are actually present in the referenced code files.
-   - Add `## Code evidence` section with specific function/type names found and their file:line if determinable.
-   - If tests cover the module's behavior, note which test functions confirm which behavior in `## Test evidence`.
-   - If code_refs point to files that don't contain what the card claims, mark `status: conflict` and add to `reconciliation/conflicts.md`.
-   - Set `evidence_level: code_confirmed` ONLY if you verified specific symbols in the code.
-   - Set `evidence_level: test_confirmed` ONLY if you verified tests cover the behavior.
+**Concurrency limit — max 3 parallel subagents.** Dispatch in batches of 3. Wait for each batch to complete before starting the next. More than 3 parallel subagents causes provider rate-limit, orchestrator context bloat, and quality degradation.
 
-3. **memory-reviewer** — for the full memory bank after enrichment:
-   - Read all enriched cards.
-   - Check that no `current` card has `evidence_level: spec_only` or `inferred` without code evidence.
-   - Check that `proposal`/`historical` cards have `can_answer_current_behavior: false`.
-   - Check that `decision` cards have `can_generate_code_from: false`.
-   - Check that `## Responsibility` is not still a placeholder ("Preliminary responsibility", "Needs review").
-   - Flag any card where content was not enriched — add to `reconciliation/open-questions.md`.
-   - Set `review_required: false` only for cards where responsibility + evidence are filled and verified.
-   - Set `last_reviewed` to today's date for all reviewed cards.
+**MUST COMPLETE ALL PHASES.** Do NOT stop after module enrichment. The pipeline has 4 mandatory subagent dispatch stages. Complete ALL before reporting "done":
+
+```
+Stage A: module cards      → extractor → coder → reviewer
+Stage B: scenario cards    → extractor → coder → reviewer
+Stage C: decision/proposal/historical cards → analyst → coder (proposals only) → reviewer
+Stage D: validate + summary
+```
+
+If you stop after Stage A or B without completing Stage C (analyst for decision/proposal/historical), the bootstrap is INCOMPLETE. Decision cards will have placeholder rationale "Требует ревью — какие альтернативы были рассмотрены?" — this is unacceptable.
+
+**Card type routing:**
+
+| entity_type | Agent pipeline | What they do |
+|-------------|----------------|--------------|
+| module | extractor → coder → reviewer | Read code, fill Responsibility/Behavior, verify symbols |
+| scenario | extractor → coder → reviewer | Read source_refs, fill Goal/Flow/Actors, verify against code |
+| decision | **analyst** → reviewer | Read spec, extract Rationale/Alternatives/Consequences |
+| proposal | **analyst** → coder → reviewer | Read spec, extract proposed behavior, check partial implementation |
+| historical | **analyst** → reviewer | Read spec, extract survived decisions, prior approach |
+
+#### 2a. Module cards — memory-extractor
+
+For each module card:
+
+- Read the code_refs and source_refs files listed in the card frontmatter.
+- Read the card body.
+- Fill in `## Responsibility` with a 2-4 sentence description of what this module does, inferred from code structure (exports, package names, function signatures, main types).
+- Fill in `## Non-responsibilities` with what this module deliberately does NOT handle (inferred from what's imported/exported and what's in sibling modules).
+- Fill in `## Current behavior` with a concise summary of the module's actual behavior from reading the code.
+- Add `## Known risks` if the code has obvious risk patterns (TODO/FIXME, deprecated markers, unsafe operations, missing error handling).
+- Set `source_confidence: medium` if code was readable and consistent, `low` if sparse or ambiguous.
+- Do NOT set `evidence_level: code_confirmed` unless you actually read and understood the code.
+
+#### 2b. Decision/Proposal/Historical cards — memory-analyst
+
+For each decision, proposal, or historical card:
+
+- Read the source_refs file (the spec/doc the card was created from).
+- Read the card body — CLI extracted sections deterministically, but semantic rationale extraction requires LLM.
+- **Decision cards**: fill `## Контекст`, `## Проблема`, `## Решение`, `## Обоснование` (WHY not WHAT), `## Рассмотренные альтернативы` (with status + reason), `## Отклонённые альтернативы`, `## Последствия`.
+- **Proposal cards**: fill `## Проблема`, `## Предлагаемое поведение`, `## Обоснование из спецификации`. Re-extract claims CLI missed (numbered requirements, prose without modal verbs, non-goals, acceptance criteria).
+- **Historical cards**: fill `## Предыдущий подход`, `## Актуальное обоснование` (what rationale survives), `## Устаревшие/неподтверждённые идеи`, `## Выжившие решения`.
+- **Spec comparison**: compare new spec against existing proposal/historical cards by meaning. Detect supersede/conflict relations. Report to reviewer.
+- **Partial implementation detection**: for proposal claims with `heuristic_code_match` evidence — determine if spec is partially implemented, report which claims have code match vs not found vs conflicting.
+- If rationale is explicitly stated in spec → mark `evidence_level: reviewed_doc`. If inferred → `evidence_level: inferred`.
+- Do NOT set `status: current` — only memory-reviewer can promote.
+
+#### 2c. Code evidence verification — memory-coder
+
+For each enriched module/scenario card (after extractor or analyst):
+
+- Read the test_refs files.
+- Verify that code_refs paths exist and the functions/types mentioned in the card are actually present in the referenced code files.
+- Add `## Code evidence` section with specific function/type names found and their file:line if determinable.
+- If tests cover the module's behavior, note which test functions confirm which behavior in `## Test evidence`.
+- If code_refs point to files that don't contain what the card claims, mark `status: conflict` and add to `reconciliation/conflicts.md`.
+- Set `evidence_level: code_confirmed` ONLY if you verified specific symbols in the code.
+- Set `evidence_level: test_confirmed` ONLY if you verified tests cover the behavior.
+- For proposal cards: check if proposed behavior is partially implemented in code. Report findings.
+
+#### 2d. Quality gate — memory-reviewer
+
+For the full memory bank after enrichment:
+
+- Read all enriched cards.
+- Check that no `current` card has `evidence_level: spec_only` or `inferred` without code evidence.
+- Check that `proposal`/`historical` cards have `can_answer_current_behavior: false`.
+- Check that `decision` cards have `can_generate_code_from: false`.
+- Check that `## Responsibility` (module) / `## Обоснование` (decision) / `## Предлагаемое поведение` (proposal) is not still a placeholder.
+- For decision cards: verify `## Обоснование` explains WHY, not WHAT. Verify `## Рассмотренные альтернативы` has ≥1 entry or "Not documented in spec".
+- Flag any card where content was not enriched — add to `reconciliation/open-questions.md`.
+- Resolve cross-card conflicts reported by analyst. Add to `reconciliation/conflicts.md` if unresolved.
+- Set `review_required: false` only for cards where content + evidence are filled and verified.
+- Set `last_reviewed` to today's date for all reviewed cards.
 
 ### Phase 3 — Validation
 
 ```bash
-npm run memory -- validate
+.ai/memory-tool/bin/memory validate
 ```
 
 If validate reports errors, fix them (broken relations, dangerous usage policies, spec_only+current_behavior). Re-run validate until clean.

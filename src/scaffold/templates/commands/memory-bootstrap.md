@@ -6,14 +6,41 @@ Use the memory-bootstrap skill.
 
 You are the orchestrator. Run the full pipeline yourself, dispatching subagents for each role:
 
-1. **Scaffold**: Run `npm run memory -- bootstrap --root .` — deterministic CLI creates skeleton cards with code_refs/test_refs but placeholder content. Enriched cards (review_required=false or evidence_level=code_confirmed) are preserved automatically.
-2. **List needs_review**: Run `npm run memory -- ls --status needs_review --json` — get cards to enrich.
-3. **Enrich**: For each `needs_review` card, dispatch subagents (do NOT do the work yourself):
-   - Dispatch `memory-extractor` subagent: it reads code_refs, fills Responsibility/Non-responsibilities/Current behavior/Known risks using the `updateCard` tool.
-   - After extractor completes, dispatch `memory-coder` subagent: it verifies code evidence, adds Code evidence/Test evidence sections, sets evidence_level using the `updateCard` tool.
-   - After coder completes, dispatch `memory-reviewer` subagent: it checks quality, promotes needs_review→current only with code_confirmed, sets review_required=false.
-4. **Validate**: Run `npm run memory -- validate` — ensure no errors. Fix if needed.
-5. **Summary**: Show card counts (created/enriched/still-needs-review) and `git diff .ai/memory/`.
+1. **Scaffold**: Run `.ai/memory-tool/bin/memory bootstrap --root .` — deterministic CLI creates skeleton cards: module cards from code, decision/proposal/historical cards from specs/docs. All with placeholder content. Enriched cards (review_required=false or evidence_level=code_confirmed) are preserved automatically.
+2. **List needs_review**: Run `.ai/memory-tool/bin/memory ls --status needs_review --json` — get cards to enrich.
+3. **Enrich by card type** (dispatch subagents, do NOT do the work yourself):
+
+   **CRITICAL — one card per subagent dispatch.** Never bundle multiple cards into a single subagent task. Each subagent gets exactly one card, reads its source_refs, fills content, returns. This keeps context bounded and quality high.
+
+   **Concurrency limit — max 3 parallel subagents.** Dispatch in batches of 3. Wait for each batch to complete before starting next batch. More than 3 parallel subagents causes: provider rate-limit, orchestrator context bloat, quality degradation.
+
+   **MUST COMPLETE ALL STAGES.** Do NOT stop after module enrichment. The pipeline has 4 mandatory subagent dispatch stages. Complete ALL before reporting "done":
+
+   ```
+   Stage A: module cards      → extractor → coder → reviewer
+   Stage B: scenario cards    → extractor → coder → reviewer
+   Stage C: decision/proposal/historical cards → analyst → coder (proposals only) → reviewer
+   Stage D: validate + summary
+   ```
+
+   If you stop after Stage A or B without completing Stage C (analyst for decision/proposal/historical), the bootstrap is INCOMPLETE. Decision cards will have placeholder rationale "Требует ревью — какие альтернативы были рассмотрены?" — this is unacceptable.
+
+   - **module cards** → for EACH module card: dispatch `memory-extractor` with that one card path (reads code_refs, fills Responsibility/Behavior) → then dispatch `memory-coder` with same card (verifies symbols, adds Code evidence) → then `memory-reviewer` (quality gate, promotes needs_review→current).
+   - **decision/proposal/historical cards** → for EACH card: dispatch `memory-analyst` with that one card path (reads source_refs/specs, extracts Rationale/Alternatives/Consequences) → then `memory-coder` (for proposal cards: checks if proposed behavior is partially implemented) → then `memory-reviewer` (quality gate, promotes decision→current, keeps proposal→proposed).
+   - **scenario cards** → for EACH scenario card: dispatch `memory-extractor` (reads source_refs, fills Goal/Flow/Actors) → then `memory-coder` (verifies flow against code) → then `memory-reviewer`.
+
+   Subagent dispatch prompt template:
+   ```
+   You are memory-<role> agent. Your task is to enrich ONE card: <card path>.
+
+   1. Read the card file: <card path>
+   2. Read its source_refs/code_refs files (from frontmatter)
+   3. Fill in card body sections per your agent instructions
+   4. Use updateCard tool to save — NEVER use Write tool
+   ```
+
+4. **Validate**: Run `.ai/memory-tool/bin/memory validate` — ensure no errors. Fix if needed.
+5. **Summary**: Show card counts by type (created/enriched/still-needs-review) and `git diff .ai/memory/`.
 
 Do NOT ask the user to manually classify specs or fill cards. The subagents do this automatically.
 

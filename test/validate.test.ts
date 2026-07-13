@@ -587,7 +587,7 @@ usage_policy:
 
 # Heuristic Current
 
-## Responsibility
+## Ответственность
 Test module.
 `,
       "utf8",

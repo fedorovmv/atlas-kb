@@ -556,20 +556,30 @@ function renderProposalCard(
 // --- Extractors ---
 
 function slugifyPath(p: string): string {
-  return toPosixPath(p).replace(/\.md$/, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "unnamed";
+  // Use basename only, not full path — avoids long slugs like
+  // "docs-superpowers-specs-2026-06-23-ai-agent-search-reliability-design".
+  const basename = path.basename(p).replace(/\.md$/, "");
+  return basename
+    // Strip leading date patterns: 2026-06-23-, 2026-06-23_
+    .replace(/^\d{4}-\d{2}-\d{2}[-_]/, "")
+    // Strip redundant trailing -design, -spec, -specification
+    .replace(/[-_](design|spec|specification)$/i, "")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase() || "unnamed";
 }
 
 function extractScenarios(report: DiscoveryReport): { id: string; slug: string; title: string; topics: string[]; sourceFiles: string[] }[] {
   const scenarios: { id: string; slug: string; title: string; topics: string[]; sourceFiles: string[] }[] = [];
   const seen = new Set<string>();
-  for (const file of report.files.filter((f) => f.kind === "doc" || f.kind === "spec")) {
-    // headings extracted as topics in discovery; derive scenario from filename
+  // Only doc files (runtime documentation), NOT spec files — specs become proposals/historical cards.
+  // Mixing specs into scenarios creates duplicate cards for the same content.
+  for (const file of report.files.filter((f) => f.kind === "doc")) {
     const baseTitle = file.basename.replace(/\.md$/, "").replace(/[-_]/g, " ");
     const slug = slugifyPath(file.path);
     const id = `scenario-${slug}`;
     if (seen.has(id)) continue;
     seen.add(id);
-    // No hardcoded keyword filter — create scenario cards for all doc/spec files
     scenarios.push({ id, slug, title: baseTitle.charAt(0).toUpperCase() + baseTitle.slice(1), topics: file.topics, sourceFiles: [file.path] });
   }
   return scenarios.slice(0, 20);

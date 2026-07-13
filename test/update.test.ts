@@ -41,7 +41,7 @@ Some body content without evidence.
 
     await expect(
       updateMemoryCard("card-1", { root, fields: { evidence_level: "code_confirmed" } }),
-    ).rejects.toThrow(/Code evidence/);
+    ).rejects.toThrow(/Свидетельства из кода/);
   });
 
   it("succeeds: set code_confirmed with evidence section in new body", async () => {
@@ -78,7 +78,7 @@ Some body content.
       "utf8",
     );
 
-    const bodyWithEvidence = "# Card 2\n\n## Code evidence\n\n- Function X at file.ts:12\n";
+    const bodyWithEvidence = "# Card 2\n\n## Свидетельства из кода\n\n- Function X at file.ts:12\n";
     const result = await updateMemoryCard("card-2", {
       root,
       fields: { evidence_level: "code_confirmed" },
@@ -116,7 +116,7 @@ usage_policy:
 
 # Card 3
 
-## Code evidence
+## Свидетельства из кода
 
 - Existing function at file.ts:1
 `,
@@ -171,7 +171,7 @@ No evidence section.
     expect(result.updated).toBe(true);
   });
 
-  it("succeeds: set test_confirmed with ## Test evidence section", async () => {
+  it("succeeds: set test_confirmed with ## Свидетельства из тестов section", async () => {
     const root = await createTempProject();
     const dir = path.join(root, ".ai/memory/modules");
     await mkdir(dir, { recursive: true });
@@ -205,7 +205,7 @@ Some body.
       "utf8",
     );
 
-    const bodyWithTestEvidence = "# Card 5\n\n## Test evidence\n\n- Test X at test.ts:10\n";
+    const bodyWithTestEvidence = "# Card 5\n\n## Свидетельства из тестов\n\n- Test X at test.ts:10\n";
     const result = await updateMemoryCard("card-5", {
       root,
       fields: { evidence_level: "test_confirmed" },
@@ -214,7 +214,7 @@ Some body.
     expect(result.updated).toBe(true);
   });
 
-  it("throws: set test_confirmed without ## Test evidence", async () => {
+  it("throws: set test_confirmed without ## Свидетельства из тестов", async () => {
     const root = await createTempProject();
     const dir = path.join(root, ".ai/memory/modules");
     await mkdir(dir, { recursive: true });
@@ -250,7 +250,7 @@ No test evidence here.
 
     await expect(
       updateMemoryCard("card-6", { root, fields: { evidence_level: "test_confirmed" } }),
-    ).rejects.toThrow(/Test evidence/);
+    ).rejects.toThrow(/Свидетельства из тестов/);
   });
 
   it("updateMemoryCard with body without required sections → warning in stderr, update succeeds", async () => {
@@ -283,21 +283,21 @@ usage_policy:
 
 ## Responsibilities
 content
-## Non-responsibilities
+## Не входит в ответственность
 content
-## Current behavior
+## Текущее поведение
 content
-## Related scenarios
+## Связанные сценарии
 content
-## Related decisions
+## Связанные решения
 content
 ## Code references
 content
 ## Test references
 content
-## Known risks
+## Известные риски
 content
-## Open questions
+## Открытые вопросы
 content
 ## Why these boundaries
 content

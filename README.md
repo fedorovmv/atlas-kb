@@ -120,14 +120,25 @@ repo-memory context <query>         # context pack для задачи
 repo-memory update <id> [--body <text>] [--set field=value]  # safe card update
 ```
 
-Через npm:
+В целевом проекте после `init` доступен wrapper `.ai/memory-tool/bin/memory` — работает без `package.json`, требует только `node` в PATH:
+
 ```bash
-npm run memory -- bootstrap
-npm run memory -- ingest-spec "specs/**/*.md"
-npm run memory -- reconcile --fix --json
-npm run memory -- context "изменить фильтрацию agent cards"
-npm run memory -- validate
+.ai/memory-tool/bin/memory bootstrap
+.ai/memory-tool/bin/memory ingest-spec "specs/**/*.md"
+.ai/memory-tool/bin/memory reconcile --fix --json
+.ai/memory-tool/bin/memory context "изменить фильтрацию agent cards"
+.ai/memory-tool/bin/memory validate
 ```
+
+Для Node.js проектов можно добавить script в `package.json`:
+```json
+{
+  "scripts": {
+    "memory": ".ai/memory-tool/bin/memory"
+  }
+}
+```
+Тогда: `npm run memory -- bootstrap`.
 
 ## Enforcement слои
 
@@ -205,7 +216,7 @@ npm run memory -- validate
 npm install
 npm run build
 
-# 1. создать memory/openCode scaffold в проекте
+# 1. создать memory/openCode scaffold в проекте (включая wrapper .ai/memory-tool/bin/memory)
 npm run memory -- --root /path/to/your/repo init
 
 # 2. автоматически исследовать и наполнить
@@ -218,11 +229,13 @@ npm run memory -- --root /path/to/your/repo validate
 npm run memory -- --root /path/to/your/repo context "изменить фильтрацию agent cards"
 ```
 
+После `init` в целевом проекте появляется wrapper `.ai/memory-tool/bin/memory` — работает без `package.json`, требует только `node` в PATH. Все skills/commands/tools используют его автоматически.
+
 Или скопировать kit в `.ai/memory-tool` и добавить script в package.json:
 ```json
 {
   "scripts": {
-    "memory": "tsx .ai/memory-tool/src/cli.ts"
+    "memory": ".ai/memory-tool/bin/memory"
   }
 }
 ```

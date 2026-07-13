@@ -100,7 +100,7 @@ describe("CLI commands", () => {
 
   it("updates a card body safely", async () => {
     const root = await createTempProject();
-    const newBody = "# Updated title\n\n## Responsibility\n\nThis module handles agent card filtering by caller identity.\n\n## Code evidence\n\n- FilterCardsForCaller at internal/registry/access_filter.go:3\n";
+    const newBody = "# Updated title\n\n## Ответственность\n\nThis module handles agent card filtering by caller identity.\n\n## Свидетельства из кода\n\n- FilterCardsForCaller at internal/registry/access_filter.go:3\n";
     const output = runCli(root, ["update", "agent-tool-registry", "--body", newBody, "--json"]);
     const result = JSON.parse(output);
     expect(result.updated).toBe(true);

@@ -21,7 +21,7 @@ Use this skill when changing product behavior, architecture boundaries, specs, o
 Run:
 
 ```bash
-npm run memory -- context "$ARGUMENTS"
+.ai/memory-tool/bin/memory context "$ARGUMENTS"
 ```
 
 Then read related module, scenario, decision, code and test references.

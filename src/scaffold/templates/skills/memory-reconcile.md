@@ -9,7 +9,7 @@ Use this skill to detect drift between `.ai/memory` and the repository.
 
 ## Steps
 
-1. Run `npm run memory -- validate`.
+1. Run `.ai/memory-tool/bin/memory validate`.
 2. List current module cards.
 3. For each current module, verify major claims against code_refs and test_refs.
 4. Find current claims with weak evidence.
