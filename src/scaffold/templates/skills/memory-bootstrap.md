@@ -31,7 +31,7 @@ For each `needs_review` card from Phase 1, you (the orchestrating agent) MUST di
 
 **CRITICAL — one card per subagent dispatch.** Never bundle multiple cards into a single subagent task. Each subagent gets exactly one card, reads its source_refs/code_refs, fills content, returns. This keeps context bounded and quality high.
 
-**Concurrency limit — max 3 parallel subagents.** Dispatch in batches of 3. Wait for each batch to complete before starting the next. More than 3 parallel subagents causes provider rate-limit, orchestrator context bloat, and quality degradation.
+**Concurrency limit — max 5 parallel subagents.** Dispatch in batches of 5. Wait for each batch to complete before starting the next. Subagents are lightweight (one card, bounded context), so 5 parallel is safe.
 
 **MUST COMPLETE ALL PHASES.** Do NOT stop after module enrichment. The pipeline has 4 mandatory subagent dispatch stages. Complete ALL before reporting "done":
 
