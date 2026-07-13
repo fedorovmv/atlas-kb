@@ -110,8 +110,8 @@ For each decision, proposal, or historical card:
 - Read the source_refs file (the spec/doc the card was created from).
 - Read the card body — CLI extracted sections deterministically, but semantic rationale extraction requires LLM.
 - **Decision cards**: fill `## Контекст`, `## Проблема`, `## Решение`, `## Обоснование` (WHY not WHAT), `## Рассмотренные альтернативы` (with status + reason), `## Отклонённые альтернативы`, `## Последствия`.
-- **Proposal cards**: fill `## Проблема`, `## Предлагаемое поведение`, `## Обоснование из спецификации`. Re-extract claims CLI missed (numbered requirements, prose without modal verbs, non-goals, acceptance criteria).
-- **Historical cards**: fill `## Предыдущий подход`, `## Актуальное обоснование` (what rationale survives), `## Устаревшие/неподтверждённые идеи`, `## Выжившие решения`.
+- **Proposal cards**: fill `## Предлагаемое поведение`, `## Обоснование из спецификации`, `## Затронутые модули`, `## Затронутые сценарии`, `## Затронутые решения`, `## Утверждения`. Re-extract claims CLI missed (numbered requirements, prose without modal verbs, non-goals, acceptance criteria).
+- **Historical cards**: fill `## Какая проблема решалась`, `## Актуальное обоснование` (what rationale survives), `## Устаревшие идеи`, `## Выжившие решения`, `## Ссылки на текущие решения`.
 - **Spec comparison**: compare new spec against existing proposal/historical cards by meaning. Detect supersede/conflict relations. Report to reviewer.
 - **Partial implementation detection**: for proposal claims with `heuristic_code_match` evidence — determine if spec is partially implemented, report which claims have code match vs not found vs conflicting.
 - If rationale is explicitly stated in spec → mark `evidence_level: reviewed_doc`. If inferred → `evidence_level: inferred`.
