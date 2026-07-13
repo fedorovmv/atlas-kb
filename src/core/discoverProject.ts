@@ -16,6 +16,10 @@ const IGNORE_PATTERNS = [
   "**/vendor/**",
   "**/third_party/**",
   "**/.opencode/**",
+  "**/tmp/**",
+  "**/backups/**",
+  "**/.backup/**",
+  "**/tmp-backup/**",
 ];
 
 // ── Heuristic classification ─────────────────────────────────────────────────

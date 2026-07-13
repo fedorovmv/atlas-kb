@@ -38,11 +38,14 @@ export async function loadMemoryCards(options: RepoMemoryOptions = {}): Promise<
 
       const parsed = matter(raw);
       const meta = MemoryFrontmatterSchema.parse(parsed.data);
+      // Strip duplicate YAML frontmatter that agents sometimes append to body
+      let body = parsed.content;
+      body = body.replace(/^---\n[\s\S]*?\n---\n?/, "").trimStart();
       cards.push({
         path: absolutePath,
         relativePath: toPosixPath(relativePath),
         meta,
-        body: parsed.content,
+        body,
         raw,
       });
     } catch (err) {

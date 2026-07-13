@@ -449,18 +449,25 @@ async function renderModuleCard(
 
 function renderArchitectureCard(mod: { id: string; title: string; codeFiles: string[]; docFiles: string[] }): string {
   const todayStr = today();
+  // Detect runtime tier from code paths — demo vs production
+  const isDemo = mod.codeFiles.some((p) =>
+    /(?:^|\/)(a2a-agents-demo|a2a-dashboard|demo|example|examples)\//.test(p) ||
+    /^(?:a2a-agents-demo|a2a-dashboard)\//.test(p)
+  );
+  const runtimeTier = isDemo ? "demo" : "production";
   const fm = frontmatterYaml({
     entity_type: "architecture",
     id: `arch-${mod.id}`,
-    title: `Архитектура: ${mod.title}`,
+    title: `Архитектура: ${mod.title} (${runtimeTier === "demo" ? "демо" : "production"})`,
     status: "needs_review",
     authority: "reviewed_memory",
     evidence_level: "inferred",
-    stability: "evolving",
+    stability: runtimeTier === "demo" ? "experimental" : "evolving",
     source_confidence: "low",
     last_reviewed: todayStr,
     review_required: true,
     knowledge_types: ["design_rationale"],
+    runtime_tier: runtimeTier,
     source_refs: mod.docFiles.map((p) => ({ path: p, role: "current_doc" })),
     usage_policy: {
       can_answer_current_behavior: false,
@@ -469,9 +476,10 @@ function renderArchitectureCard(mod: { id: string; title: string; codeFiles: str
       requires_code_check_before_change: true,
     },
   });
+  const tierLabel = runtimeTier === "demo" ? "демо-компонент (не production)" : "production-компонент";
   const body = [
     "## Обзор архитектуры",
-    `Архитектура модуля ${mod.title}. Требует ревью — опишите высокоуровневую структуру и границы.`,
+    `Архитектура модуля ${mod.title}. ${tierLabel}. Требует ревью — опишите высокоуровневую структуру и границы.`,
     "",
     "## Компоненты",
     "Требует ревью — перечислите основные компоненты и их ответственность.",
@@ -639,7 +647,7 @@ function renderDecisionCard(
       requires_code_check_before_change: true,
     },
   });
-  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Контекст\n${context || "Требует ревью — какая проблема привела к этому решению?"}\n\n## Проблема\n${problem || "Требует ревью — какая конкретная проблема решена?"}\n\n## Решение\n${decisionText || "Требует ревью — что было решено?"}\n\n## Обоснование\n${rationale || d.rationale}\n\n## Рассмотренные альтернативы\n${alternatives || "Требует ревью — какие альтернативы были рассмотрены?"}\n\n## Отклонённые альтернативы\n${rejectedAlt || (alternatives ? "См. альтернативы выше." : "Требует ревью — что было отклонено и почему?")}\n\n## Последствия\n${consequences || "Требует ревью — какие компромиссы были приняты?"}\n\n## Свидетельства текущего поведения\nТребует ревью — действительно ли решение актуально для текущего кода?\n\n## Затронутые модули\n${affectedModules || "Требует ревью — какие модули затронуты этим решением?"}\n\n## Затронутые сценарии\n${affectedScenarios || "Требует ревью — какие сценарии затронуты этим решением?"}\n`;
+  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Контекст\n${context || "Требует ревью — какая проблема привела к этому решению?"}\n\n## Проблема\n${problem || "Требует ревью — какая конкретная проблема решена?"}\n\n## Решение\n${decisionText || "Требует ревью — что было решено?"}\n\n## Обоснование\n${rationale || d.rationale || "Не задокументировано в спецификации."}\n\n## Рассмотренные альтернативы\n${alternatives || "Требует ревью — какие альтернативы были рассмотрены?"}\n\n## Отклонённые альтернативы\n${rejectedAlt || (alternatives ? "См. альтернативы выше." : "Требует ревью — что было отклонено и почему?")}\n\n## Последствия\n${consequences || "Требует ревью — какие компромиссы были приняты?"}\n\n## Свидетельства текущего поведения\nТребует ревью — действительно ли решение актуально для текущего кода?\n\n## Затронутые модули\n${affectedModules || "Требует ревью — какие модули затронуты этим решением?"}\n\n## Затронутые сценарии\n${affectedScenarios || "Требует ревью — какие сценарии затронуты этим решением?"}\n`;
 }
 
 function renderHistoricalCard(
@@ -753,7 +761,7 @@ function extractDecisions(report: DiscoveryReport): { id: string; title: string;
       const id = slugifyPath(file.path);
       if (seen.has(id)) continue;
       seen.add(id);
-      decisions.push({ id, title: file.basename.replace(/\.md$/, ""), rationale: `Inferred rationale signals from ${file.path}: ${file.signals.join(", ")}`, sourceFile: file.path });
+      decisions.push({ id, title: file.basename.replace(/\.md$/, ""), rationale: "", sourceFile: file.path });
     }
   }
   return decisions.slice(0, 5);
