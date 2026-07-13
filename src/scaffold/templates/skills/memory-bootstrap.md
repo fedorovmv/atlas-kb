@@ -33,6 +33,18 @@ For each `needs_review` card from Phase 1, you (the orchestrating agent) MUST di
 
 **Concurrency limit — max 5 parallel subagents.** Dispatch in batches of 5. Wait for each batch to complete before starting the next. Subagents are lightweight (one card, bounded context), so 5 parallel is safe.
 
+**Progress tracking — MANDATORY.** After each batch completes, run:
+```bash
+.ai/memory-tool/bin/memory ls --status needs_review --json
+```
+Count remaining needs_review cards. If >0 cards remain in the current stage, continue dispatching. Do NOT advance to the next stage until the current stage has 0 needs_review cards of that entity_type.
+
+**Completion gate — MANDATORY.** Before reporting "done", run:
+```bash
+.ai/memory-tool/bin/memory ls --status needs_review --json
+```
+If the result contains ANY cards, the bootstrap is INCOMPLETE. You MUST continue dispatching subagents for remaining cards. Do NOT report "done" until `needs_review` count is 0 (or all remaining cards are explicitly marked as deferred in `reconciliation/open-questions.md` with a reason).
+
 **MUST COMPLETE ALL PHASES.** Do NOT stop after module enrichment. The pipeline has 4 mandatory subagent dispatch stages. Complete ALL before reporting "done":
 
 ```
@@ -41,6 +53,14 @@ Stage B: scenario cards    → extractor → coder → reviewer
 Stage C: decision/proposal/historical cards → analyst → coder (proposals only) → reviewer
 Stage D: validate + summary
 ```
+
+**Per-stage checkpoint (run after each stage):**
+```bash
+.ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="module")] | length'   # after Stage A
+.ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="scenario")] | length' # after Stage B
+.ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="decision" or .entity_type=="proposal" or .entity_type=="historical")] | length' # after Stage C
+```
+If count >0 for the stage's entity types — continue dispatching. Do NOT proceed to next stage until count is 0.
 
 If you stop after Stage A or B without completing Stage C (analyst for decision/proposal/historical), the bootstrap is INCOMPLETE. Decision cards will have placeholder rationale "Требует ревью — какие альтернативы были рассмотрены?" — this is unacceptable.
 
@@ -136,6 +156,12 @@ For the full memory bank after enrichment:
 If validate reports errors, fix them (broken relations, dangerous usage policies, spec_only+current_behavior). Re-run validate until clean.
 
 ### Phase 4 — Summary
+
+**Run completion gate first:**
+```bash
+.ai/memory-tool/bin/memory ls --status needs_review --json
+```
+If ANY cards remain — bootstrap is INCOMPLETE. Either continue dispatching or list deferred cards with reasons in `reconciliation/open-questions.md`.
 
 Show the user:
 - How many cards were created (from Phase 1).

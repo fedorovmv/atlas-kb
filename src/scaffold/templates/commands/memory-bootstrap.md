@@ -14,6 +14,10 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
 
    **Concurrency limit — max 5 parallel subagents.** Dispatch in batches of 5. Wait for each batch to complete before starting next batch. Subagents are lightweight (one card, bounded context), so 5 parallel is safe.
 
+   **Progress tracking — MANDATORY.** After each batch, run `.ai/memory-tool/bin/memory ls --status needs_review --json` and count remaining. Do NOT advance to next stage until current stage has 0 needs_review cards of that entity_type.
+
+   **Completion gate — MANDATORY.** Before reporting "done", run `.ai/memory-tool/bin/memory ls --status needs_review --json`. If ANY cards remain, bootstrap is INCOMPLETE — continue dispatching. Do NOT report "done" until needs_review count is 0 (or remaining cards are explicitly deferred in open-questions.md with a reason).
+
    **MUST COMPLETE ALL STAGES.** Do NOT stop after module enrichment. The pipeline has 4 mandatory subagent dispatch stages. Complete ALL before reporting "done":
 
    ```
@@ -22,6 +26,8 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
    Stage C: decision/proposal/historical cards → analyst → coder (proposals only) → reviewer
    Stage D: validate + summary
    ```
+
+   **Per-stage checkpoint:** after each stage, run `ls --status needs_review --json` filtered by entity_type. If count >0 — continue dispatching. Do NOT proceed to next stage until count is 0.
 
    If you stop after Stage A or B without completing Stage C (analyst for decision/proposal/historical), the bootstrap is INCOMPLETE. Decision cards will have placeholder rationale "Требует ревью — какие альтернативы были рассмотрены?" — this is unacceptable.
 
