@@ -45,13 +45,14 @@ Count remaining needs_review cards. If >0 cards remain in the current stage, con
 ```
 If the result contains ANY cards, the bootstrap is INCOMPLETE. You MUST continue dispatching subagents for remaining cards. Do NOT report "done" until `needs_review` count is 0 (or all remaining cards are explicitly marked as deferred in `reconciliation/open-questions.md` with a reason).
 
-**MUST COMPLETE ALL PHASES.** Do NOT stop after module enrichment. The pipeline has 4 mandatory subagent dispatch stages. Complete ALL before reporting "done":
+**MUST COMPLETE ALL PHASES.** Do NOT stop after module enrichment. The pipeline has 5 mandatory subagent dispatch stages. Complete ALL before reporting "done":
 
 ```
 Stage A: module cards      → extractor → coder → reviewer
 Stage B: scenario cards    → extractor → coder → reviewer
 Stage C: decision/proposal/historical cards → analyst → coder (proposals only) → reviewer
-Stage D: validate + summary
+Stage D: architecture cards → analyst (synthesis) → reviewer
+Stage E: validate + summary
 ```
 
 **Per-stage checkpoint (run after each stage):**
@@ -59,6 +60,7 @@ Stage D: validate + summary
 .ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="module")] | length'   # after Stage A
 .ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="scenario")] | length' # after Stage B
 .ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="decision" or .entity_type=="proposal" or .entity_type=="historical")] | length' # after Stage C
+.ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="architecture")] | length' # after Stage D
 ```
 If count >0 for the stage's entity types — continue dispatching. Do NOT proceed to next stage until count is 0.
 
@@ -131,7 +133,21 @@ For each enriched module/scenario card (after extractor or analyst):
 - For scenario cards: verify that the flow described in `## Поток выполнения` matches actual code behavior. If flow doesn't match — flag as conflict.
 - For proposal cards: check if proposed behavior is partially implemented in code. Report findings.
 
-#### 2d. Quality gate — memory-reviewer
+#### 2d. Architecture cards — memory-analyst (synthesis)
+
+For each architecture card:
+
+- Read the corresponding module card (`.ai/memory/modules/<id>.md`).
+- Read the `source_refs` docs listed in the architecture card frontmatter.
+- Fill in `## Обзор архитектуры` — high-level structure, boundaries, design rationale.
+- Fill in `## Компоненты` — main components with their responsibilities.
+- Fill in `## Зависимости` — external dependencies and internal coupling points.
+- Fill in `## Поток данных` — how data flows through this module.
+- Fill in `## Связанные модули` — list module card ids that interact with this one.
+- Architecture is **synthesis**, not extraction — you are creating architectural documentation by combining module behavior, code structure, and design docs.
+- Do NOT set `status: current` — only memory-reviewer can promote.
+
+#### 2e. Quality gate — memory-reviewer
 
 For the full memory bank after enrichment:
 
@@ -139,8 +155,9 @@ For the full memory bank after enrichment:
 - Check that no `current` card has `evidence_level: spec_only` or `inferred` without code evidence.
 - Check that `proposal`/`historical` cards have `can_answer_current_behavior: false`.
 - Check that `decision` cards have `can_generate_code_from: false`.
-- Check that `## Ответственность` (module) / `## Цель` (scenario) / `## Обоснование` (decision) / `## Предлагаемое поведение` (proposal) is not still a placeholder.
+- Check that `## Ответственность` (module) / `## Цель` (scenario) / `## Обзор архитектуры` (architecture) / `## Обоснование` (decision) / `## Предлагаемое поведение` (proposal) is not still a placeholder.
 - For scenario cards: verify `## Поток выполнения` has numbered steps, `## Участники` has ≥1 participant, `## Связанные модули` has module ids or "Не выявлены".
+- For architecture cards: verify `## Компоненты` has ≥1 component, `## Зависимости` lists dependencies, `## Связанные модули` has module ids.
 - For decision cards: verify `## Обоснование` explains WHY, not WHAT. Verify `## Рассмотренные альтернативы` has ≥1 entry or "Not documented in spec".
 - Flag any card where content was not enriched — add to `reconciliation/open-questions.md`.
 - Resolve cross-card conflicts reported by analyst. Add to `reconciliation/conflicts.md` if unresolved.

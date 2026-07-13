@@ -115,7 +115,6 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
 
   await createSubdir("flows");
   await createSubdir("architecture");
-
   // Module cards from candidate modules (confidence >= medium)
   for (const mod of report.candidateModules) {
     if (mod.confidence === "low" && mod.codeFiles.length === 0) continue;
@@ -152,6 +151,7 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
       }, 0);
       return bScore - aScore; // higher score = more path overlap = sort first
     });
+
     let docSummary = "";
     let docResponsibilities = "";
     let docOverview = "";
@@ -166,6 +166,13 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
 
     const card = await renderModuleCard(mod, status, evidenceLevel, docSummary, docResponsibilities, docOverview, report.files);
     await writeCard(`modules/${mod.id}.md`, card);
+  }
+
+  // Architecture cards — one per module (synthesis of module architecture)
+  for (const mod of report.candidateModules) {
+    if (mod.confidence === "low" && mod.codeFiles.length === 0) continue;
+    const archCard = renderArchitectureCard(mod);
+    await writeCard(`architecture/arch-${mod.id}.md`, archCard);
   }
 
   // Scenario cards from spec/doc headings (deterministic extraction)
@@ -416,6 +423,47 @@ async function renderModuleCard(
     "",
     "## Открытые вопросы",
     "Требует ревью — добавьте вопросы, на которые нельзя ответить только из кода.",
+  ].join("\n");
+  return `---\n${fm}\n---\n\n${body}\n`;
+}
+
+function renderArchitectureCard(mod: { id: string; title: string; codeFiles: string[]; docFiles: string[] }): string {
+  const todayStr = today();
+  const fm = frontmatterYaml({
+    entity_type: "architecture",
+    id: `arch-${mod.id}`,
+    title: `Архитектура: ${mod.title}`,
+    status: "needs_review",
+    authority: "reviewed_memory",
+    evidence_level: "inferred",
+    stability: "evolving",
+    source_confidence: "low",
+    last_reviewed: todayStr,
+    review_required: true,
+    knowledge_types: ["design_rationale"],
+    source_refs: mod.docFiles.map((p) => ({ path: p, role: "current_doc" })),
+    usage_policy: {
+      can_answer_current_behavior: false,
+      can_generate_code_from: false,
+      can_use_as_rationale: true,
+      requires_code_check_before_change: true,
+    },
+  });
+  const body = [
+    "## Обзор архитектуры",
+    `Архитектура модуля ${mod.title}. Требует ревью — опишите высокоуровневую структуру и границы.`,
+    "",
+    "## Компоненты",
+    "Требует ревью — перечислите основные компоненты и их ответственность.",
+    "",
+    "## Зависимости",
+    "Требует ревью — внешние зависимости и внутренние coupling points.",
+    "",
+    "## Поток данных",
+    "Требует ревью — как данные проходят через этот модуль.",
+    "",
+    "## Связанные модули",
+    "Требует ревью — список module card ids которые взаимодействуют с этим.",
   ].join("\n");
   return `---\n${fm}\n---\n\n${body}\n`;
 }

@@ -1,0 +1,1881 @@
+{
+  "entries": [
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "3e8186e260602836a100aafe91ee1c51733b75b9c61a70d65192c928777380ce",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "docs/LIMITATIONS.md",
+      "sha256": "f841d3c60ad8d381bb1f29fc9d19a9303fd11a8ed2c05923c83056e02f9e4549",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "docs/plans/claim-dedup-brief.md",
+      "sha256": "2832e31a6041d4efde8c23d7033a60327b95701f4ad036f3681d857a2f831953",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/decisions/claim-dedup-brief.md",
+        ".ai/memory/scenarios/claim-dedup-brief.md"
+      ],
+      "reason": "document with headings (low confidence)"
+    },
+    {
+      "path": "docs/plans/claim-dedup-plan.md",
+      "sha256": "85753e29f7b85fd6b865ba8d7bafffd169b0cb673f1963b12f0de20a261ea525",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/scenarios/claim-dedup-plan.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/claim-linking-brief.md",
+      "sha256": "3ef97d2991280aab232a2e432798d0247f13854ea64f280b40d58ce04a858a62",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/decisions/claim-linking-brief.md",
+        ".ai/memory/scenarios/claim-linking-brief.md"
+      ],
+      "reason": "document with headings (low confidence)"
+    },
+    {
+      "path": "docs/plans/claim-linking-plan.md",
+      "sha256": "5646938d6a8bfd83414c58588af2d29069bf7da53b100633e70760786069bfa6",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/decisions/claim-linking-plan.md",
+        ".ai/memory/scenarios/claim-linking-plan.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/claim-storage-brief.md",
+      "sha256": "1fafdbc28a55c016a23631bd9dc734316031e13b1038aaa7f6d659997950ddc6",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/decisions/claim-storage-brief.md",
+        ".ai/memory/scenarios/claim-storage-brief.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/claim-storage-plan.md",
+      "sha256": "3a3f2c76f4d3fd498af2cf9c7d8024521a24cc8d22838cf37e3fcc787336c56a",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/scenarios/claim-storage-plan.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/content-quality-brief.md",
+      "sha256": "295c55089efd5cac1156de17eb4e29e8437dbcef7ff380ccf72476da092d9237",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/decisions/content-quality-brief.md",
+        ".ai/memory/scenarios/content-quality-brief.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/content-quality-plan.md",
+      "sha256": "ef1781f6e0263bd073235bad05b39babfa850617f521d7a25376acbb164211cb",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/plans/cross-doc-comparison-brief.md",
+      "sha256": "dbc1811e21fb1d7f30b636eb9fee5b1e8f95f521ca77bf62d2893f754dbaaae9",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/plans/cross-doc-comparison-plan.md",
+      "sha256": "5d441ab2fe47b476f823d1d740a6aeac048bcc09278c461e8de30e34334f81b1",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/plans/kb-gaps-brief.md",
+      "sha256": "614a1cec220c233c8bab883830bd65151b90b9d0a686bb977ccf0212a9cbbd38",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/scenarios/kb-gaps-brief.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/kb-gaps-plan.md",
+      "sha256": "15b0cf6d2985ea1899cfdb749481c1cb5e097a23802ef3261ecf2815707012c4",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/plans/llm-validation-enforcement-brief.md",
+      "sha256": "469b6cc43439e85563700121e47c959846453dedfd4191c93002515f3df0c8e1",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/scenarios/llm-validation-enforcement-brief.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/llm-validation-enforcement-plan.md",
+      "sha256": "0e06b2e646d5bcbcbf2149b12c6a1133aee5de74718bd0992b176edfea5ad8d2",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/scenarios/llm-validation-enforcement-plan.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/memory-guard-plugin-brief.md",
+      "sha256": "c26bf4bba1873b29da2c36c30fa7e58e5dada76e16c73cf0e5342a25782f2687",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/scenarios/memory-guard-plugin-brief.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/memory-guard-plugin-plan.md",
+      "sha256": "4933b3b8409dd2d90dc6a31b321cf96711c7d9386b9321a497980f646dd90d43",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/scenarios/memory-guard-plugin-plan.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/phase2-brief.md",
+      "sha256": "3ba35dc4aae989e92cd6b6784d5ff117dc2b7a5063c1fb9500a7f06954bc2346",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/scenarios/phase2-brief.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/phase2-plan.md",
+      "sha256": "eabc56683f6b135e20d553d65d687faef556163abf85be683f23b5c8ca1601f0",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "docs/plans/phase3-brief.md",
+      "sha256": "23fbd0f1a6a66f93930b6f4aaf8536bdaa340c14ce1de7671a0b403b70cc00d2",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/phase3-plan.md",
+      "sha256": "fac76dd5b383ed15b19d479cd3b327065e9a0e67d5ab22e4276517b00e7d041c",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/plans/phase4-brief.md",
+      "sha256": "1177781bad7a8340e1896261214b8983a1be455970e55dc520de38744e1d3f9f",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/phase4-design.md",
+      "sha256": "35b712c329edfa0f193bd04fa0b56ec2fddf2ed1dd08f9d8dad5b521b0980773",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/plans/phase4-plan.md",
+      "sha256": "d855582905149e01065e5e30ec098e4e6f2807e4959ee669fc60d8d0f08251e7",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/plans/rationale-extraction-brief.md",
+      "sha256": "ee099a702df3e73ef76d1e5b161b23a952a1d8260b2c6ee26498996c6c5658c2",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "docs/plans/rationale-extraction-plan.md",
+      "sha256": "55397d08238671d68f7c59fdd60ed836f54deb6d75a824e91835d836bd6ae234",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "docs/plans/reconcile-fix-brief.md",
+      "sha256": "0b98c8d80b4598620b6955b68b721a2cf769eed6ab0abbbc2cab27b1b0da8c85",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/reconcile-fix-plan.md",
+      "sha256": "b3ff89d783b2f24b0f00585c54c630786875ce7ac13ac06d7f486bb9ad4914a7",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/plans/semantic-code-evidence-brief.md",
+      "sha256": "671afa4f7c587f733074fc74f9b7d4311d4b10536df4beac49b4ee57b8997dec",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "document with headings (low confidence)"
+    },
+    {
+      "path": "docs/plans/semantic-code-evidence-plan.md",
+      "sha256": "0e7e17f54a219858015c1d6632fe1cab383efcc1f49bfdb06dd5f0e3c4b818e3",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "docs/reviews/claim-storage-review-feedback.md",
+      "sha256": "5d15a1ae3da5843166993e48bfe371121ecbb460812b48a14bc98b5f4821b74c",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/reviews/cross-doc-review-feedback.md",
+      "sha256": "b69d681c1d61b4eb09401076c4dd34c45d913e71c718e2d15cd86e03e7a31860",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "docs/reviews/kb-gaps-council-feedback.md",
+      "sha256": "2bfb13a3f8cfccf870a5e88a1cae87b18bd4566b394b3283294fb5d17cfa0b53",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "docs/reviews/kb-gaps-review-feedback.md",
+      "sha256": "3892c8039f732c56aaa6653a98636b4c0f18ec4cbe69a2d186dcfd5b84afc304",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/reviews/phase1-review-feedback.md",
+      "sha256": "22c2365fdb7fbc55aa7fc3e52da6cb962e36e9480404e7fefeac9821562c50e0",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/reviews/phase2-review-feedback.md",
+      "sha256": "c3c17e1ea0c55f88e6dd2ed6ffe15609e470700517bdfa50f7034e487d123aaf",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/reviews/phase3-code-review-feedback.md",
+      "sha256": "ed6339dbea481a66a4fd5bc614c83e153dea585ad2df3e9536252f67dcdea15f",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "docs/reviews/phase3-plan-review-feedback.md",
+      "sha256": "713d969a7c4949ef840be40ffb2486b303cb5fed16e91302977ec7a771ac73de",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/reviews/phase4-code-review-feedback.md",
+      "sha256": "2d6b73950825cc5e77eda603a3a2a2dc5f074b37ef49de47a639fa7a4dd8cb5c",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "docs/reviews/phase4-external-review-feedback.md",
+      "sha256": "fa5634372aaecbc84463dc15811f5c40f7b6a82a28faf75a849fe4a78f51fa99",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "docs/reviews/phase4-plan-review-feedback.md",
+      "sha256": "a5820d3c0a437d6b9eea95a31eb3d1d1f3e727ec1baf6305aebb899a8555cabd",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/specs/GAP_CLOSURE_SPEC.md",
+      "sha256": "1eb23c7655062418db848f307adf7382a1ea803576a5919df431599697b80b1f",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/specs/IMPLEMENTATION_DESIGN.md",
+      "sha256": "e8eaa015afe416451abe7834661e78c6377c22cfb782978d7edddb8b211b3710",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/specs/PHASE1_IMPLEMENTATION_SPEC.md",
+      "sha256": "919eb36fd63e3c7ff3948f5be4ff9847b670de237f0da75aa0ade7994530218a",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "docs/specs/REQUIREMENTS.md",
+      "sha256": "c9d257d2d316b0c196d6469d75e1f1947812558eaec63b5e97e92cfa2e7c1047",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "examples/synapse-mini/docs/agent-registry.md",
+      "sha256": "bffcac6ed15c6787da15183d0ee96f1839b3cda00b208371853784865b046bdf",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "examples/synapse-mini/examples/demo-agent/main.go",
+      "sha256": "1d98f6eea37a4b75e35585ff9188f3b4f7b6338c784a037b8a70c74f626bb117",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "examples/synapse-mini/internal/mcp/gateway.go",
+      "sha256": "3c00d4e0528e1acaf09cacb3b822590d447c5303ae71fd0b00c4e9330b22db56",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "examples/synapse-mini/internal/registry/access_filter_test.go",
+      "sha256": "19b843cfe5571f7ac4e2b6671d2c8134279e1b3ae45a07e45f806bd99641e6b3",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "examples/synapse-mini/internal/registry/access_filter.go",
+      "sha256": "57f69f55d1cd58439767ed7a598858a655fa71a4496c293209fb656b3c1dd9b8",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "examples/synapse-mini/pkg/agentcard/card.go",
+      "sha256": "5e81cc08a54c4ec6abad4381a7059f51e44a4137020626e48c099709dd8b915a",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "examples/synapse-mini/specs/2027-agent-tool-registry.md",
+      "sha256": "6e8e729606945fd81ae2efb028763b7f96828d4f8df583f18b25992d1e950912",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "examples/synapse-mini/specs/legacy/2025-agent-routing.md",
+      "sha256": "2bffb311eddc518d157aa11ce26af8cbf7464ca8ccf2bee998b5755f281187d2",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "IMPLEMENTATION_STATUS.md",
+      "sha256": "4d63ba3f001d6d2cd97adf26111ea2b1a86970c6ef44fd0821ce55785c014f28",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "Makefile",
+      "sha256": "98a062f036dc950e211cfec3df97698d198e9f96c746177268e455570937ca16",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "caaef541d468aad2cd98953249d916d96ac71072ec2e99fa9a713e6d314ce079",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "package.json",
+      "sha256": "1eb45e145e6938a24a1b617a4800601065ce42f2ad0564bcfb15d72e43abf60b",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "README.md",
+      "sha256": "c8755b07f2c81a226ea7ca3869ef90fb7a7486d1229c6a522b67a1e604186918",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/cli.ts",
+      "sha256": "6a6714f0c330e5544c62ceccd83508b0990cfbc5ee9a033e8d23151c90c1ed31",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/artifactsSearch.ts",
+      "sha256": "03c424eaafc1148d7e2321bdabb7d2b9b177535779dca18c9590446e8c40cb88",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/bootstrap.ts",
+      "sha256": "50a51629107812ded20505aceb507501a2c77f8d97fe0a91f2d3a4ede82506b2",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/compact.ts",
+      "sha256": "0e33658c92e975c9915cc9a053f75f2e80a48ffadc46c2d4c43a1e95340fdbca",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/context.ts",
+      "sha256": "f4e5c7f5f7b0087568ba5cf7db53a211520f6ec7281613b1f2623cc0ab5b095b",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/contextCheck.ts",
+      "sha256": "ec6dfb153eb43bdf34094e00a6ad65218f67aac37e9493d9cb0727704cc0a7e0",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/commands/discover.ts",
+      "sha256": "519aaa1cca380ef1da4887e371cbc8e6ea22b336ee3aaa0c123026a546e50f75",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/ingestSpec.ts",
+      "sha256": "f4fa5053a32f8ad7d03046c80b2d7262faae0efaa9b0b36460bf55d2d6c8d60b",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/commands/init.ts",
+      "sha256": "b8e13b9372132eacd8a5e3e37feebdbdb3aeadd41ca8a674b808e669a77ae5af",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/commands/legacyIngest.ts",
+      "sha256": "549a82aceac641b3665c4fc3abfdbb4df58b0c6a848b559bc26c3876a8356af5",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/commands/ls.ts",
+      "sha256": "1a3c29fcd5d49f94006c7064abfa93dfb8e587f315f912d224236a08082fe1e5",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/migrateFromV3.ts",
+      "sha256": "d423da00eab013a840c8484298faf0bfb6d39c882e3da37f4b02588535747444",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/openspec.ts",
+      "sha256": "0bf62dab2d3039986cd1767f779cf3e6f9ae32b7a4a2fefdbaa2d89c188b8781",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/plan.ts",
+      "sha256": "be1712de5ebf560882b2fde81c15d9be8f87a0c2f3b82892278345c381a8e3b4",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/profile.ts",
+      "sha256": "cf80f19f9b55f6199f6ed2aac568aab65fa3a2f3b4562ef0622c9df5d6756fad",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/reconcile.ts",
+      "sha256": "1816fd8d0fbbaefbb7be2806ff5aa11f00bde6c26c4a26481e93d2e1fda87931",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/related.ts",
+      "sha256": "76277aa66a4fe3a4558a4be8abf322a86d113d81f35a7c4d97ba5cfb0fdc4ba8",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/render.ts",
+      "sha256": "b8554bd2106bcd2ab6c1cdb5417d98f96c2c9278970e1927776e76457bfdbb99",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/route.ts",
+      "sha256": "f2d11d62ef6225c8c65e89df07ff184a11af512f5b8b15051c185465c6e40914",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/commands/semanticRepair.ts",
+      "sha256": "618099e7e728dbfd2b0ab06f712eec74ee3489879512a63f6c02dffc97d93c61",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/session.ts",
+      "sha256": "062cdc6ef9b5748cd959aa1c9497940de4bc617af987cfdaa9a48e0f7a8ad25b",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/show.ts",
+      "sha256": "afb2eaaceb40dbf7422f4cce6d75e94502c92e2f43650aa409e8abd3e2fb71dd",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/triage.ts",
+      "sha256": "44eb5930433a27f90f443a6ab4bbad8dc715ed9b7790e078a6d40f07641bc3f5",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/update.ts",
+      "sha256": "58aae2094df5a0b9ff2ea5cbd088a736e0eafb4503bbca1c4ba2d54dd1ae7e91",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/commands/validate.ts",
+      "sha256": "a979d0451701958f7e98860f1467f9ba38ccf6894c7e309a18a3b3c5d96a548b",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/artifactIndex.ts",
+      "sha256": "ab4ae8748ce11d309f27b94f57ee9c2804985f4285ac9c9a7d9a30f81db037ee",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/bootstrapMemory.ts",
+      "sha256": "c6cc5fb1949f20a80fffa4d108be3a6ea534994d3ab8ca55537ab1b863c38eb4",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/core/cardSections.ts",
+      "sha256": "a0a6b950de2083e371377362f4463547967e05b45273db49f3531edd05f36871",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/changeSurface.ts",
+      "sha256": "76e2b644e6708648af81dcee04b6d28b7cf07bca41b65b3789fcf6b06d17d9ef",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/claimDedup.ts",
+      "sha256": "302281bdecce6f2d789dd66a7f76594d375153b63a848e5b162751994f0f6686",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/claimLinking.ts",
+      "sha256": "00037f3a7479d7ece52560f8781bbf25729cefeefea1340794268a109f570bad",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/compaction.ts",
+      "sha256": "7d035b84f51ddbb12c7bd5ccc0cb0c41ad3ebebe91f41d99adea5fb0fdf99fe4",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/contentMap.ts",
+      "sha256": "2cba6f7de1a3b6a52108814f0fc2329d1fe0bc8aee1891a992907ebb73d63976",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/core/context.ts",
+      "sha256": "58f36f7396c5007d916a37b547ae83d698128bb438a41e617fd3d02e6af3f41f",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/core/discoverProject.ts",
+      "sha256": "3cfa7f3776f477ff3be96d2d08950f85acd164eecc8713b9a36af8358579c740",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/core/dispatch.ts",
+      "sha256": "f7b67bc7d7f06f151c04b2c6b568549cea1a4d5fbdbec07dded515b513598c1c",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/core/docExtraction.ts",
+      "sha256": "e8f35cb87bc3dcd4b59313e3f120c405be206a9d8958193ad6ad0cddbd1e625b",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/core/docValidate.ts",
+      "sha256": "8efd4b07b012f534b898d127d357ff342e889a63581eb3af69bf5e8ff2b30d1e",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/evidenceSection.ts",
+      "sha256": "c51adf0a11ae1e469cb0be7590a476397ea0bf00d47a57d8096db44c0a433965",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/hashing.ts",
+      "sha256": "e64913b3eae37b53c989ca9f6d081c8b30e13e4d1a5f71676c8da002fcd0f373",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/core/legacyIngest.ts",
+      "sha256": "50e269417af3d418c3388cf41b8619c059196456da56882b8fd38dbf86770ae5",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/core/loadMemory.ts",
+      "sha256": "3f8b6335818a54a1070af7d2c382bac0eb57e4a779ac12cb00c7a92df45084da",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/migrateDocs.ts",
+      "sha256": "6ebf00ba4252b5c6ac1ddb2004fd4faeb1cfe507f942ff2604c1923d7e970014",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/core/migrateFromV3.ts",
+      "sha256": "e398fff1851315016d3e3a4adcb855b57695e3318bdf1a23ffb87e6a93ccdadb",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/migratePaths.ts",
+      "sha256": "893e3971817048d388a5b1c1ef6aa6f908f3bea81c7ba9b3069ec25699d26194",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/core/migrateSynthesis.ts",
+      "sha256": "445e2af5c4ec216ee5b3e0586a861cf1cd7dcf9b3202a588270d573d484d6b14",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/core/modelRouting.ts",
+      "sha256": "486a7f715fa8b6dc36b5cdb52c98344cdc6f1f85f0eb220a29ac8643c9161c73",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/overview.ts",
+      "sha256": "3bec451e2b31a5889bdc1ffaecb4f48a01fce7c2377ad3fc0c8697c39d688520",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/paths.ts",
+      "sha256": "cfa464524214aa9c4c05fccd77f217798f4ab7b8050e37e2b1f0c255250ea8d9",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/plan.ts",
+      "sha256": "ac236684ac7d6a537c15b1dfbc76f81335781f91c7867af6ab1c38af17550317",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/reconcile.ts",
+      "sha256": "8f73d2b13b4f034ce71248014d90d3de2921d0b117a2b95f64a48b473056f3b6",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/reconcileFix.ts",
+      "sha256": "53c94f4dc1e8f3815aeabf125523089a4cc6c491de3e0d64212cd54e51a281c8",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/relations.ts",
+      "sha256": "aaf8705cfb35dc68809aefc7790d2d45f21dbf29889972073f0420b4429d5201",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/routeWorkflow.ts",
+      "sha256": "f5512789715c7325cdcd9e580be2b66c9015243138f77f923b2b6e399821f5c5",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/runtimeTier.ts",
+      "sha256": "bf2da305416c04a89529f2a407d7b7a813ba34e3b6a4ca3df2483670d9807473",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/score.ts",
+      "sha256": "9c8e2f5c9c65ec95051f3000632970ee7a81a1d79e39c1805832c9475f460d2b",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/core/semanticRepair.ts",
+      "sha256": "128ea72422cbdda274b259c1d9e5648e4e4d66127e814f9f5e4a576af636c854",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/core/sessionTracking.ts",
+      "sha256": "62a49fd56b8b2db7a3ecc74537605a7f6f54d21c60cc6e349f763440fcbd901d",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/sourceCoverage.ts",
+      "sha256": "e683cacba7f931f1beddc618fd5cc623651759a3db500310c879f48afe66c9b9",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/core/specClassification.ts",
+      "sha256": "c450bd9a91dd73ef86699f55274a2ac8568e062a709606245d7563bc376853dc",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/core/specRelations.ts",
+      "sha256": "cc92a89750f45df9924b3937905946a8993882eac899d533d2a42d95e3b27ece",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/core/topics.ts",
+      "sha256": "03a7c1fcdc4b633826d6b88d825e7c0369fcc7a848bf03b20e22a1e76d54c940",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/types.ts",
+      "sha256": "4f13e124a2914e282983ce96a98d4a93e6282eca6050cd5fbd44190af3cce62a",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/updateMemory.ts",
+      "sha256": "34469be1c484ba96485f2fb7c72cb6a3dd88dfc8f573f4a6b69a2fd145e70b54",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/utils.ts",
+      "sha256": "4b77a183294415f77552a3cd06ae1f4c1570a39f58188795d8c808bcfcebe607",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/core/validate.ts",
+      "sha256": "116f024953a552a1e77e95041f70f34783d486600155827f448e9f2ce65f249a",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/index.ts",
+      "sha256": "0c7b744187affa6165420c3eee26f73d3bfe54de5e2decc080c18f386f3c4608",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/scaffold/templates.ts",
+      "sha256": "7edf68b33a016a6a911ebdfe8f1c3f322a778f6a116adbc726e09fc516ee5755",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/AGENTS.md",
+      "sha256": "b63fdca30f12d5ca705e7ecf1918a329b2819492b229e72489f21dfc8b64f9aa",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/agents/memory-analyst.md",
+      "sha256": "07b351bba7ce44bdc280734e16ec65c74eeb4dde7be2fe8b33d6e06b3cbf5d97",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/scaffold/templates/agents/memory-coder.md",
+      "sha256": "80291d368c35e389865173a7b59670f19a12bc8e8c5ec85e8aeaa5bbf794d1a8",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/agents/memory-extractor.md",
+      "sha256": "d6403f6f6dc5244c57ef12825195f5549ad535ed1d8fbfe7d3b0c1aeff8f195c",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/scaffold/templates/agents/memory-reviewer.md",
+      "sha256": "cb5df9d68a3ad886ca598be2b845fb87c3298675e75902508e1f67675e7fd93b",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/commands/memory-bootstrap.md",
+      "sha256": "9871aac2dc83d32ff26997d530716b0c17fe804a5a8dabf3ac35437cafbe61f2",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/commands/memory-context.md",
+      "sha256": "7cfcf5ee93500f7595a466f3de3e187ed2b40f5a40a3925060b1ba2c12d4d52d",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/commands/memory-ingest-spec.md",
+      "sha256": "3da73710106de77bfdc565ff63b32e80ad0ba152e082c37666abc8d8425d017f",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/commands/memory-reconcile.md",
+      "sha256": "0ba7fc95328b0bfd3b85147a6710426db54c10f9fab383a856c9113b0481a352",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/config/code-map.yaml",
+      "sha256": "72b916eddb73f998977a48e43898005799a5b9fc5388ae0d7d63d91dc5fd1cea",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/config/model-routing.yaml",
+      "sha256": "64af54768e044d95b2710dd8597bac9078c6bbae3169bf395c92601834b2c086",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/config/source-priority.yaml",
+      "sha256": "3941025a6bac8a62df43b741c933f704715b58d49e4348ae5acd8c9089e3c66a",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/githooks/post-checkout",
+      "sha256": "ed93980b613e7954921ffe8ad5aa1861a532e3da64fdbd459f002605d44c5561",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/githooks/post-merge",
+      "sha256": "ed93980b613e7954921ffe8ad5aa1861a532e3da64fdbd459f002605d44c5561",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/githooks/pre-commit",
+      "sha256": "e62c13b6297ac5f8435908471708f426f8f245db276b281303a5ca9a6eab1298",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/githooks/pre-push",
+      "sha256": "09116ffcb1b3f0b346752e5dcdfc6852e793ce8796d40c2bbc099b4a6fc5afa1",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/ARCHITECTURE.md",
+      "sha256": "13517701aa83221a9a46dd38d0d56e8a3295961368654f71ac835361e6c08fe3",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/DECISIONS.md",
+      "sha256": "9eead1cc46007bdaeede45c847832cb5524ba1ab676dd13ad32d04edc800f9a7",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/scaffold/templates/memory/decisions/registry-is-discovery-not-orchestration.md",
+      "sha256": "1a78eb73ce8fcce9349045a14c189eb0e92ac860ea4a691af3503e2ac9ec13a4",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/MEMORY.md",
+      "sha256": "3f512e78f830cdf6ac6b5649f125ca6f0a961bf01c348db940dccf797987ae2a",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/MODULES.md",
+      "sha256": "8049804ae6a7989a03b3c47803eb26568c2769c5d8900dc02efe3da45090768f",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/modules/agent-tool-registry.md",
+      "sha256": "abc794ec02d127865663006c2dcf9c97348747a517bc242bb13d2ffc7aa2255d",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/modules/mcp-gateway.md",
+      "sha256": "66fdc31f87bdcffd614da716fc9a0ca05e21394c93bcbd6b26e9cbdc2cd9d6a0",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/ontology.md",
+      "sha256": "ce7a734bb99f2d8b9c30f2dd0d3810ea7bdb29f8269a273a7f670d31f05b8796",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/product-map.md",
+      "sha256": "f7fad1aee475a6d7dab5b26c56ec53e8514ac599bfebb7c3fe6d225d0ea507a5",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/README.md",
+      "sha256": "dfab6c01fb953a2c613772f4d4a202cb7b5382b7974a2e44546bb0a0b4915d3d",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/reconciliation/conflicts.md",
+      "sha256": "e5a7e79ab38d1391a69b466abc61f6945a905d65b40535b6a2a79d3bd1f1133b",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/reconciliation/open-questions.md",
+      "sha256": "3974bc451459eeb400f5a0e3df945c5632a0811cdec330c40a0c1eb72a4551ff",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/scenarios/a2a-agent-discovery.md",
+      "sha256": "30bba3031854df1e23ff3bbe196c6c3c2c1bed70c18a65af5b5677b2e42c28b8",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/memory/scenarios/mcp-tool-discovery.md",
+      "sha256": "3f2b93bca356f1592344badb59871274f5e16da77efc03f3e83a54b0dc706c11",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/plugins/memory-guard.js",
+      "sha256": "67c37b2b866328fe6d6da43ed3c085c37684cf8fed2c43e5ae25575e6e7622de",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/skills/memory-bank.md",
+      "sha256": "fa6b52fd7f89951f40e43f538ced735550ec6171bcc92f10000855028575f054",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/skills/memory-bootstrap.md",
+      "sha256": "46c413dfdc669c01fafd0d7478f559637bf81ce402583aa0005e5fd80eb9f903",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/scaffold/templates/skills/memory-ingest-spec.md",
+      "sha256": "cd7f4404d97908bbe663cbba0fe357092d3cf0928fadae2c2d2136952305c69d",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "legacy path with rationale signals"
+    },
+    {
+      "path": "src/scaffold/templates/skills/memory-reconcile.md",
+      "sha256": "7341b8b78a542591edd6a4b0573ae99ffa45d45c70ce712bca3568ee0c93b2f0",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/scaffold/templates/tools/memory.ts",
+      "sha256": "f36ab3dd6d484a9a9ede45a9955bf0c4de8c59e5166c80a91e9324bf7ad2a080",
+      "sourceKind": "git-tracked",
+      "disposition": "historical-only",
+      "targetCards": [],
+      "reason": "legacy path without architecture signals"
+    },
+    {
+      "path": "src/schemas/artifactIndex.ts",
+      "sha256": "6a42ef8334782b2015b4ddf619c9fea5beb8123de81095b83929c60c65666b00",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/schemas/cardSections.ts",
+      "sha256": "327b38c7a1f7876b3dde81e5fc7355552679ad4af8c5a7a23ec87c5e180d62d7",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/schemas/claim.ts",
+      "sha256": "df1ff691b8bb306074f9d5b38941564c758ed04578c797a5a19287acd619477c",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/schemas/discovery.ts",
+      "sha256": "018aed85752ae1c3f60078c84398f812d00b8970d25bcd2d1c065a8a9a3ad683",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/schemas/dispatch.ts",
+      "sha256": "824b9034ef69d5b87fded94ac73c883391dc0ffbf6728ce5bc529fab8f548bd0",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/schemas/docFrontmatter.ts",
+      "sha256": "6398ea282f84a8d5a43947b3e05600e8d7cf18254a40c58f54f02a614b45497c",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/schemas/frontmatter.ts",
+      "sha256": "107e1c08ccdeaccaac3996d4cda377a064371392468be295cbff10ed00ace3d8",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/schemas/legacyIngest.ts",
+      "sha256": "eeffc74e7a113162d68ff79b3da93d77326abb6806a4dbd063f136a42e791e2d",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/schemas/migrateFromV3.ts",
+      "sha256": "993a41f21f4e35f922d872a2bf0393b41aeb5f826946698b5af477e150fa05dd",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/schemas/modelRouting.ts",
+      "sha256": "dbaefc4eed78a19c1b1cde1401c0a6ed20ffe80e5d3906ea608e2fe0c63b329f",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/schemas/semanticRepair.ts",
+      "sha256": "b5869c4fb5b622d54142a391aa4feaaf1c07f248cd81779010775027a00f7c76",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/schemas/session.ts",
+      "sha256": "a2a789c7a73db7b7fb25233b477d4b087cfe138bbb0800c839f5547ba96a0772",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "src/schemas/sourceContentMap.ts",
+      "sha256": "cb53310646aa8ea67fdedf9cb016da80bdf630ad1894147b169f6919afdd1f20",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/schemas/sourceCoverage.ts",
+      "sha256": "28e19478fb2b415ba0c4d23d9e5db0c1e1f1a248b42c121dbdf6337f1d22c34c",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "src/schemas/sourcePriority.ts",
+      "sha256": "e84c529104eee2f0283cc475602ebee479d3342c45c897c07ab97e8ae084f8bc",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "src/schemas/workflow.ts",
+      "sha256": "6230f5eaf8d5f3918e2c4a010f3990749863e0fe59fb29621aa3d9890393cb48",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "TEST_RESULTS.md",
+      "sha256": "89db8756c468ec64725f505676006edfc03af418844559faf4ea56789cc48d46",
+      "sourceKind": "git-tracked",
+      "disposition": "extracted",
+      "targetCards": [
+        ".ai/memory/architecture/unnamed.md",
+        ".ai/memory/modules/unnamed.md"
+      ],
+      "reason": "current documentation with durable signals"
+    },
+    {
+      "path": "test/artifactIndex.test.ts",
+      "sha256": "899b021346e1a315526ae61504011f512239a9238a922246d696cf3bac46945a",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/bootstrap.test.ts",
+      "sha256": "c6f81b6c864dffdc391c69bdd88bc57a9fc3652db07395323f3b01fb1bedf21d",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/cardSections.test.ts",
+      "sha256": "bd11c379f1f0df2a25b69a849ca9ad3b1dd49127c06e3d1779a01dfef253571e",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/categoryExtraction.test.ts",
+      "sha256": "3515b13c463200b8330433c11217e21c488c1cb68d264fb598c306c213ed4c32",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/ciTemplate.test.ts",
+      "sha256": "ef650eea5873185cbe8910cc766f4401ed0cee968c934dcede8a31241fcee8dd",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/claimDedup.test.ts",
+      "sha256": "5c1c1af2ce2b6b87cdb328109bb3d9028282550d4b6fb7a25dd9c5b135b558c4",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/claimLinking.test.ts",
+      "sha256": "2891ab30d9015bfdc11d490f82cdbb4ef719a86be9f7f353a2cae04f91627d99",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/cli.test.ts",
+      "sha256": "51b67388b3b26ec848385ccfdb5f5a7256f05ac2c1b42fdda18f91a54b4b057f",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/compaction.test.ts",
+      "sha256": "a2e28629ada8a19c3427386aed8313cdaf7ac48b10811e4222a7beb689d8f550",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/contentMap.test.ts",
+      "sha256": "7a62505e56263c97fcdd34b91ac660b22d1870a1c577b7dd0f43b6be6c321607",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/context-related.test.ts",
+      "sha256": "bd2a73834a3a576acce68c6e094b8e0dffb7ac81889c8f9627e1c2212a11947e",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/discovery.test.ts",
+      "sha256": "60d2e5494635af14288c3612c9195be68da8fb8bb241a7deca29222ce54d0276",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/dispatch.test.ts",
+      "sha256": "0a8ac4753c2f67eee883d7c243139967de726249e1a45b8c068195ecfedfd6da",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/docFrontmatter.test.ts",
+      "sha256": "36e22ad292970c5036b041a4a316d1f506873def0965323897404b366aee7bd8",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/docValidate.test.ts",
+      "sha256": "886dd433b4c82ea97e9f880c8605e0b2c99db39f2daf4e71b0639f6e00865c29",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/frontmatter.test.ts",
+      "sha256": "87c1d71677d0569a65a6025a3317a9eae35cc6f5e42dfdda36f77dc7ac6d712b",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "test/gitHooks.test.ts",
+      "sha256": "98e4dcdff928c3945e00abe709aa72faed02801ac65392fd2335b7084a7cbdef",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/hashing.test.ts",
+      "sha256": "cf9f876edd00ee857935c53df2f5d9c432e069353167664f55f5b86a6ae1485d",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/helpers.ts",
+      "sha256": "03bfad260ee318d7f309d2cf4dc4258af8d5a6ffe59c1fa8c2a3a32d9796b060",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/ingest-spec.test.ts",
+      "sha256": "f3889ea78039a2df750e4292904a10850aae0b1b3455e0bb868c597f3f7ed58e",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "test/init.test.ts",
+      "sha256": "95ff9e032a03ef467d86ed328ff91dc58713e489091f0a8d04fcd946de7ae1f8",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "test/integration.test.ts",
+      "sha256": "29f29d058e1b59e8715bc83cdc137bec2ae1a776df69d85ac9c1211eb5137e31",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/legacyCli.test.ts",
+      "sha256": "9a7bebea6d8fb7fc787abb2845a695f7ca36695d594114cf6b5aacdfe3c3406c",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/legacyIngest.test.ts",
+      "sha256": "ba3b2c254e6ddda844a6b47f55d02c96c7035aad378a3d5e11e0817a966cde13",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/loadMemory.test.ts",
+      "sha256": "b9770125bbb7c30dc9a76e863033537b171ed0bb81d456f17a940a67bfa8c4d6",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/migrateDocs.test.ts",
+      "sha256": "735f972ce890129d99fe4a75cab3b7b07fc2d39fe6b24d1f18b83127c0a2f902",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "test/migrateFromV3.test.ts",
+      "sha256": "14b8aa870ee02705f5f64d4562700189fdf6f222300f3409d7d8e2ed1650e676",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/migratePaths.test.ts",
+      "sha256": "612ba2b2f7f01770e298a7b04b5f6a5b4c362d04d3d205c747755f5c55a52e58",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/migrateSynthesis.test.ts",
+      "sha256": "c3051d06fd75101d4851ad9bd41ee5d5832ddaa0039ea2a6c1a24224ebf34b05",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "test/modelRouting.test.ts",
+      "sha256": "d333d73a85d3e628871288b10dcb6cca7554bcb84469e0779d4d59ad909babe4",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/openspec.test.ts",
+      "sha256": "2bd766f6dbbbf2cf0002fd88fa8c6fd682a9e87dcc7d86a50809db0de076acda",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/overview.test.ts",
+      "sha256": "e868670ea30966ecc33a0f55c6b39bde7c1c01ec18459e1e103540c4b296469c",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/plan.test.ts",
+      "sha256": "04b1028e41a68212b5976df2988692ff4b0c680627376b5aba45a80323e8ae35",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/postRepair.test.ts",
+      "sha256": "1a8cdc38901f043430fd229b60a802a7418d35c9f38e45daf8fd223b451ae767",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/reconcile.test.ts",
+      "sha256": "378edd7506b3075fc1b84849a75bda4872f015e5e4fa75e1f6286a7920434f86",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/reconcileFix.test.ts",
+      "sha256": "b262e1b65c113142c9073155a651ab4f7831739e05719b55fe12db52e69b60cb",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/referenceValidation.test.ts",
+      "sha256": "4e652d7853c81f023e6a1b4544821ff5ea46dbb56989d14302d2aab680c0248f",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/runtimeTier.test.ts",
+      "sha256": "ed83b257c8ec18562240a4ba9deaa33ddf09b1fbac716b1cc56b984d3250ea63",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/semanticRepair.test.ts",
+      "sha256": "b179f3aa97eecf415e969eb9179caed25a7d5abe4eedf59d127eba7b66bc549c",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/sessionTracking.test.ts",
+      "sha256": "2b9a3361d9c070bf0010178d87a5359a79232afbe5b7987df51ddb9f53dcb2f2",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/sourceCoverage.test.ts",
+      "sha256": "d84a70da570b9c2944009093b02daaa250010fe4201a05a5d411055ed687a3b8",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "test/specRelations.test.ts",
+      "sha256": "9e774fa6354d7e72f47cc352db9793b01f179d1f6f9d311a622b1989fdde7932",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "test/staging.test.ts",
+      "sha256": "a37239384460b83ea3df9709a6023fcf06d1a3349cadf122c8e8f105c375bb36",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "test/subjectHash.test.ts",
+      "sha256": "1de735f6078b69079b2f4b47fd7d0e4bb6725220522843fa6e267eb5b77c7a68",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/triage.test.ts",
+      "sha256": "2a2fb8e5018552a0bf7ba6f478abd21251a73c467c5fec7f67bb616359587a40",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/update.test.ts",
+      "sha256": "003ed24e3b718c77e05c890595b6a2cea2929bf86f63bd6f8d6a9e25d06cf565",
+      "sourceKind": "git-tracked",
+      "disposition": "rationale-only",
+      "targetCards": [],
+      "reason": "rationale markers in content"
+    },
+    {
+      "path": "test/validate.test.ts",
+      "sha256": "012c268528cb27bd9e4b7c54116c7e9e5fdac819e8419f050fd237a0dc46e8f2",
+      "sourceKind": "git-tracked",
+      "disposition": "superseded",
+      "targetCards": [],
+      "reason": "deprecated/superseded markers in content"
+    },
+    {
+      "path": "test/workflow.test.ts",
+      "sha256": "6342d87414b22529f1857da4d15ede362be9f2ba49fcf00411024327c4e102d7",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "a80f3ca4fc062bdf89839c312ffb28b5dffae56b5e6e0e856ef0381e588ceaa0",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    },
+    {
+      "path": "vitest.config.ts",
+      "sha256": "7c300f2f413ce1b2377d8de59edd2b0afd63f7564ce138f386e9a2438c1845c6",
+      "sourceKind": "git-tracked",
+      "disposition": "rejected",
+      "targetCards": [],
+      "reason": "no durable signals detected"
+    }
+  ],
+  "counts": {
+    "unknown": 230
+  }
+}

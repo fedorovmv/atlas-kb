@@ -18,13 +18,14 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
 
    **Completion gate — MANDATORY.** Before reporting "done", run `.ai/memory-tool/bin/memory ls --status needs_review --json`. If ANY cards remain, bootstrap is INCOMPLETE — continue dispatching. Do NOT report "done" until needs_review count is 0 (or remaining cards are explicitly deferred in open-questions.md with a reason).
 
-   **MUST COMPLETE ALL STAGES.** Do NOT stop after module enrichment. The pipeline has 4 mandatory subagent dispatch stages. Complete ALL before reporting "done":
+   **MUST COMPLETE ALL STAGES.** Do NOT stop after module enrichment. The pipeline has 5 mandatory subagent dispatch stages. Complete ALL before reporting "done":
 
    ```
    Stage A: module cards      → extractor → coder → reviewer
    Stage B: scenario cards    → extractor → coder → reviewer
    Stage C: decision/proposal/historical cards → analyst → coder (proposals only) → reviewer
-   Stage D: validate + summary
+   Stage D: architecture cards → analyst (synthesis) → reviewer
+   Stage E: validate + summary
    ```
 
    **Per-stage checkpoint:** after each stage, run `ls --status needs_review --json` filtered by entity_type. If count >0 — continue dispatching. Do NOT proceed to next stage until count is 0.
@@ -34,6 +35,7 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
    - **module cards** → for EACH module card: dispatch `memory-extractor` with that one card path (reads code_refs, fills Ответственность/Поведение) → then dispatch `memory-coder` with same card (verifies symbols, adds Свидетельства из кода) → then `memory-reviewer` (quality gate, promotes needs_review→current).
    - **decision/proposal/historical cards** → for EACH card: dispatch `memory-analyst` with that one card path (reads source_refs/specs, extracts Rationale/Alternatives/Consequences) → then `memory-coder` (for proposal cards: checks if proposed behavior is partially implemented) → then `memory-reviewer` (quality gate, promotes decision→current, keeps proposal→proposed).
    - **scenario cards** → for EACH scenario card: dispatch `memory-extractor` (reads source_refs, fills Цель/Участники/Поток выполнения/Связанные модули/Связанные тесты) → then `memory-coder` (verifies flow against code, fills Свидетельства из кода/тестов) → then `memory-reviewer`.
+   - **architecture cards** → for EACH architecture card: dispatch `memory-analyst` (reads module card + source_refs, synthesizes architecture overview/components/dependencies/data flow) → then `memory-reviewer` (quality gate).
 
    Subagent dispatch prompt template:
    ```

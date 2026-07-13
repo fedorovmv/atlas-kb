@@ -33,6 +33,11 @@ All H2 section headings in card body MUST be in Russian. The validator rejects E
 | ## Obsolete ideas | ## Устаревшие идеи |
 | ## Survived decisions | ## Выжившие решения |
 | ## Links to current decisions | ## Ссылки на текущие решения |
+| ## Architecture overview | ## Обзор архитектуры |
+| ## Components | ## Компоненты |
+| ## Dependencies | ## Зависимости |
+| ## Data flow | ## Поток данных |
+| ## Related modules | ## Связанные модули |
 
 The section CONTENT can be in English if the source is English — but the H2 HEADING must be Russian.
 
@@ -92,6 +97,8 @@ Report format for reviewer:
 - claim_id | status | evidence_summary | what is missing (if partial)
 
 ## Quality checklist (before calling updateCard)
+
+**Decision/Proposal/Historical cards:**
 - [ ] `## Problem`: specific problem statement, not "Needs review"
 - [ ] `## Decision`: concrete decision, not vague
 - [ ] `## Rationale`: explains WHY, not just WHAT. If inferred - set `evidence_level: inferred`
@@ -100,6 +107,15 @@ Report format for reviewer:
 - [ ] Claims: scanned full spec for claims CLI missed (numbered requirements, prose, non-goals, constraints)
 - [ ] Non-goals: extracted if present, skipped if not
 - [ ] No stale status names: use `heuristic_code_match` not `confirmed_by_code` for CLI evidence
+
+**Architecture cards:**
+- [ ] `## Обзор архитектуры`: high-level structure, boundaries, design rationale
+- [ ] `## Компоненты`: ≥1 component with responsibility
+- [ ] `## Зависимости`: external dependencies + internal coupling points listed
+- [ ] `## Поток данных`: describes how data flows through module
+- [ ] `## Связанные модули`: module card ids listed
+- [ ] Read corresponding module card (`.ai/memory/modules/<id>.md`) for context
+- [ ] Synthesis, not extraction — combine module behavior + code structure + docs
 
 ## Anti-patterns - DON'T write:
 - "This decision was made for technical reasons" - too vague
