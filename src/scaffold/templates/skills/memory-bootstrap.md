@@ -144,8 +144,8 @@ For each enriched module/scenario card (after extractor or analyst):
 
 - Read all module cards (`.ai/memory/modules/*.md`).
 - Fill in `## Обзор архитектуры` — high-level system overview, component boundaries, deployment topology.
-- **Split by runtime tier**: describe production components separately from demo components. Production = `runtime-agent-registry` (K8s operator, MCP, search). Demo = `a2a-agents-demo` + `a2a-dashboard` (experimental agents, UI). Mark demo components explicitly.
-- Fill in `## Компоненты` — list of components with responsibilities (from module cards), grouped by production vs demo.
+- **Group by runtime_tier**: read `runtime_tier` field from each module card's frontmatter. Describe production components separately from demo/experimental components. If module card has `runtime_tier: demo` — mark it as demo. If `runtime_tier: production` — production. If missing — infer from code paths (demo/example/testdata → demo, else production).
+- Fill in `## Компоненты` — list of components with responsibilities (from module cards), grouped by runtime tier.
 - Fill in `## Зависимости` — external dependencies (DBs, APIs, message queues) + internal coupling.
 - Fill in `## Поток данных` — data flow through system (ingress → processing → egress).
 - This is **system-level synthesis**, not per-package documentation.
