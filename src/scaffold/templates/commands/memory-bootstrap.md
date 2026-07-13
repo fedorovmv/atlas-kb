@@ -25,9 +25,9 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
 
    If you stop after Stage A or B without completing Stage C (analyst for decision/proposal/historical), the bootstrap is INCOMPLETE. Decision cards will have placeholder rationale "Требует ревью — какие альтернативы были рассмотрены?" — this is unacceptable.
 
-   - **module cards** → for EACH module card: dispatch `memory-extractor` with that one card path (reads code_refs, fills Responsibility/Behavior) → then dispatch `memory-coder` with same card (verifies symbols, adds Code evidence) → then `memory-reviewer` (quality gate, promotes needs_review→current).
+   - **module cards** → for EACH module card: dispatch `memory-extractor` with that one card path (reads code_refs, fills Ответственность/Поведение) → then dispatch `memory-coder` with same card (verifies symbols, adds Свидетельства из кода) → then `memory-reviewer` (quality gate, promotes needs_review→current).
    - **decision/proposal/historical cards** → for EACH card: dispatch `memory-analyst` with that one card path (reads source_refs/specs, extracts Rationale/Alternatives/Consequences) → then `memory-coder` (for proposal cards: checks if proposed behavior is partially implemented) → then `memory-reviewer` (quality gate, promotes decision→current, keeps proposal→proposed).
-   - **scenario cards** → for EACH scenario card: dispatch `memory-extractor` (reads source_refs, fills Goal/Flow/Actors) → then `memory-coder` (verifies flow against code) → then `memory-reviewer`.
+   - **scenario cards** → for EACH scenario card: dispatch `memory-extractor` (reads source_refs, fills Цель/Участники/Поток выполнения/Связанные модули/Связанные тесты) → then `memory-coder` (verifies flow against code, fills Свидетельства из кода/тестов) → then `memory-reviewer`.
 
    Subagent dispatch prompt template:
    ```

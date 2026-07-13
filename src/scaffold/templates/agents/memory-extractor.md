@@ -19,6 +19,8 @@ When given a memory card path with `needs_review` status:
 3. Read the `test_refs` files if present — tests reveal INTENDED behavior, edge cases, and usage patterns. Tests often show what the code is supposed to do more clearly than the code itself.
 4. Read the `source_refs` files if present (docs, specs) — these provide intended design context.
 4. Fill in the card body sections (use EXACT Russian headings — validator checks them):
+
+   **Module cards** (entity_type: module):
    - `## Ответственность` — 2-4 sentences: what this module does, inferred from exports, package names, function signatures, main types. Be specific: "Filters agent cards by caller service identity" not "Handles agent stuff".
    - `## Не входит в ответственность` — what this module deliberately does NOT handle. Infer from imports, sibling modules, boundary patterns.
    - `## Текущее поведение` — concise summary of actual behavior from reading the code AND tests. Reference specific functions/types. Include key exported functions with signatures.
@@ -28,6 +30,18 @@ When given a memory card path with `needs_review` status:
    - `## Связанные сценарии` — list scenario card ids that involve this module (from discovery or cross-ref). If none — write "Не выявлены".
    - `## Связанные решения` — list decision card ids that affect this module. If none — write "Не выявлены".
    - `## Открытые вопросы` — questions that cannot be answered from code alone (require product/spec context). If none — write "Нет".
+
+   **Scenario cards** (entity_type: scenario):
+   - `## Цель` — 2-3 sentences: what user/system goal this scenario achieves. Read source_refs (docs) for intended goal. Be specific: "User sends task to A2A agent and receives result" not "Handles task flow".
+   - `## Участники` — list the components/services/agents involved. Format: bullet list with role. Example: `- A2A Client — initiates task request\n- A2A Agent — executes task\n- Registry — resolves agent card`.
+   - `## Поток выполнения` — numbered step-by-step sequence. Read source_refs AND code_refs to reconstruct actual flow. Example: `1. Client sends task/send to agent\n2. Agent validates task\n3. Agent executes\n4. Agent returns result or SSE stream`.
+   - `## Ограничения` — preconditions, limits, constraints. Example: `Task ID must be unique. Max payload 10MB. Requires valid agent card in registry.`.
+   - `## Сценарии ошибок` — known failure paths. Example: `Agent not found → 404. Task timeout → 504. Invalid payload → 400.`. If none documented — write "Не задокументировано.".
+   - `## Связанные модули` — list module card ids that participate in this scenario. Cross-reference with `.ai/memory/modules/`. If none — write "Не выявлены".
+   - `## Связанные тесты` — list test file paths that verify this scenario. Look in test_refs or search test directories. If none — write "Не выявлены".
+   - `## Свидетельства из кода` — leave for memory-coder. Write "Не проверено — memory-coder должен подтвердить поток по коду.".
+   - `## Свидетельства из тестов` — leave for memory-coder. Write "Не проверено — memory-coder должен подтвердить покрытие тестами.".
+   - `## Обоснование` — WHY this scenario exists. Read source_refs for rationale. If not documented — write "Не задокументировано — сценарий описывает основной поток взаимодействия.".
 5. Update frontmatter:
    - `source_confidence`: `medium` if code was readable and consistent; `low` if sparse, ambiguous, or generated.
    - `evidence_level`: keep as-is unless you have strong reason to change. Do NOT set `code_confirmed` — that's memory-coder's job after evidence verification.
@@ -35,12 +49,25 @@ When given a memory card path with `needs_review` status:
 6. Use the `updateCard` tool to save: pass `id` (from frontmatter), `body` (new body content), and `setLastReviewed`/`setSourceConfidence` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
 
 ## Quality checklist (before calling updateCard)
+
+**Module cards:**
 - [ ] `## Ответственность`: 2-4 sentences, cites ≥1 function/type name from code_refs
 - [ ] `## Не входит в ответственность`: ≥1 specific item (not "None identified")
 - [ ] `## Текущее поведение`: references ≥1 specific function/type/method from code
 - [ ] `## Публичный интерфейс`: ≥1 exported symbol with one-line description
 - [ ] `## Известные риски`: only if TODO/FIXME/deprecated found; otherwise omit section
 - [ ] Read test_refs if present — did tests reveal behavior not obvious from code?
+
+**Scenario cards:**
+- [ ] `## Цель`: 2-3 sentences, specific goal (not "handles flow")
+- [ ] `## Участники`: ≥1 participant with role
+- [ ] `## Поток выполнения`: numbered steps, references actual code/docs
+- [ ] `## Ограничения`: preconditions/limits listed or "Не задокументировано."
+- [ ] `## Сценарии ошибок`: failure paths listed or "Не задокументировано."
+- [ ] `## Связанные модули`: module ids or "Не выявлены"
+- [ ] `## Связанные тесты`: test paths or "Не выявлены"
+
+**Both:**
 - [ ] Headings are EXACTLY as specified (Russian) — validator checks them by name
 
 ## Anti-patterns — DON'T write:

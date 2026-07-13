@@ -60,12 +60,28 @@ For each module card:
 
 - Read the code_refs and source_refs files listed in the card frontmatter.
 - Read the card body.
-- Fill in `## Responsibility` with a 2-4 sentence description of what this module does, inferred from code structure (exports, package names, function signatures, main types).
-- Fill in `## Non-responsibilities` with what this module deliberately does NOT handle (inferred from what's imported/exported and what's in sibling modules).
-- Fill in `## Current behavior` with a concise summary of the module's actual behavior from reading the code.
-- Add `## Known risks` if the code has obvious risk patterns (TODO/FIXME, deprecated markers, unsafe operations, missing error handling).
+- Fill in `## Ответственность` with a 2-4 sentence description of what this module does, inferred from code structure (exports, package names, function signatures, main types).
+- Fill in `## Не входит в ответственность` with what this module deliberately does NOT handle (inferred from what's imported/exported and what's in sibling modules).
+- Fill in `## Текущее поведение` with a concise summary of the module's actual behavior from reading the code.
+- Add `## Известные риски` if the code has obvious risk patterns (TODO/FIXME, deprecated markers, unsafe operations, missing error handling).
 - Set `source_confidence: medium` if code was readable and consistent, `low` if sparse or ambiguous.
 - Do NOT set `evidence_level: code_confirmed` unless you actually read and understood the code.
+
+#### 2b. Scenario cards — memory-extractor
+
+For each scenario card:
+
+- Read the source_refs files listed in the card frontmatter (docs describing the scenario).
+- Read the card body.
+- Fill in `## Цель` — 2-3 sentences: what user/system goal this scenario achieves.
+- Fill in `## Участники` — list components/services/agents involved with roles.
+- Fill in `## Поток выполнения` — numbered step-by-step sequence from docs and code.
+- Fill in `## Ограничения` — preconditions, limits, constraints.
+- Fill in `## Сценарии ошибок` — known failure paths.
+- Fill in `## Связанные модули` — list module card ids that participate. Cross-reference with `.ai/memory/modules/`.
+- Fill in `## Связанные тесты` — list test file paths that verify this scenario.
+- Leave `## Свидетельства из кода` and `## Свидетельства из тестов` for memory-coder.
+- Fill in `## Обоснование` — WHY this scenario exists.
 
 #### 2b. Decision/Proposal/Historical cards — memory-analyst
 
@@ -87,11 +103,12 @@ For each enriched module/scenario card (after extractor or analyst):
 
 - Read the test_refs files.
 - Verify that code_refs paths exist and the functions/types mentioned in the card are actually present in the referenced code files.
-- Add `## Code evidence` section with specific function/type names found and their file:line if determinable.
-- If tests cover the module's behavior, note which test functions confirm which behavior in `## Test evidence`.
+- Fill `## Свидетельства из кода` with specific function/type names found and their file:line if determinable. Use Russian heading (validator checks it).
+- If tests cover the module's behavior, note which test functions confirm which behavior in `## Свидетельства из тестов`. Use Russian heading.
 - If code_refs point to files that don't contain what the card claims, mark `status: conflict` and add to `reconciliation/conflicts.md`.
 - Set `evidence_level: code_confirmed` ONLY if you verified specific symbols in the code.
 - Set `evidence_level: test_confirmed` ONLY if you verified tests cover the behavior.
+- For scenario cards: verify that the flow described in `## Поток выполнения` matches actual code behavior. If flow doesn't match — flag as conflict.
 - For proposal cards: check if proposed behavior is partially implemented in code. Report findings.
 
 #### 2d. Quality gate — memory-reviewer
@@ -102,7 +119,8 @@ For the full memory bank after enrichment:
 - Check that no `current` card has `evidence_level: spec_only` or `inferred` without code evidence.
 - Check that `proposal`/`historical` cards have `can_answer_current_behavior: false`.
 - Check that `decision` cards have `can_generate_code_from: false`.
-- Check that `## Responsibility` (module) / `## Обоснование` (decision) / `## Предлагаемое поведение` (proposal) is not still a placeholder.
+- Check that `## Ответственность` (module) / `## Цель` (scenario) / `## Обоснование` (decision) / `## Предлагаемое поведение` (proposal) is not still a placeholder.
+- For scenario cards: verify `## Поток выполнения` has numbered steps, `## Участники` has ≥1 participant, `## Связанные модули` has module ids or "Не выявлены".
 - For decision cards: verify `## Обоснование` explains WHY, not WHAT. Verify `## Рассмотренные альтернативы` has ≥1 entry or "Not documented in spec".
 - Flag any card where content was not enriched — add to `reconciliation/open-questions.md`.
 - Resolve cross-card conflicts reported by analyst. Add to `reconciliation/conflicts.md` if unresolved.

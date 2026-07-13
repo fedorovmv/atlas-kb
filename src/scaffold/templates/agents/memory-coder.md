@@ -58,6 +58,18 @@ When given a memory card path (after memory-extractor has filled content):
   - Add entry to `.ai/memory/reconciliation/conflicts.md` with the specific mismatch.
 7. Use the `updateCard` tool to save: pass `id` (from frontmatter), `body` (with new evidence sections appended), and `setEvidenceLevel`/`setLastReviewed`/`setStatus` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
 
+## Scenario cards — special handling
+
+For scenario cards (entity_type: scenario):
+
+1. The `## Поток выполнения` section describes a step-by-step flow. Verify each step against code:
+   - For each step, grep for the function/handler that implements it.
+   - If step says "Client sends task/send" — verify `task/send` endpoint exists in code.
+   - If step says "Agent validates task" — verify validation function exists.
+2. Fill `## Свидетельства из кода` with verified flow steps: `- Step N (<description>) — verified: <function> at <file>:<line>`.
+3. Fill `## Свидетельства из тестов` with tests that exercise the scenario end-to-end.
+4. If flow doesn't match code — add `## Конфликты` section and set `status: conflict`.
+
 ## Semantic verification (beyond symbol existence)
 
 After finding a symbol at file:line, you MUST verify the symbol BEHAVIOR matches the claim INTENT:
