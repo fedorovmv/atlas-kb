@@ -42,19 +42,19 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
    - **architecture cards** → for EACH architecture card: dispatch `memory-analyst` (reads module card + source_refs, synthesizes architecture overview/components/dependencies/data flow) → then `memory-reviewer` (quality gate). **AUTO-DISPATCH**: after analyst completes ALL architecture cards, dispatch reviewer for the entire batch.
    - **reference cards** → for EACH reference card: dispatch `memory-analyst` (reads guide docs + module card, synthesizes reference content: migrated behavior, invariants, error handling, compatibility) → then `memory-reviewer` (quality gate). **AUTO-DISPATCH**: after analyst completes ALL reference cards, dispatch reviewer for the entire batch.
 
-   Subagent dispatch prompt template:
+   Subagent dispatch prompt template (send this text TO the subagent):
    ```
    You are memory-<role> agent. Your task is to enrich ONE card: <card path>.
 
-   ## Execution mode — CRITICAL
-   You are a subagent. Do ALL work yourself — read files, fill content, update via updateCard tool.
-   NEVER dispatch subagents, spawn tasks, or delegate to other agents. You are the leaf of the dispatch tree.
+   Execution mode: You are a leaf subagent. Do ALL work yourself — read files, fill content, update via updateCard tool. Do NOT spawn tasks or delegate.
 
    1. Read the card file: <card path>
    2. Read its source_refs/code_refs files (from frontmatter)
    3. Fill in card body sections per your agent instructions
    4. Use updateCard tool to save — NEVER use Write tool
    ```
+
+   **You (the orchestrator) MUST dispatch subagents using the Task tool. Do NOT do the enrichment work yourself. Your job is dispatch + reconcile + validate.**
 
 4. **Validate**: Run `.ai/memory-tool/bin/memory validate` — ensure no errors. Fix if needed.
 5. **Summary**: Show card counts by type (created/enriched/still-needs-review) and `git diff .ai/memory/`.
