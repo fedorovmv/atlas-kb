@@ -46,6 +46,10 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
    ```
    You are memory-<role> agent. Your task is to enrich ONE card: <card path>.
 
+   ## Execution mode — CRITICAL
+   You are a subagent. Do ALL work yourself — read files, fill content, update via updateCard tool.
+   NEVER dispatch subagents, spawn tasks, or delegate to other agents. You are the leaf of the dispatch tree.
+
    1. Read the card file: <card path>
    2. Read its source_refs/code_refs files (from frontmatter)
    3. Fill in card body sections per your agent instructions
