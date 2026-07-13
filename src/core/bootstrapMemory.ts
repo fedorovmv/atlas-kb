@@ -449,16 +449,19 @@ async function renderModuleCard(
 
 function renderArchitectureCard(mod: { id: string; title: string; codeFiles: string[]; docFiles: string[] }): string {
   const todayStr = today();
-  // Detect runtime tier from code paths — demo vs production
+  // Detect runtime tier using universal pattern matcher (not project-specific paths)
   const isDemo = mod.codeFiles.some((p) =>
-    /(?:^|\/)(a2a-agents-demo|a2a-dashboard|demo|example|examples)\//.test(p) ||
-    /^(?:a2a-agents-demo|a2a-dashboard)\//.test(p)
+    /(?:^|\/)(demo|example|examples|testdata)\//.test(p) || /(?:^|\/)(demo|example)\./.test(p)
   );
-  const runtimeTier = isDemo ? "demo" : "production";
+  const isProduction = mod.codeFiles.some((p) =>
+    !/(?:^|\/)(test|tests|spec|demo|example|examples|testdata|legacy|archive)\//.test(p)
+  );
+  const runtimeTier = isDemo && !isProduction ? "demo" : isDemo && isProduction ? "mixed" : isProduction ? "production" : "unknown";
+  const tierLabel = runtimeTier === "demo" ? "демо-компонент (не production)" : runtimeTier === "mixed" ? "смешанный (demo+production)" : runtimeTier === "production" ? "production-компонент" : "неопределён";
   const fm = frontmatterYaml({
     entity_type: "architecture",
     id: `arch-${mod.id}`,
-    title: `Архитектура: ${mod.title} (${runtimeTier === "demo" ? "демо" : "production"})`,
+    title: `Архитектура: ${mod.title} (${tierLabel})`,
     status: "needs_review",
     authority: "reviewed_memory",
     evidence_level: "inferred",
@@ -476,7 +479,6 @@ function renderArchitectureCard(mod: { id: string; title: string; codeFiles: str
       requires_code_check_before_change: true,
     },
   });
-  const tierLabel = runtimeTier === "demo" ? "демо-компонент (не production)" : "production-компонент";
   const body = [
     "## Обзор архитектуры",
     `Архитектура модуля ${mod.title}. ${tierLabel}. Требует ревью — опишите высокоуровневую структуру и границы.`,
