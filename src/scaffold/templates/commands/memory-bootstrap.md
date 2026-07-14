@@ -4,11 +4,21 @@ description: One-command LLM-assisted memory bank population — bootstrap + age
 
 Use the memory-bootstrap skill.
 
-You are the orchestrator. Run the full pipeline yourself, dispatching subagents for each role:
+You are the orchestrator. Run the full pipeline yourself, dispatching subagents for each role. This is NOT a question — the user wants the FULL pipeline. Do NOT ask "Would you like me to proceed?" — just do it.
 
-1. **Scaffold**: Run `.ai/memory-tool/bin/memory bootstrap --root .` — deterministic CLI creates skeleton cards: module cards from code, decision/proposal/historical cards from specs/docs. All with placeholder content. Enriched cards (review_required=false or evidence_level=code_confirmed) are preserved automatically.
-2. **List cards needing enrichment**: Run `.ai/memory-tool/bin/memory ls --needs-enrichment --json` — get cards with weak evidence OR placeholder content. This catches cards that have status=current but still contain "Требует ревью" or "Не задокументировано" in body.
-3. **Enrich by card type** (dispatch subagents, do NOT do the work yourself):
+## STEP 1 — Scaffold (run this FIRST)
+
+Run: `.ai/memory-tool/bin/memory bootstrap --root .`
+
+Then run: `.ai/memory-tool/bin/memory ls --needs-enrichment --json`
+
+Save the output. Count how many cards need enrichment.
+
+## STEP 2 — Dispatch subagents (run this IMMEDIATELY after STEP 1)
+
+If STEP 1 returned ANY cards needing enrichment — you MUST dispatch subagents NOW. Not after asking the user. Not after offering options. NOW.
+
+**Dispatch by card type (one card per subagent dispatch):**
 
    **CRITICAL — one card per subagent dispatch.** Never bundle multiple cards into a single subagent task. Each subagent gets exactly one card, reads its source_refs, fills content, returns. This keeps context bounded and quality high.
 
@@ -32,7 +42,7 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
    **Auto-reviewer dispatch (Stages D & E):**
    After analyst completes enrichment for a stage, **automatically dispatch memory-reviewer** for all cards in that stage. Do NOT wait for manual trigger. Reviewer promotes cards from `needs_review` to `current` (if evidence is sufficient) or adds to `open-questions.md` (if content is incomplete).
 
-   **Per-stage checkpoint:** after each stage, run `ls --status needs_review --json` filtered by entity_type. If count >0 — continue dispatching. Do NOT proceed to next stage until count is 0.
+   **Per-stage checkpoint:** after each stage, run `.ai/memory-tool/bin/memory ls --needs-enrichment --json` filtered by entity_type. If count >0 — continue dispatching. Do NOT proceed to next stage until count is 0.
 
    If you stop after Stage A or B without completing Stage C (analyst for decision/proposal/historical), the bootstrap is INCOMPLETE. Decision cards will have placeholder rationale "Требует ревью — какие альтернативы были рассмотрены?" — this is unacceptable.
 
