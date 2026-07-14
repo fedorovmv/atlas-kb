@@ -11,6 +11,7 @@
 #
 # Примеры:
 #   make install TARGET=/path/to/repo
+#   make bootstrap TARGET=/path/to/repo FORCE=1   — пересоздать skeleton (перезаписать enriched)
 #   make memory TARGET=/path/to/repo CMD=bootstrap
 #   make memory TARGET=/path/to/repo CMD='validate --strict-warnings'
 #   make memory TARGET=/path/to/repo CMD='context "изменить фифильтрацию agent cards"'
@@ -24,6 +25,9 @@ NPX   := npx
 TARGET ?= $(CURDIR)
 # Аргумент repo-memory: одна команда (с флагами) строкой
 CMD    ?= help
+# FORCE=1 — передать --force (пересоздать scaffold/bootstrap, перезаписать enriched карты)
+FORCE  ?= 0
+FORCE_FLAG := $(if $(filter 1 true yes,$(FORCE)),--force,)
 
 # Корень кита
 KIT_ROOT := $(CURDIR)
@@ -65,7 +69,7 @@ clean:
 
 install: build
 	@echo "→ Установка scaffold в: $(TARGET)"
-	$(TSX) src/cli.ts --root "$(TARGET)" init
+	$(TSX) src/cli.ts --root "$(TARGET)" init $(FORCE_FLAG)
 	@echo "→ Готово. Scaffold создан."
 	@echo "→ Далее: make bootstrap TARGET=$(TARGET)"
 
@@ -80,7 +84,7 @@ install: build
 
 bootstrap: build
 	@echo "→ Анализ проекта и создание skeleton cards: $(TARGET)"
-	$(TSX) src/cli.ts --root "$(TARGET)" bootstrap
+	$(TSX) src/cli.ts --root "$(TARGET)" bootstrap $(FORCE_FLAG)
 	$(TSX) src/cli.ts --root "$(TARGET)" validate
 	@echo "→ Готово. Skeleton cards созданы."
 	@echo "→ Далее: /memory-bootstrap (LLM-агенты) или make memory-ingest-spec TARGET=$(TARGET) SPEC=..."
