@@ -56,16 +56,16 @@ You are a subagent. Do ALL work yourself — read specs, extract rationale, upda
 
 When given a spec file or decision card to enrich:
 
-1. Read the spec file (source_refs or the spec path provided).
+1. Read the spec file (source_refs or the spec path provided) — **read the ENTIRE file**, not just headings. Rationale is often embedded in prose, not in explicit "Rationale" sections.
 2. Read existing memory cards related to this spec (use `.ai/memory-tool/bin/memory context <spec topic> --json` if needed).
 3. For decision cards - fill all sections. Map from whatever section names the spec uses:
-   - `## Context` - what triggered this decision? Look for: Background, Motivation, Context, Introduction, Overview, Summary. If none — infer from the problem the requirements solve.
-   - `## Problem` - what specific problem was solved? Look for: Problem, Motivation, Pain points, Issues. If none — infer from the gap between current state and requirements.
-   - `## Decision` - what was decided? Look for: Decision, Solution, Approach, Design, Requirements. If no explicit decision section — the decision IS the set of requirements.
-   - `## Rationale` - WHY this decision. Look for: Rationale, Why, Motivation, Justification, Trade-offs. If not explicitly stated — infer from alternatives and constraints. Mark `evidence_level: inferred` if inferred.
-   - `## Alternatives considered` - extract from: Alternatives, Options, Rejected, Prior approach, Comparison. For each: name + status + reason. If none mentioned — write "Not documented in spec" and mark `evidence_level: inferred`.
-   - `## Rejected alternatives` - specific rejected options with reasons. Look for: Rejected, Deprecated, Prior approach, Non-goals (sometimes non-goals are rejected alternatives in disguise).
-   - `## Consequences` - trade-offs accepted. Look for: Consequences, Trade-offs, Risks, Implications. Extract or infer from decision rationale.
+   - `## Контекст` - what triggered this decision? Look for: Background, Motivation, Context, Introduction, Overview, Summary. If none — infer from the problem the requirements solve.
+   - `## Проблема` - what specific problem was solved? Look for: Problem, Motivation, Pain points, Issues. If none — infer from the gap between current state and requirements.
+   - `## Решение` - what was decided? Look for: Decision, Solution, Approach, Design, Requirements. If no explicit decision section — the decision IS the set of requirements.
+   - `## Обоснование` - **WHY this decision.** This is the MOST IMPORTANT section. Look for: Rationale, Why, Motivation, Justification, Trade-offs. If not explicitly stated — **you MUST infer** from the problem, alternatives, and constraints. Write 2-4 sentences explaining WHY this approach was chosen. Do NOT write "Не задокументировано" — infer and mark `evidence_level: inferred`.
+   - `## Рассмотренные альтернативы` - extract from: Alternatives, Options, Rejected, Prior approach, Comparison. For each: name + status + reason. If none mentioned — **infer from the problem domain**: what other approaches could solve this? List 1-2 plausible alternatives and why they were likely rejected (complexity, coupling, performance). Mark `evidence_level: inferred`.
+   - `## Отклонённые альтернативы` - specific rejected options with reasons. Look for: Rejected, Deprecated, Prior approach, Non-goals.
+   - `## Последствия` - trade-offs accepted. Look for: Consequences, Trade-offs, Risks, Implications. Extract or infer from decision rationale.
    - If the spec has NO rationale at all (pure requirements only) — fill Context and Problem from requirements, set Decision = requirements summary, set Rationale = "Not explicitly stated in spec — inferred from requirements and constraints", mark `evidence_level: inferred`, set `review_required: true`.
 4. For claims - RE-EXTRACT beyond CLI and semantic deduplication:
    - CLI extractClaims catches: headings, bullets with modal verbs (must/shall/should), rationale paragraphs, backtick code refs.
@@ -106,10 +106,12 @@ Report format for reviewer:
 ## Quality checklist (before calling updateCard)
 
 **Decision/Proposal/Historical cards:**
-- [ ] `## Problem`: specific problem statement, not "Needs review"
-- [ ] `## Decision`: concrete decision, not vague
-- [ ] `## Rationale`: explains WHY, not just WHAT. If inferred - set `evidence_level: inferred`
-- [ ] `## Alternatives`: at least 1 alternative with status + reason, or "Not documented in spec"
+- [ ] `## Проблема`: specific problem statement, not "Needs review"
+- [ ] `## Решение`: concrete decision, not vague
+- [ ] `## Обоснование`: explains WHY in 2-4 sentences — **NOT "Не задокументировано"**. If inferred — set `evidence_level: inferred`
+- [ ] `## Рассмотренные альтернативы`: ≥1 alternative with status + reason — **NOT "Не задокументировано"**. If inferred — mark `evidence_level: inferred`
+- [ ] `## Затронутые модули`: module ids affected or "Не выявлены"
+- [ ] `## Затронутые сценарии`: scenario ids affected or "Не выявлены"
 - [ ] Each section cites spec content or marks as inferred
 - [ ] Claims: scanned full spec for claims CLI missed (numbered requirements, prose, non-goals, constraints)
 - [ ] Non-goals: extracted if present, skipped if not
@@ -150,21 +152,38 @@ Report format for reviewer:
 ## Rules
 - ALWAYS read the full spec content before filling sections.
 - If rationale is explicitly stated in spec - mark `evidence_level: reviewed_doc`. If inferred - `evidence_level: inferred`.
-- Use updateCard tool to save. NEVER use Write tool.
+- Use updateCard tool to save. NEVER use Write tool — it corrupts YAML frontmatter and causes duplicate `---` blocks.
 - Do NOT set `status: current` - only memory-reviewer can promote.
 - Do NOT change code_refs, test_refs, entity_type, id.
 - Semantic dedup is advisory - report duplicates, don't auto-merge (reviewer decides).
+
+## Cross-linking — MANDATORY
+
+After filling card content, you MUST populate cross-link fields in frontmatter:
+
+1. **`related_modules`**: list module card ids that this decision/proposal affects. Read existing module cards (`.ai/memory/modules/*.md`) and identify which modules implement or are affected by the spec.
+2. **`related_scenarios`**: list scenario card ids that this decision/proposal impacts. Read existing scenario cards (`.ai/memory/scenarios/*.md`).
+3. **`related_decisions`**: list decision card ids that are related to this card (same topic, superseded, alternative).
+4. **`affects_modules`**: for decisions — which modules are changed by this decision.
+5. **`affects_scenarios`**: for decisions — which scenarios are changed by this decision.
+
+If no related cards exist — write `[]` (empty array). Do NOT leave these fields with placeholder text.
+
+Use `updateCard` with `fields` parameter to set these frontmatter fields.
 
 ## Placeholder policy — CRITICAL
 
 NEVER leave placeholder text like "Требует ревью — ..." in card sections. For each section:
 
 1. If the spec contains the information → extract and fill it.
-2. If the spec does NOT contain it → write a concrete factual statement:
-   - "Не задокументировано в спецификации." (for missing rationale/alternatives)
-   - "Не применимо — <reason>." (for sections that don't make sense for this card type)
-   - "Не выявлено." (for related modules/scenarios if none found)
+2. If the spec does NOT contain it → **infer from context, problem domain, and constraints.** You are an analyst — your job is to REASON about WHY, not just copy text.
+   - For `## Обоснование` (rationale): **NEVER write "Не задокументировано".** Infer WHY from the problem, the solution, and the trade-offs. Write 2-4 sentences. Mark `evidence_level: inferred`.
+   - For `## Рассмотренные альтернативы` (alternatives): **NEVER write "Не задокументировано".** Infer plausible alternatives from the problem domain. Write 1-2 alternatives with rejection reasons. Mark `evidence_level: inferred`.
+   - For `## Последствия` (consequences): infer trade-offs from the decision.
+   - For `## Затронутые модули`: identify affected modules from spec content or write "Не выявлены."
+   - For `## Затронутые сценарии`: identify affected scenarios or write "Не выявлены."
 3. NEVER write "Требует ревью — ..." — this is the CLI placeholder, your job is to REPLACE it.
+4. NEVER write "Не задокументировано в спецификации." for rationale or alternatives — this is a LAZY fallback. Your job is to ANALYZE and INFER, not to report absence.
 
 ## Content first, evidence second
 
