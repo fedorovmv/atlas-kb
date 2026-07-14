@@ -381,7 +381,7 @@ export function validateReferenceStudy(card: MemoryCard): { errors: string[]; wa
       // treeHash present — async verification in validateMemory() handles mismatch/errors
     } else {
       // Existing reference cards without treeHash → WARNING (backward compat)
-      warnings.push(`Card "${card.meta.id}": reference study source_ref has no treeHash — consider running 'repo-memory migrate' to auto-fill`);
+      warnings.push(`Card "${card.meta.id}": reference study source_ref has no treeHash — consider running 'atlas migrate' to auto-fill`);
     }
   }
 

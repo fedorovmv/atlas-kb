@@ -34,7 +34,7 @@ async function copySynapseMiniWithoutMemory(dest: string) {
 }
 
 describe("E2E integration on synapse-mini", () => {
-  it("full pipeline: discover → bootstrap → validate → context → ingest-spec → validate → reconcile", async () => {
+  it("full pipeline: discover → bootstrap → validate → recall → ingest → validate → reconcile", async () => {
     const dest = await mkdtemp(path.join(tmpdir(), "e2e-integration-"));
     await copySynapseMiniWithoutMemory(dest);
 
@@ -54,13 +54,13 @@ describe("E2E integration on synapse-mini", () => {
     expect(validateReport.errors.length).toBe(0);
 
     // 4. context for agent registry
-    const contextOut = runCli(dest, ["context", "agent registry filtering", "--json"]);
+    const contextOut = runCli(dest, ["recall", "agent registry filtering", "--json"]);
     const contextPack = JSON.parse(contextOut);
     expect(contextPack.selected.length).toBeGreaterThan(0);
     expect(contextPack.codeRefs.length).toBeGreaterThan(0);
 
     // 5. ingest-spec (legacy → historical)
-    const ingestOut = runCli(dest, ["ingest-spec", "specs/legacy/2025-agent-routing.md", "--json"]);
+    const ingestOut = runCli(dest, ["ingest", "specs/legacy/2025-agent-routing.md", "--json"]);
     const ingestResults = JSON.parse(ingestOut);
     expect(ingestResults.length).toBe(1);
     expect(ingestResults[0].actuality).toBe("historical_context");
@@ -84,7 +84,7 @@ describe("E2E integration on synapse-mini", () => {
     await copySynapseMiniWithoutMemory(dest);
 
     runCli(dest, ["bootstrap", "--json"]);
-    const contextOut = runCli(dest, ["context", "demo agent", "--json"]);
+    const contextOut = runCli(dest, ["recall", "demo agent", "--json"]);
     const contextPack = JSON.parse(contextOut);
     // demo file should NOT appear in codeRefs as production evidence
     const demoInCodeRefs = contextPack.codeRefs.some((r: string) => r.includes("demo-agent/main.go"));

@@ -1,5 +1,5 @@
 ---
-name: memory-bootstrap
+name: atlas-bootstrap
 description: Full LLM-assisted memory bank population — deterministic scaffold + agent-driven content enrichment.
 ---
 
@@ -11,9 +11,9 @@ Populate `.ai/memory` from project source, tests, docs, and specs in one workflo
 1. **Phase 1**: Run CLI scaffold (creates skeleton cards)
 2. **Phase 2**: Dispatch subagents to enrich ALL needs-enrichment cards (fill content, verify evidence, promote to current)
 
-**If you stop after Phase 1 without dispatching subagents — the bootstrap is INCOMPLETE.** Cards will have placeholder content "Требует ревью — ...". You MUST dispatch memory-extractor, memory-analyst, memory-coder, and memory-reviewer subagents as described in Phase 2 below.
+**If you stop after Phase 1 without dispatching subagents — the bootstrap is INCOMPLETE.** Cards will have placeholder content "Требует ревью — ...". You MUST dispatch atlas-extractor, atlas-analyst, atlas-coder, and atlas-reviewer subagents as described in Phase 2 below.
 
-**Do NOT ask the user "Would you like me to proceed?" — just proceed.** The user invoked `/memory-bootstrap` which means they want the FULL pipeline. Asking is a waste of their time. Dispatch subagents immediately after Phase 1.
+**Do NOT ask the user "Would you like me to proceed?" — just proceed.** The user invoked `/atlas-bootstrap` which means they want the FULL pipeline. Asking is a waste of their time. Dispatch subagents immediately after Phase 1.
 
 ## Progress-based stop (LOOP safety)
 
@@ -32,8 +32,8 @@ After each STEP 2→3→4 iteration, compare hash set against the previous itera
 
 **Completion gate (MANDATORY before reporting "done"):**
 ```bash
-.ai/memory-tool/bin/memory ls --needs-enrichment --json   # must be []
-.ai/memory-tool/bin/memory ls --status needs_review --json  # must be []
+.ai/atlas/bin/atlas ls --needs-enrichment --json   # must be []
+.ai/atlas/bin/atlas ls --status needs_review --json  # must be []
 ```
 If BOTH empty → validate → report "done".
 If EITHER non-empty → go back to STEP 2. Do NOT report "done". Do NOT ask the user. Loop.
@@ -52,7 +52,7 @@ If EITHER non-empty → go back to STEP 2. Do NOT report "done". Do NOT ask the 
 Run from project root:
 
 ```bash
-.ai/memory-tool/bin/memory bootstrap --root .
+.ai/atlas/bin/atlas bootstrap --root .
 ```
 
 This creates skeleton cards: module cards with code_refs/test_refs/source_refs but placeholder content ("Needs review", "Preliminary responsibility"). It also creates `reconciliation/conflicts.md` and `reconciliation/open-questions.md`.
@@ -60,7 +60,7 @@ This creates skeleton cards: module cards with code_refs/test_refs/source_refs b
 **MANDATORY after scaffold:** Run this command and SAVE the output:
 
 ```bash
-.ai/memory-tool/bin/memory ls --needs-enrichment --json
+.ai/atlas/bin/atlas ls --needs-enrichment --json
 ```
 
 This returns cards that have weak evidence (`inferred`, `spec_only`, `unknown`), `needs_review` status, `review_required: true`, OR placeholder content ("Требует ревью", "Не задокументировано"). The CLI scans card bodies for placeholder patterns.
@@ -85,13 +85,13 @@ For each `needs_review` card from Phase 1, you (the orchestrating agent) MUST di
 
 **Progress tracking — MANDATORY.** After each batch completes, run:
 ```bash
-.ai/memory-tool/bin/memory ls --status needs_review --json
+.ai/atlas/bin/atlas ls --status needs_review --json
 ```
 Count remaining needs_review cards. If >0 cards remain in the current stage, continue dispatching. Do NOT advance to the next stage until the current stage has 0 needs_review cards of that entity_type.
 
 **Completion gate — MANDATORY.** Before reporting "done", run:
 ```bash
-.ai/memory-tool/bin/memory ls --status needs_review --json
+.ai/atlas/bin/atlas ls --status needs_review --json
 ```
 If the result contains ANY cards, the bootstrap is INCOMPLETE. You MUST continue dispatching subagents for remaining cards. Do NOT report "done" until `needs_review` count is 0 (or all remaining cards are explicitly marked as deferred in `reconciliation/open-questions.md` with a reason).
 
@@ -106,18 +106,18 @@ Stage E: reference cards → analyst (synthesis from guide docs) → **auto: rev
 Stage F: validate + summary
 ```
 
-**⚠️ MANDATORY: STEP 3 (reviewer) after STEP 2 (enrichment).** Strong-evidence cards (code_confirmed / contract_confirmed / test_confirmed) with complete sections and `status: needs_review` MUST be promoted by memory-reviewer. Do NOT skip STEP 3 even if `ls --needs-enrichment` returns `[]` — if `ls --status needs_review` returns cards, dispatch reviewer. The orchestrator must run STEP 3 after STEP 2 completes, every iteration.
+**⚠️ MANDATORY: STEP 3 (reviewer) after STEP 2 (enrichment).** Strong-evidence cards (code_confirmed / contract_confirmed / test_confirmed) with complete sections and `status: needs_review` MUST be promoted by atlas-reviewer. Do NOT skip STEP 3 even if `ls --needs-enrichment` returns `[]` — if `ls --status needs_review` returns cards, dispatch reviewer. The orchestrator must run STEP 3 after STEP 2 completes, every iteration.
 
 **Auto-reviewer dispatch (Stages D & E):**
-After analyst completes enrichment for a stage, **automatically dispatch memory-reviewer** for all cards in that stage. Do NOT wait for manual trigger. Reviewer promotes cards from `needs_review` to `current` (if evidence is sufficient) or adds to `open-questions.md` (if content is incomplete).
+After analyst completes enrichment for a stage, **automatically dispatch atlas-reviewer** for all cards in that stage. Do NOT wait for manual trigger. Reviewer promotes cards from `needs_review` to `current` (if evidence is sufficient) or adds to `open-questions.md` (if content is incomplete).
 
 **Per-stage checkpoint (run after each stage):**
 ```bash
-.ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="module")] | length'   # after Stage A
-.ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="scenario")] | length' # after Stage B
-.ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="decision" or .entity_type=="proposal" or .entity_type=="historical")] | length' # after Stage C
-.ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="architecture")] | length' # after Stage D
-.ai/memory-tool/bin/memory ls --status needs_review --json | jq '[.[] | select(.entity_type=="reference")] | length' # after Stage E
+.ai/atlas/bin/atlas ls --status needs_review --json | jq '[.[] | select(.entity_type=="module")] | length'   # after Stage A
+.ai/atlas/bin/atlas ls --status needs_review --json | jq '[.[] | select(.entity_type=="scenario")] | length' # after Stage B
+.ai/atlas/bin/atlas ls --status needs_review --json | jq '[.[] | select(.entity_type=="decision" or .entity_type=="proposal" or .entity_type=="historical")] | length' # after Stage C
+.ai/atlas/bin/atlas ls --status needs_review --json | jq '[.[] | select(.entity_type=="architecture")] | length' # after Stage D
+.ai/atlas/bin/atlas ls --status needs_review --json | jq '[.[] | select(.entity_type=="reference")] | length' # after Stage E
 ```
 If count >0 for the stage's entity types — continue dispatching. Do NOT proceed to next stage until count is 0.
 
@@ -138,7 +138,7 @@ If you stop after Stage A or B without completing Stage C (analyst for decision/
 
 **Note on `heuristic_match` evidence for decision/historical cards:** These card types are spec-based (no code_refs). `evidence_level=heuristic_match` is a CLI keyword-match artifact, not a signal that coder verification is needed. Decision/historical cards with `heuristic_match` are EXCLUDED from `--needs-enrichment-content` gate — they don't need enrichment, they need reviewer promotion (if sections complete).
 
-#### 2a. Module cards — memory-extractor
+#### 2a. Module cards — atlas-extractor
 
 For each module card:
 
@@ -151,7 +151,7 @@ For each module card:
 - Set `source_confidence: medium` if code was readable and consistent, `low` if sparse or ambiguous.
 - Do NOT set `evidence_level: code_confirmed` unless you actually read and understood the code.
 
-#### 2b. Scenario cards — memory-extractor
+#### 2b. Scenario cards — atlas-extractor
 
 For each scenario card:
 
@@ -164,10 +164,10 @@ For each scenario card:
 - Fill in `## Сценарии ошибок` — known failure paths.
 - Fill in `## Связанные модули` — list module card ids that participate. Cross-reference with `.ai/memory/modules/`.
 - Fill in `## Связанные тесты` — list test file paths that verify this scenario.
-- Leave `## Свидетельства из кода` and `## Свидетельства из тестов` for memory-coder.
+- Leave `## Свидетельства из кода` and `## Свидетельства из тестов` for atlas-coder.
 - Fill in `## Обоснование` — WHY this scenario exists.
 
-#### 2b. Decision/Proposal/Historical cards — memory-analyst
+#### 2b. Decision/Proposal/Historical cards — atlas-analyst
 
 For each decision, proposal, or historical card:
 
@@ -179,9 +179,9 @@ For each decision, proposal, or historical card:
 - **Spec comparison**: compare new spec against existing proposal/historical cards by meaning. Detect supersede/conflict relations. Report to reviewer.
 - **Partial implementation detection**: for proposal claims with `heuristic_code_match` evidence — determine if spec is partially implemented, report which claims have code match vs not found vs conflicting.
 - If rationale is explicitly stated in spec → mark `evidence_level: reviewed_doc`. If inferred → `evidence_level: inferred`.
-- Do NOT set `status: current` — only memory-reviewer can promote.
+- Do NOT set `status: current` — only atlas-reviewer can promote.
 
-#### 2c. Code evidence verification — memory-coder
+#### 2c. Code evidence verification — atlas-coder
 
 For each enriched module/scenario card (after extractor or analyst):
 
@@ -195,7 +195,7 @@ For each enriched module/scenario card (after extractor or analyst):
 - For scenario cards: verify that the flow described in `## Поток выполнения` matches actual code behavior. If flow doesn't match — flag as conflict.
 - For proposal cards: check if proposed behavior is partially implemented in code. Report findings.
 
-#### 2d. Architecture cards — memory-analyst (synthesis)
+#### 2d. Architecture cards — atlas-analyst (synthesis)
 
 **System architecture card** (`architecture/system.md`):
 
@@ -218,16 +218,16 @@ For each enriched module/scenario card (after extractor or analyst):
 - Fill in `## Поток данных` — how data flows through this component.
 - Fill in `## Связанные модули` — list module card ids that interact with this one.
 - Architecture is **synthesis**, not extraction — you are creating architectural documentation by combining module behavior, code structure, and design docs.
-- Do NOT set `status: current` — only memory-reviewer can promote.
+- Do NOT set `status: current` — only atlas-reviewer can promote.
 
 **AUTO-DISPATCH REVIEWER:**
-After analyst completes ALL architecture cards, **automatically dispatch memory-reviewer** for the entire batch. Reviewer will:
+After analyst completes ALL architecture cards, **automatically dispatch atlas-reviewer** for the entire batch. Reviewer will:
 - Check each card for required sections
 - Promote to `current` if evidence is sufficient
 - Add incomplete cards to `open-questions.md`
 - Set `review_required: false` for completed cards
 
-#### 2e. Reference cards — memory-analyst (synthesis from guide docs)
+#### 2e. Reference cards — atlas-analyst (synthesis from guide docs)
 
 For each reference card:
 
@@ -240,16 +240,16 @@ For each reference card:
 - Fill in `## Совместимость/операционные ограничения` — known compatibility limits, version constraints, environment requirements.
 - Fill in `## Производные сценарии и тесты` — use cases and tests derived from this behavior.
 - Reference is **synthesis** — combine guide docs, module behavior, and operational knowledge.
-- Do NOT set `status: current` — only memory-reviewer can promote.
+- Do NOT set `status: current` — only atlas-reviewer can promote.
 
 **AUTO-DISPATCH REVIEWER:**
-After analyst completes ALL reference cards, **automatically dispatch memory-reviewer** for the entire batch. Reviewer will:
+After analyst completes ALL reference cards, **automatically dispatch atlas-reviewer** for the entire batch. Reviewer will:
 - Check each card for required sections (Перенесённое поведение, Инварианты, Отказ/повтор, etc.)
 - Promote to `current` if evidence is sufficient
 - Add incomplete cards to `open-questions.md`
 - Set `review_required: false` for completed cards
 
-#### 2f. Quality gate — memory-reviewer
+#### 2f. Quality gate — atlas-reviewer
 
 For the full memory bank after enrichment:
 
@@ -270,7 +270,7 @@ For the full memory bank after enrichment:
 ### Phase 3 — Validation
 
 ```bash
-.ai/memory-tool/bin/memory validate
+.ai/atlas/bin/atlas validate
 ```
 
 If validate reports errors, fix them (broken relations, dangerous usage policies, spec_only+current_behavior). Re-run validate until clean.
@@ -279,7 +279,7 @@ If validate reports errors, fix them (broken relations, dangerous usage policies
 
 **Run completion gate first:**
 ```bash
-.ai/memory-tool/bin/memory ls --status needs_review --json
+.ai/atlas/bin/atlas ls --status needs_review --json
 ```
 If ANY cards remain — bootstrap is INCOMPLETE. Either continue dispatching or list deferred cards with reasons in `reconciliation/open-questions.md`.
 
@@ -291,10 +291,10 @@ Show the user:
 
 ## Model routing
 
-- **memory-extractor** (qwen-3.6-27b): document classification, responsibility/behavior extraction from code reading. Cheap, high-volume.
-- **memory-analyst** (deepseek-v4-flash): spec analysis, rationale extraction, semantic claim matching, decision card enrichment. Strong text understanding.
-- **memory-coder** (qwen-coder-next): code evidence verification, test coverage check, symbol-level analysis. Precise code understanding.
-- **memory-reviewer** (qwen-thinking-large): rationale, conflict resolution, final quality gate. Deep reasoning.
+- **atlas-extractor** (qwen-3.6-27b): document classification, responsibility/behavior extraction from code reading. Cheap, high-volume.
+- **atlas-analyst** (deepseek-v4-flash): spec analysis, rationale extraction, semantic claim matching, decision card enrichment. Strong text understanding.
+- **atlas-coder** (qwen-coder-next): code evidence verification, test coverage check, symbol-level analysis. Precise code understanding.
+- **atlas-reviewer** (qwen-thinking-large): rationale, conflict resolution, final quality gate. Deep reasoning.
 
 ## Rules
 
@@ -303,7 +303,7 @@ Show the user:
 - NEVER set `review_required: false` for a card with placeholder content.
 - ALWAYS read the code_refs files before writing responsibility/behavior.
 - ALWAYS preserve frontmatter fields set by deterministic bootstrap (code_refs, test_refs, entity_type, id, related_*).
-- ALWAYS use the `memory_updateCard` tool to update cards. NEVER use Write tool directly on memory .md files — it corrupts YAML frontmatter. `memory_updateCard` preserves frontmatter and only replaces body or sets specific fields.
+- ALWAYS use the `atlas_updateCard` tool to update cards. NEVER use Write tool directly on memory .md files — it corrupts YAML frontmatter. `atlas_updateCard` preserves frontmatter and only replaces body or sets specific fields.
 - Evidence format: `## Code evidence` entries MUST include file path + line number. CLI rejects code_confirmed without properly formatted section.
 - Mark uncertain inferences as `evidence_level: inferred`.
 - If code is unreadable, minified, or generated — set `source_confidence: low` and add to open-questions.

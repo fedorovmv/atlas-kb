@@ -3,7 +3,7 @@
 ## Memory-First Development
 
 Before coding tasks involving product behavior or architecture:
-1. Run /memory-context to load relevant memory cards.
+1. Run /atlas-recall to load relevant memory cards.
 2. Read the module/scenario/decision cards related to your task.
 3. Check code_refs and test_refs in those cards for the actual source files.
 

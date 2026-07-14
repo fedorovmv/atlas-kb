@@ -11,7 +11,7 @@ function loadTemplate(relPath: string): string {
   return readFileSync(path.join(templatesDir, relPath), "utf8");
 }
 
-export const MEMORY_GUARD_PLUGIN_TEMPLATE = loadTemplate("plugins/memory-guard.js");
+export const MEMORY_GUARD_PLUGIN_TEMPLATE = loadTemplate("plugins/atlas-guard.js");
 
 export const scaffoldFiles: ScaffoldFile[] = [
   { path: ".ai/memory/MEMORY.md", content: loadTemplate("memory/MEMORY.md") },
@@ -36,25 +36,25 @@ export const scaffoldFiles: ScaffoldFile[] = [
   { path: ".ai/memory/historical/.gitkeep", content: "" },
   { path: ".ai/memory/reconciliation/conflicts.md", content: loadTemplate("memory/reconciliation/conflicts.md") },
   { path: ".ai/memory/reconciliation/open-questions.md", content: loadTemplate("memory/reconciliation/open-questions.md") },
-  { path: ".ai/memory-tool/config/source-priority.yaml", content: loadTemplate("config/source-priority.yaml") },
-  { path: ".ai/memory-tool/config/model-routing.yaml", content: loadTemplate("config/model-routing.yaml") },
-  { path: ".ai/memory-tool/config/code-map.yaml", content: loadTemplate("config/code-map.yaml") },
+  { path: ".ai/atlas/config/source-priority.yaml", content: loadTemplate("config/source-priority.yaml") },
+  { path: ".ai/atlas/config/model-routing.yaml", content: loadTemplate("config/model-routing.yaml") },
+  { path: ".ai/atlas/config/code-map.yaml", content: loadTemplate("config/code-map.yaml") },
   { path: ".ai/docs/.gitkeep", content: loadTemplate("docs/.gitkeep") },
   { path: ".ai/drafts/.gitkeep", content: loadTemplate("drafts/.gitkeep") },
-  { path: ".opencode/skills/memory-bank/SKILL.md", content: loadTemplate("skills/memory-bank.md") },
-  { path: ".opencode/skills/memory-ingest-spec/SKILL.md", content: loadTemplate("skills/memory-ingest-spec.md") },
-  { path: ".opencode/skills/memory-reconcile/SKILL.md", content: loadTemplate("skills/memory-reconcile.md") },
-  { path: ".opencode/skills/memory-bootstrap/SKILL.md", content: loadTemplate("skills/memory-bootstrap.md") },
-  { path: ".opencode/commands/memory-bootstrap.md", content: loadTemplate("commands/memory-bootstrap.md") },
-  { path: ".opencode/commands/memory-context.md", content: loadTemplate("commands/memory-context.md") },
-  { path: ".opencode/commands/memory-ingest-spec.md", content: loadTemplate("commands/memory-ingest-spec.md") },
-  { path: ".opencode/commands/memory-reconcile.md", content: loadTemplate("commands/memory-reconcile.md") },
-  { path: ".opencode/agents/memory-extractor.md", content: loadTemplate("agents/memory-extractor.md") },
-  { path: ".opencode/agents/memory-coder.md", content: loadTemplate("agents/memory-coder.md") },
-  { path: ".opencode/agents/memory-reviewer.md", content: loadTemplate("agents/memory-reviewer.md") },
-  { path: ".opencode/agents/memory-analyst.md", content: loadTemplate("agents/memory-analyst.md") },
-  { path: ".opencode/tools/memory.ts", content: loadTemplate("tools/memory.ts") },
-  { path: ".opencode/plugins/memory-guard.js", content: MEMORY_GUARD_PLUGIN_TEMPLATE },
+  { path: ".opencode/skills/atlas-bank/SKILL.md", content: loadTemplate("skills/atlas-bank.md") },
+  { path: ".opencode/skills/atlas-ingest/SKILL.md", content: loadTemplate("skills/atlas-ingest.md") },
+  { path: ".opencode/skills/atlas-reconcile/SKILL.md", content: loadTemplate("skills/atlas-reconcile.md") },
+  { path: ".opencode/skills/atlas-bootstrap/SKILL.md", content: loadTemplate("skills/atlas-bootstrap.md") },
+  { path: ".opencode/commands/atlas-bootstrap.md", content: loadTemplate("commands/atlas-bootstrap.md") },
+  { path: ".opencode/commands/atlas-recall.md", content: loadTemplate("commands/atlas-recall.md") },
+  { path: ".opencode/commands/atlas-ingest.md", content: loadTemplate("commands/atlas-ingest.md") },
+  { path: ".opencode/commands/atlas-reconcile.md", content: loadTemplate("commands/atlas-reconcile.md") },
+  { path: ".opencode/agents/atlas-extractor.md", content: loadTemplate("agents/atlas-extractor.md") },
+  { path: ".opencode/agents/atlas-coder.md", content: loadTemplate("agents/atlas-coder.md") },
+  { path: ".opencode/agents/atlas-reviewer.md", content: loadTemplate("agents/atlas-reviewer.md") },
+  { path: ".opencode/agents/atlas-analyst.md", content: loadTemplate("agents/atlas-analyst.md") },
+  { path: ".opencode/tools/atlas.ts", content: loadTemplate("tools/atlas.ts") },
+  { path: ".opencode/plugins/atlas-guard.js", content: MEMORY_GUARD_PLUGIN_TEMPLATE },
   { path: "AGENTS.md", content: loadTemplate("AGENTS.md") },
 ];
 

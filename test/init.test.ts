@@ -109,9 +109,9 @@ describe("initMemory", () => {
     expect(updated).toContain("requiredTopLevel");
   });
 
-  it("generates .ai/memory-tool/bin/memory wrapper script", async () => {
+  it("generates .ai/atlas/bin/atlas wrapper script", async () => {
     await initMemory({ root: tmpDir });
-    const wrapperPath = path.join(tmpDir, ".ai", "memory-tool", "bin", "memory");
+    const wrapperPath = path.join(tmpDir, ".ai", "atlas", "bin", "atlas");
     expect(existsSync(wrapperPath)).toBe(true);
     const content = await readFile(wrapperPath, "utf-8");
     expect(content).toContain("#!/usr/bin/env bash");
@@ -122,7 +122,7 @@ describe("initMemory", () => {
 
   it("wrapper script is executable", async () => {
     await initMemory({ root: tmpDir });
-    const wrapperPath = path.join(tmpDir, ".ai", "memory-tool", "bin", "memory");
+    const wrapperPath = path.join(tmpDir, ".ai", "atlas", "bin", "atlas");
     const st = await stat(wrapperPath);
     // Owner execute bit must be set (0o755)
     expect(st.mode & 0o100).toBeTruthy();
@@ -130,7 +130,7 @@ describe("initMemory", () => {
 
   it("dryRun does not create wrapper script", async () => {
     await initMemory({ root: tmpDir, dryRun: true });
-    const wrapperPath = path.join(tmpDir, ".ai", "memory-tool", "bin", "memory");
+    const wrapperPath = path.join(tmpDir, ".ai", "atlas", "bin", "atlas");
     expect(existsSync(wrapperPath)).toBe(false);
   });
 });

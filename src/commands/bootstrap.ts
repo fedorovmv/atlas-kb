@@ -52,15 +52,15 @@ export async function bootstrapMemoryCommand(options: RepoMemoryOptions & { forc
     console.log("Bootstrap is NOT complete. You MUST dispatch subagents to enrich these cards.");
     console.log("Do NOT ask the user. Do NOT offer options. Proceed to Phase 2 now.");
     console.log("\nTo see which cards need work:");
-    console.log("  .ai/memory-tool/bin/memory ls --needs-enrichment --json");
+    console.log("  .ai/atlas/bin/memory ls --needs-enrichment --json");
     console.log("\nThen dispatch subagents per card type:");
     console.log("  module/scenario cards → memory-extractor → memory-coder → memory-reviewer");
     console.log("  decision/proposal/historical cards → memory-analyst → memory-reviewer");
     console.log("  architecture cards → memory-analyst → memory-reviewer");
     console.log("  reference cards → memory-analyst → memory-reviewer");
     console.log("\nAfter all subagents complete, run:");
-    console.log("  .ai/memory-tool/bin/memory ls --needs-enrichment --json");
-    console.log("  .ai/memory-tool/bin/memory validate");
+    console.log("  .ai/atlas/bin/memory ls --needs-enrichment --json");
+    console.log("  .ai/atlas/bin/atlas validate");
     console.log("If needs-enrichment returns [] — bootstrap is complete.");
     // Signal incomplete via exit code only in JSON mode (for programmatic use)
     if (options.json) process.exitCode = 1;

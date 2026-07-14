@@ -56,7 +56,7 @@ type SourcePriority = {
 export async function loadSourcePriority(options: RepoMemoryOptions): Promise<SourcePriority> {
   try {
     const root = resolveRoot(options);
-    const configPath = path.join(root, ".ai", "memory-tool", "config", "source-priority.yaml");
+    const configPath = path.join(root, ".ai", "atlas", "config", "source-priority.yaml");
     const raw = await readFile(configPath, "utf8");
     const parsed = yaml.load(raw) as Record<string, unknown>;
     const validated = SourcePrioritySchema.parse(parsed);

@@ -1,5 +1,5 @@
 ---
-name: memory-ingest-spec
+name: atlas-ingest
 description: Process a new product spec into proposals, rationale, conflicts, and safe memory updates.
 ---
 

@@ -28,8 +28,8 @@ import { migrateFromV3Command } from "./commands/migrateFromV3.js";
 const program = new Command();
 
 program
-  .name("repo-memory")
-  .description("Markdown/frontmatter repository memory bank tool for coding agents")
+   .name("atlas")
+   .description("Atlas — Markdown-first engineering memory for coding agents")
   .version("0.7.0")
   .option("--root <path>", "repository root", process.cwd());
 
@@ -90,8 +90,8 @@ program
   });
 
 program
-  .command("context")
-  .description("Build a compact memory context pack for a task or question")
+  .command("recall")
+  .description("Recall context — build a compact memory context pack for a task or question")
   .argument("<query>", "task or question")
   .option("--limit <number>", "max primary cards", (value) => Number.parseInt(value, 10), 8)
   .option("--json", "print JSON", false)
@@ -143,8 +143,8 @@ program
   });
 
 program
-  .command("ingest-spec")
-  .description("Process a spec into proposal/historical/conflict memory")
+  .command("ingest")
+  .description("Ingest a spec into proposal/historical/conflict memory")
   .argument("<spec>", "spec path or glob")
   .option("--force", "overwrite existing cards", false)
   .option("--dry-run", "preview without writing", false)

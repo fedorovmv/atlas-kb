@@ -1,4 +1,4 @@
-# Repo Memory OpenCode Kit
+# Atlas
 
 ## Что это
 
@@ -82,10 +82,10 @@ FilterCardsForCaller(caller string) returns []string of visible card IDs.
 ```
 1. init          → CLI scaffold: .ai/memory/ + .opencode/ (agents, skills, tools, plugin)
 2. bootstrap     → CLI: skeleton cards (placeholder body, code_refs filled)
-3. /memory-bootstrap → OpenCode dispatch:
-   3a. memory-extractor (qwen-27b)    → LLM: читает код, заполняет Responsibility/Behavior
-   3b. memory-coder (qwen-coder)      → LLM: verifies symbols, добавляет ## Code evidence
-   3c. memory-reviewer (qwen-thinking)→ LLM: quality gate, promotes to current
+3. /atlas-bootstrap → OpenCode dispatch:
+   3a. atlas-extractor (qwen-27b)    → LLM: читает код, заполняет Responsibility/Behavior
+   3b. atlas-coder (qwen-coder)      → LLM: verifies symbols, добавляет ## Code evidence
+   3c. atlas-reviewer (qwen-thinking)→ LLM: quality gate, promotes to current
 4. validate      → CLI: проверяет инварианты (блокирует code_confirmed без evidence)
 5. ingest-spec   → CLI: claims → evidence → classify → cards + cross-spec relations
 6. reconcile     → CLI: stale refs, changed evidence, broken links, duplicates
@@ -96,49 +96,49 @@ FilterCardsForCaller(caller string) returns []string of visible card IDs.
 
 | Агент | Модель | Назначение |
 |-------|-------|-----------|
-| memory-extractor | qwen-3.6-27b | Читает **код**, заполняет module/scenario cards (Responsibility, Current behavior) |
-| memory-analyst | deepseek-v4-flash | Читает **спеки**, извлекает rationale/semantic claims, заполняет decision cards |
-| memory-coder | qwen-coder-next | Верифицирует evidence: открывает code_refs, ищет symbols, добавляет `## Code evidence` |
-| memory-reviewer | qwen-thinking-large | Финальный quality gate: rubric scoring, re-read verification, promotes to current |
+| atlas-extractor | qwen-3.6-27b | Читает **код**, заполняет module/scenario cards (Responsibility, Current behavior) |
+| atlas-analyst | deepseek-v4-flash | Читает **спеки**, извлекает rationale/semantic claims, заполняет decision cards |
+| atlas-coder | qwen-coder-next | Верифицирует evidence: открывает code_refs, ищет symbols, добавляет `## Code evidence` |
+| atlas-reviewer | qwen-thinking-large | Финальный quality gate: rubric scoring, re-read verification, promotes to current |
 
 **Workflow:** extractor → coder → reviewer (bootstrap); analyst → coder → reviewer (ingest-spec).
 
 ## CLI команды
 
 ```bash
-repo-memory init                    # создать .ai/memory + .opencode scaffold
-repo-memory discover [--json]       # инвентаризация: файлы, классификация, candidate modules
-repo-memory bootstrap [--force]     # skeleton cards из discovery
-repo-memory ingest-spec <glob>      # спека → claims → evidence → card + cross-spec relations
-repo-memory reconcile [--json]      # сверка с кодом (read-only report)
-repo-memory reconcile --fix         # применить безопасные патчи (idempotent)
-repo-memory validate [--strict-warnings]
-repo-memory ls [--type module] [--status current]
-repo-memory show <id>
-repo-memory related <id>
-repo-memory context <query>         # context pack для задачи
-repo-memory update <id> [--body <text>] [--set field=value]  # safe card update
+atlas init                    # создать .ai/memory + .opencode scaffold
+atlas discover [--json]       # инвентаризация: файлы, классификация, candidate modules
+atlas bootstrap [--force]     # skeleton cards из discovery
+atlas ingest-spec <glob>      # спека → claims → evidence → card + cross-spec relations
+atlas reconcile [--json]      # сверка с кодом (read-only report)
+atlas reconcile --fix         # применить безопасные патчи (idempotent)
+atlas validate [--strict-warnings]
+atlas ls [--type module] [--status current]
+atlas show <id>
+atlas related <id>
+atlas context <query>         # context pack для задачи
+atlas update <id> [--body <text>] [--set field=value]  # safe card update
 ```
 
-В целевом проекте после `init` доступен wrapper `.ai/memory-tool/bin/memory` — работает без `package.json`, требует только `node` в PATH:
+В целевом проекте после `init` доступен wrapper `.ai/atlas/bin/atlas` — работает без `package.json`, требует только `node` в PATH:
 
 ```bash
-.ai/memory-tool/bin/memory bootstrap
-.ai/memory-tool/bin/memory ingest-spec "specs/**/*.md"
-.ai/memory-tool/bin/memory reconcile --fix --json
-.ai/memory-tool/bin/memory context "изменить фильтрацию agent cards"
-.ai/memory-tool/bin/memory validate
+.ai/atlas/bin/atlas bootstrap
+.ai/atlas/bin/atlas ingest-spec "specs/**/*.md"
+.ai/atlas/bin/atlas reconcile --fix --json
+.ai/atlas/bin/atlas context "изменить фильтрацию agent cards"
+.ai/atlas/bin/atlas validate
 ```
 
 Для Node.js проектов можно добавить script в `package.json`:
 ```json
 {
   "scripts": {
-    "memory": ".ai/memory-tool/bin/memory"
+    "atlas": ".ai/atlas/bin/atlas"
   }
 }
 ```
-Тогда: `npm run memory -- bootstrap`.
+Тогда: `npm run atlas -- bootstrap`.
 
 ## Enforcement слои
 
@@ -150,8 +150,8 @@ repo-memory update <id> [--body <text>] [--set field=value]  # safe card update
 | validate ERROR | `decision + can_generate_code_from: true` — rationale не для code gen |
 | validate ERROR | broken relations, broken claim links, duplicate ids |
 | updateCard THROW | попытка выставить `code_confirmed` без evidence section |
-| memory-guard plugin | `tool.execute.before` — advisory warning если Write без memory read |
-| AGENTS.md | "Run /memory-context before product behavior tasks" |
+| atlas-guard plugin | `tool.execute.before` — advisory warning если Write без memory read |
+| AGENTS.md | "Run /atlas-recall before product behavior tasks" |
 
 ## Что умеет
 
@@ -174,7 +174,7 @@ repo-memory update <id> [--body <text>] [--set field=value]  # safe card update
 - Decision card creation для спек с rationale content (## Problem, ## Decision, ## Rationale)
 - Cross-spec relations: `supersedes`, `superseded_by`, `conflicts_with`, `related_specs` (Jaccard topic overlap + "replaces" keyword)
 - Claims stored в frontmatter с embedded evidence + last_checked
-- LLM memory-analyst: semantic rationale extraction, semantic claim matching, partial implementation detection
+- LLM atlas-analyst: semantic rationale extraction, semantic claim matching, partial implementation detection
 
 ### Reconcile
 - Stale refs (code_refs/test_refs paths не существуют)
@@ -188,25 +188,25 @@ repo-memory update <id> [--body <text>] [--set field=value]  # safe card update
 
 ### Content quality
 - Agent instructions включают quality checklist, anti-patterns, good examples
-- memory-reviewer: rubric scoring (0-2 per section, ≥4/6 для promotion), re-read code verification
+- atlas-reviewer: rubric scoring (0-2 per section, ≥4/6 для promotion), re-read code verification
 - Bootstrap placeholders содержат EXAMPLE good output (не просто "Needs review")
 - validate проверяет evidence bullet format: `at <path>:<line>` pattern, не любой `- text`
 
 ### OpenCode integration
 - 4 agent definitions (extractor, analyst, coder, reviewer)
-- 4 skills (memory-bank, memory-bootstrap, memory-ingest-spec, memory-reconcile)
+- 4 skills (atlas-bank, atlas-bootstrap, atlas-ingest, atlas-reconcile)
 - 4 commands (slash commands для workflow)
 - 6 tools (context, validate, related, discover, bootstrap, updateCard)
-- memory-guard plugin: lifecycle hooks (auto-context injection, write enforcement, session tracking)
+- atlas-guard plugin: lifecycle hooks (auto-context injection, write enforcement, session tracking)
 - AGENTS.md: project-level instructions
 
 ## OpenCode команды
 
 ```text
-/memory-bootstrap                              # автоматически наполнить memory bank
-/memory-context изменить фильтрацию agent cards
-/memory-ingest-spec docs/specs/new-cr.md       # обработать спеку
-/memory-reconcile                              # сверить memory с кодом
+/atlas-bootstrap                              # автоматически наполнить memory bank
+/atlas-recall изменить фильтрацию agent cards
+/atlas-ingest docs/specs/new-cr.md       # обработать спеку
+/atlas-reconcile                              # сверить memory с кодом
 ```
 
 ## Установка
@@ -216,26 +216,26 @@ repo-memory update <id> [--body <text>] [--set field=value]  # safe card update
 npm install
 npm run build
 
-# 1. создать memory/openCode scaffold в проекте (включая wrapper .ai/memory-tool/bin/memory)
-npm run memory -- --root /path/to/your/repo init
+# 1. создать memory/openCode scaffold в проекте (включая wrapper .ai/atlas/bin/atlas)
+npm run atlas -- --root /path/to/your/repo init
 
 # 2. автоматически исследовать и наполнить
-npm run memory -- --root /path/to/your/repo bootstrap
+npm run atlas -- --root /path/to/your/repo bootstrap
 
 # 3. проверить
-npm run memory -- --root /path/to/your/repo validate
+npm run atlas -- --root /path/to/your/repo validate
 
 # 4. context pack под задачу
-npm run memory -- --root /path/to/your/repo context "изменить фильтрацию agent cards"
+npm run atlas -- --root /path/to/your/repo recall "изменить фильтрацию agent cards"
 ```
 
-После `init` в целевом проекте появляется wrapper `.ai/memory-tool/bin/memory` — работает без `package.json`, требует только `node` в PATH. Все skills/commands/tools используют его автоматически.
+После `init` в целевом проекте появляется wrapper `.ai/atlas/bin/atlas` — работает без `package.json`, требует только `node` в PATH. Все skills/commands/tools используют его автоматически.
 
-Или скопировать kit в `.ai/memory-tool` и добавить script в package.json:
+Или скопировать kit в `.ai/atlas` и добавить script в package.json:
 ```json
 {
   "scripts": {
-    "memory": ".ai/memory-tool/bin/memory"
+    "atlas": ".ai/atlas/bin/atlas"
   }
 }
 ```

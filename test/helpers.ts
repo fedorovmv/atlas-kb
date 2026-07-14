@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const templatesDir = path.resolve(__dirname, "..", "src", "scaffold", "templates");
 
 export async function createTempProject() {
-  const root = await mkdtemp(path.join(tmpdir(), "repo-memory-test-"));
+  const root = await mkdtemp(path.join(tmpdir(), "atlas-test-"));
   await initMemory({ root });
 
   // Copy example scaffold cards (not in default scaffold, used as test fixtures)

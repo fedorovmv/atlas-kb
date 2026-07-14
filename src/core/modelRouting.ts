@@ -6,7 +6,7 @@ import { resolveRoot } from "./paths.js";
 import { ModelRouting, ModelRoutingSchema } from "../schemas/modelRouting.js";
 
 export async function loadModelRouting(root: string): Promise<ModelRouting | null> {
-  const configPath = path.join(root, ".ai/memory-tool/config/model-routing.yaml");
+  const configPath = path.join(root, ".ai/atlas/config/model-routing.yaml");
   if (!existsSync(configPath)) {
     return null;
   }
@@ -20,10 +20,10 @@ export async function switchProfile(options: {
   profile: "quality" | "balanced" | "economy";
 }): Promise<void> {
   const root = resolveRoot(options);
-  const configPath = path.join(root, ".ai/memory-tool/config/model-routing.yaml");
+  const configPath = path.join(root, ".ai/atlas/config/model-routing.yaml");
 
   if (!existsSync(configPath)) {
-    throw new Error("model-routing.yaml not found. Run: repo-memory init");
+    throw new Error("model-routing.yaml not found. Run: atlas init");
   }
 
   const content = await readFile(configPath, "utf8");

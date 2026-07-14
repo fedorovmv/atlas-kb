@@ -1,5 +1,5 @@
-// Memory Guard Plugin — auto-inject memory context, track tool usage, advisory enforcement
-// Auto-scaffolded by repo-memory-opencode-kit
+// Atlas Guard Plugin — auto-inject memory context, track tool usage, advisory enforcement
+// Auto-scaffolded by atlas
 //
 // Advisory enforcement: пишет warnings в лог-файл, НЕ в stdout/stderr,
 // чтобы не ломать TUI OpenCode.
@@ -8,7 +8,7 @@ import { appendFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-const LOG_FILE = join(tmpdir(), "memory-guard.log");
+const LOG_FILE = join(tmpdir(), "atlas-guard.log");
 
 function logAdvisory(msg) {
   try {
@@ -48,7 +48,7 @@ export const MemoryGuardPlugin = async ({ $, directory }) => {
         if (!messageText || messageText.length < 5) return;
 
         // Run memory context CLI
-        const result = await `.ai/memory-tool/bin/memory context ${messageText.slice(0, 200)}`.quiet();
+        const result = await `.ai/atlas/bin/atlas context ${messageText.slice(0, 200)}`.quiet();
         const context = await result.text();
         if (context && context.trim().length > 0) {
           output.parts.push({
@@ -73,7 +73,7 @@ export const MemoryGuardPlugin = async ({ $, directory }) => {
       if (!hasReadMemory) {
         logAdvisory(
           "Write tool '" + input.tool + "' called without prior memory context. " +
-          "Consider running /memory-context first to avoid missing product context."
+          "Consider running /atlas-recall first to avoid missing product context."
         );
       }
     },

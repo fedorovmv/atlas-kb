@@ -1,9 +1,9 @@
 #!/bin/sh
 # Memory Bank pre-push validation (strict)
-if [ -f "./node_modules/.bin/repo-memory" ]; then
-  MEMORY_CMD="./node_modules/.bin/repo-memory"
+if [ -f "./node_modules/.bin/atlas" ]; then
+  MEMORY_CMD="./node_modules/.bin/atlas"
 else
-  MEMORY_CMD="npx repo-memory"
+  MEMORY_CMD="npx atlas"
 fi
 echo "Running strict memory bank validation..."
 $MEMORY_CMD validate --root . --strict-warnings

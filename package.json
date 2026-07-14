@@ -1,20 +1,20 @@
 {
-  "name": "repo-memory-opencode-kit",
+  "name": "atlas",
   "version": "0.7.0",
-  "description": "Markdown/frontmatter memory bank CLI, OpenCode skills, commands, agents and tools for coding-agent project memory.",
+  "description": "Atlas is a Markdown-first engineering memory for coding agents. It discovers project structure and connects specifications, design rationale, code and tests.",
   "private": true,
   "type": "module",
   "bin": {
-    "repo-memory": "dist/cli.js"
+    "atlas": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node -e \"fs.cpSync('src/scaffold/templates','dist/scaffold/templates',{recursive:true})\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "memory": "tsx src/cli.ts",
-    "memory:init": "tsx src/cli.ts init",
-    "memory:validate": "tsx src/cli.ts validate",
-    "memory:context": "tsx src/cli.ts context",
+    "atlas": "tsx src/cli.ts",
+    "atlas:init": "tsx src/cli.ts init",
+    "atlas:validate": "tsx src/cli.ts validate",
+    "atlas:recall": "tsx src/cli.ts recall",
     "check": "npm run build && npm run test"
   },
   "keywords": [

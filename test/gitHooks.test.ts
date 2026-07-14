@@ -25,9 +25,9 @@ describe("hook template files", () => {
     expect(existsSync(path.join(TEMPLATES_DIR, "githooks/post-merge"))).toBe(true);
   });
 
-  it("pre-commit contains repo-memory validate", async () => {
+  it("pre-commit contains atlas validate", async () => {
     const content = await readFile(path.join(TEMPLATES_DIR, "githooks/pre-commit"), "utf8");
-    expect(content).toContain("repo-memory");
+    expect(content).toContain("atlas");
     expect(content).toContain("validate");
   });
 
@@ -52,7 +52,7 @@ describe("hook template files", () => {
     const hooks = ["pre-commit", "pre-push", "post-checkout", "post-merge"];
     for (const hook of hooks) {
       const content = await readFile(path.join(TEMPLATES_DIR, "githooks", hook), "utf8");
-      expect(content).toContain("node_modules/.bin/repo-memory");
+      expect(content).toContain("node_modules/.bin/atlas");
     }
   });
 });

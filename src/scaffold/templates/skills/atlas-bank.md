@@ -1,5 +1,5 @@
 ---
-name: memory-bank
+name: atlas-bank
 description: Use repository memory bank before product, architecture, or behavior changes.
 ---
 
@@ -21,7 +21,7 @@ Use this skill when changing product behavior, architecture boundaries, specs, o
 Run:
 
 ```bash
-.ai/memory-tool/bin/memory context "$ARGUMENTS"
+.ai/atlas/bin/atlas context "$ARGUMENTS"
 ```
 
 Then read related module, scenario, decision, code and test references.

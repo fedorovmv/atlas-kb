@@ -43,7 +43,7 @@ describe("CLI commands", () => {
 
   it("builds context from CLI", async () => {
     const root = await createTempProject();
-    const output = runCli(root, ["context", "изменить фильтрацию agent cards"]);
+    const output = runCli(root, ["recall", "изменить фильтрацию agent cards"]);
     expect(output).toContain("Memory context pack");
     expect(output).toContain("Agent & Tool Registry");
     expect(output).toContain("Related code paths");
@@ -80,7 +80,7 @@ describe("CLI commands", () => {
     await copyFile(path.join(src, "examples/demo-agent/main.go"), path.join(dest, "examples/demo-agent/main.go"));
     await copyFile(path.join(src, "pkg/agentcard/card.go"), path.join(dest, "pkg/agentcard/card.go"));
 
-    const output = runCli(dest, ["ingest-spec", "specs/legacy/2025-agent-routing.md", "--force", "--json"]);
+    const output = runCli(dest, ["ingest", "specs/legacy/2025-agent-routing.md", "--force", "--json"]);
     const results = JSON.parse(output);
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].actuality).toBe("historical_context");
@@ -114,7 +114,7 @@ describe("CLI commands", () => {
   });
 
   it("reconcile --fix updates open-questions.md", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "repo-memory-fix-test-"));
+    const root = await mkdtemp(path.join(tmpdir(), "atlas-fix-test-"));
     await initMemory({ root });
 
     // Create project structure and a Go source file
@@ -166,7 +166,7 @@ describe("CLI commands", () => {
   });
 
   it("reconcile --fix updates claim evidence via CLI", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "repo-memory-fix-claim-"));
+    const root = await mkdtemp(path.join(tmpdir(), "atlas-fix-claim-"));
     await initMemory({ root });
 
     // Create Go + test files

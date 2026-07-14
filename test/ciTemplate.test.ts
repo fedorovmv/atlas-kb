@@ -22,12 +22,12 @@ describe("CI template file", () => {
     expect(() => yaml.load(content)).not.toThrow();
   });
 
-  it("contains repo-memory validate", async () => {
+  it("contains atlas validate", async () => {
     const content = await readFile(
       path.join(TEMPLATES_DIR, ".github/workflows/memory-bank.yml"),
       "utf8"
     );
-    expect(content).toContain("repo-memory validate");
+    expect(content).toContain("atlas validate");
   });
 
   it("contains --require-source-coverage", async () => {

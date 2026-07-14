@@ -17,7 +17,7 @@ afterEach(async () => {
 });
 
 function writeModelRouting(config: any) {
-  const configDir = path.join(tmpDir, ".ai/memory-tool/config");
+  const configDir = path.join(tmpDir, ".ai/atlas/config");
   return writeFile(
     path.join(configDir, "model-routing.yaml"),
     yaml.dump(config, { lineWidth: -1 }),
@@ -61,7 +61,7 @@ const validConfig = {
 
 describe("loadModelRouting", () => {
   it("parses model-routing.yaml with profiles", async () => {
-    const configDir = path.join(tmpDir, ".ai/memory-tool/config");
+    const configDir = path.join(tmpDir, ".ai/atlas/config");
     await mkdir(configDir, { recursive: true });
     await writeModelRouting(validConfig);
 
@@ -81,7 +81,7 @@ describe("loadModelRouting", () => {
 
 describe("switchProfile", () => {
   it("updates activeProfile in YAML", async () => {
-    const configDir = path.join(tmpDir, ".ai/memory-tool/config");
+    const configDir = path.join(tmpDir, ".ai/atlas/config");
     await mkdir(configDir, { recursive: true });
     await writeModelRouting(validConfig);
 
@@ -93,7 +93,7 @@ describe("switchProfile", () => {
   });
 
   it("preserves profiles and routing sections", async () => {
-    const configDir = path.join(tmpDir, ".ai/memory-tool/config");
+    const configDir = path.join(tmpDir, ".ai/atlas/config");
     await mkdir(configDir, { recursive: true });
     await writeModelRouting(validConfig);
 
@@ -111,7 +111,7 @@ describe("switchProfile", () => {
   });
 
   it("corrupted YAML throws Zod parse error", async () => {
-    const configDir = path.join(tmpDir, ".ai/memory-tool/config");
+    const configDir = path.join(tmpDir, ".ai/atlas/config");
     await mkdir(configDir, { recursive: true });
     await writeFile(
       path.join(configDir, "model-routing.yaml"),
@@ -125,7 +125,7 @@ describe("switchProfile", () => {
 
 describe("getActiveProfile", () => {
   it("returns activeProfile from config", async () => {
-    const configDir = path.join(tmpDir, ".ai/memory-tool/config");
+    const configDir = path.join(tmpDir, ".ai/atlas/config");
     await mkdir(configDir, { recursive: true });
     const configWithQuality = { ...validConfig, activeProfile: "quality" };
     await writeModelRouting(configWithQuality);

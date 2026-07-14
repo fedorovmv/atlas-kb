@@ -22,7 +22,7 @@ jobs:
         run: npm ci
 
       - name: Validate memory bank
-        run: npx repo-memory validate --root . --require-source-coverage --json
+        run: npx atlas validate --root . --require-source-coverage --json
 
       - name: Upload validation results
         if: always()
