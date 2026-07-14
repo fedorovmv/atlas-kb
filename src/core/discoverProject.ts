@@ -48,19 +48,17 @@ const PATH_SEGMENT_KINDS: Record<string, FileRecord["kind"]> = {
 };
 
 // Priority ranking: higher number = higher priority (wins over others)
-// Code directories (internal/pkg/cmd) take priority over demo/example
-// because demo projects still have real code in internal/pkg/cmd paths.
 const KIND_PRIORITY: Record<string, number> = {
   unknown: 0,
-  code: 6,
+  code: 1,
   config: 2,
   contract: 2,
   doc: 3,
   example: 4,
   demo: 5,
-  spec: 7,
-  legacy: 8,
-  test: 9,
+  spec: 6,
+  legacy: 7,
+  test: 8,
 };
 
 const TEST_FILENAME_TOKENS = ["test_", "_test", ".test", "spec_", "_spec"];

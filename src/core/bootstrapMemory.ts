@@ -116,7 +116,7 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
   await createSubdir("flows");
   await createSubdir("architecture");
   await createSubdir("reference");
-  // Module cards from candidate modules (confidence >= medium)
+  // Module cards from candidate modules — include demo modules too
   for (const mod of report.candidateModules) {
     if (mod.confidence === "low" && mod.codeFiles.length === 0 && mod.testFiles.length === 0) continue;
     const hasCode = mod.codeFiles.length > 0;
@@ -391,7 +391,10 @@ async function renderModuleCard(
     review_required: status !== "current",
     knowledge_types: ["current_behavior"],
     product_areas: mod.topics.slice(0, 3),
-    code_refs: mod.codeFiles.map((p) => ({ path: p, kind: "production" })),
+    code_refs: [
+      ...mod.codeFiles.map((p) => ({ path: p, kind: "production" as const })),
+      ...mod.demoFiles.map((p) => ({ path: p, kind: "demo" as const })),
+    ],
     test_refs: mod.testFiles.map((p) => ({ path: p, kind: "unit" })),
     source_refs: mod.docFiles.map((p) => ({ path: p, role: "current_doc" })),
     usage_policy: {
