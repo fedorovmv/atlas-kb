@@ -25,25 +25,30 @@ Run from project root:
 
 This creates skeleton cards: module cards with code_refs/test_refs/source_refs but placeholder content ("Needs review", "Preliminary responsibility"). It also creates `reconciliation/conflicts.md` and `reconciliation/open-questions.md`.
 
-**MANDATORY after scaffold:** Run BOTH commands and SAVE the output:
+**MANDATORY after scaffold:** Run this command and SAVE the output:
 
 ```bash
-# Check 1: cards with needs_review status
-.ai/memory-tool/bin/memory ls --status needs_review --json
-
-# Check 2: cards with placeholder content (even if status=current)
 .ai/memory-tool/bin/memory ls --json | jq '[.[] | select(
+  .status == "needs_review" or
   .evidence_level == "inferred" or
   .evidence_level == "spec_only" or
-  .evidence_level == "unknown"
-)]'
+  .evidence_level == "unknown" or
+  .review_required == true
+)] | length'
 ```
 
-**If Check 1 returns ANY cards — you MUST proceed to Phase 2** to enrich them.
+This returns a NUMBER. If the number is **0** — bootstrap is complete, skip Phase 2. If the number is **>0** — there are cards with weak content, placeholder rationale, or missing enrichment. You **MUST proceed to Phase 2** to dispatch subagents. Do NOT ask the user. Do NOT offer options. Do NOT report "bootstrap complete" until this number is 0.
 
-**If Check 2 returns ANY cards — you MUST proceed to Phase 2** to re-enrich them. These cards have weak evidence and likely contain placeholder content ("Не задокументировано", "Требует ревью", empty cross-links). They were promoted to current by a previous reviewer pass but still need quality improvement.
-
-**If BOTH checks return 0 cards — bootstrap is complete, skip Phase 2.**
+To see which cards need work, run:
+```bash
+.ai/memory-tool/bin/memory ls --json | jq '[.[] | select(
+  .status == "needs_review" or
+  .evidence_level == "inferred" or
+  .evidence_level == "spec_only" or
+  .evidence_level == "unknown" or
+  .review_required == true
+)] | .[] | {id, entity_type, status, evidence_level}'
+```
 
 Phase 2 below describes how to dispatch subagents for enrichment.
 
