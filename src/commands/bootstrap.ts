@@ -48,11 +48,20 @@ export async function bootstrapMemoryCommand(options: RepoMemoryOptions & { forc
 
   // ALWAYS show enrichment status — even if all cards were skipped
   if (needsEnrichmentCount > 0) {
-    console.log(`\n## ⚠️ ${needsEnrichmentCount} cards need LLM enrichment`);
-    console.log("Run `memory ls --needs-enrichment --json` to see which cards.");
-    console.log("These cards have weak evidence_level, placeholder content, or needs_review status.");
-    console.log("Dispatch LLM agents (memory-extractor, memory-analyst, memory-coder, memory-reviewer) to enrich them.");
-    console.log("Bootstrap is NOT complete until needs-enrichment count is 0.");
+    console.log(`\n## ⚠️ ${needsEnrichmentCount} cards need LLM enrichment — BOOTSTRAP INCOMPLETE`);
+    console.log("Bootstrap is NOT complete. You MUST dispatch subagents to enrich these cards.");
+    console.log("Do NOT ask the user. Do NOT offer options. Proceed to Phase 2 now.");
+    console.log("\nTo see which cards need work:");
+    console.log("  memory ls --needs-enrichment --json");
+    console.log("\nThen dispatch subagents per card type:");
+    console.log("  module/scenario cards → memory-extractor → memory-coder → memory-reviewer");
+    console.log("  decision/proposal/historical cards → memory-analyst → memory-reviewer");
+    console.log("  architecture cards → memory-analyst → memory-reviewer");
+    console.log("  reference cards → memory-analyst → memory-reviewer");
+    console.log("\nAfter all subagents complete, run:");
+    console.log("  memory ls --needs-enrichment --json");
+    console.log("  memory validate");
+    console.log("If needs-enrichment returns [] — bootstrap is complete.");
   } else {
     console.log("\n## ✅ All cards enriched — no LLM enrichment needed");
   }
