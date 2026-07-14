@@ -60,5 +60,5 @@ You are the orchestrator. Run the full pipeline yourself, dispatching subagents 
 5. **Summary**: Show card counts by type (created/enriched/still-needs-review) and `git diff .ai/memory/`.
 
 Do NOT ask the user to manually classify specs or fill cards. The subagents do this automatically.
-
+Do NOT ask "Would you like me to proceed?" — the user invoked /memory-bootstrap, they want the FULL pipeline. Proceed automatically.
 Arguments (optional): $ARGUMENTS — if a specific path or topic is given, focus enrichment on matching cards only.
