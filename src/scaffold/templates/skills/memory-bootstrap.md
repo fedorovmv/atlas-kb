@@ -28,35 +28,20 @@ This creates skeleton cards: module cards with code_refs/test_refs/source_refs b
 **MANDATORY after scaffold:** Run this command and SAVE the output:
 
 ```bash
-.ai/memory-tool/bin/memory ls --json | jq '[.[] | select(
-  .status == "needs_review" or
-  .evidence_level == "inferred" or
-  .evidence_level == "spec_only" or
-  .evidence_level == "unknown" or
-  .review_required == true
-)] | length'
+.ai/memory-tool/bin/memory ls --needs-enrichment --json
 ```
 
-This returns a NUMBER. If the number is **0** — bootstrap is complete, skip Phase 2. If the number is **>0** — there are cards with weak content, placeholder rationale, or missing enrichment. You **MUST proceed to Phase 2** to dispatch subagents. Do NOT ask the user. Do NOT offer options. Do NOT report "bootstrap complete" until this number is 0.
+This returns cards that have weak evidence (`inferred`, `spec_only`, `unknown`), `needs_review` status, `review_required: true`, OR placeholder content ("Требует ревью", "Не задокументировано"). The CLI scans card bodies for placeholder patterns.
+
+**If this command returns ANY cards — you MUST proceed to Phase 2** to dispatch subagents. Do NOT ask the user. Do NOT offer options. Do NOT report "bootstrap complete" until this returns `[]`.
+
+**If this command returns `[]` (empty array) — bootstrap is complete, skip Phase 2.**
 
 **⚠️ Do NOT rationalize skipping Phase 2.** Common false excuses:
 - "spec_only is expected for proposals" — FALSE. Proposals with spec_only still need analyst to extract `## Предлагаемое поведение`, `## Обоснование из спецификации`, `## Утверждения` from the spec. spec_only means "no code verification yet", NOT "content is complete".
 - "review_required=true means awaiting human decision" — FALSE. review_required means analyst hasn't filled rationale/alternatives yet. Analyst MUST infer WHY and fill sections before reviewer can promote.
 - "inferred evidence is acceptable" — FALSE for decision cards. Decision cards with inferred evidence need analyst to extract real rationale from specs, not leave "Не задокументировано".
-- "cards are already enriched" — verify by reading 2-3 cards. If ANY section says "Требует ревью" or "Не задокументировано" — enrichment is INCOMPLETE.
-
-To see which cards need work, run:
-```bash
-.ai/memory-tool/bin/memory ls --json | jq '[.[] | select(
-  .status == "needs_review" or
-  .evidence_level == "inferred" or
-  .evidence_level == "spec_only" or
-  .evidence_level == "unknown" or
-  .review_required == true
-)] | .[] | {id, entity_type, status, evidence_level}'
-```
-
-Phase 2 below describes how to dispatch subagents for enrichment.
+- "cards are already enriched" — FALSE if `--needs-enrichment` returns them. The CLI found placeholder text or weak evidence. Trust the CLI, not your assumption.
 
 ### Phase 2 — LLM enrichment (agents)
 

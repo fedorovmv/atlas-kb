@@ -50,10 +50,11 @@ program
   .description("List memory cards")
   .option("--type <type>", "filter by entity_type")
   .option("--status <status>", "filter by status")
+  .option("--needs-enrichment", "show only cards with weak evidence or placeholder content")
   .option("--json", "print JSON", false)
   .action(async (opts) => {
     const root = program.opts().root;
-    await listMemory({ root, type: opts.type, status: opts.status, json: opts.json });
+    await listMemory({ root, type: opts.type, status: opts.status, json: opts.json, needsEnrichment: opts.needsEnrichment });
   });
 
 program
