@@ -14,7 +14,6 @@ import type { DiscoveryReport } from "../schemas/discovery.js";
 export type AppliedFixes = {
   conflictsAppended: string[];
   openQuestionsAppended: string[];
-  proposalCardsUpdated: string[];
   claimsUpdated: string[];
   relationsFixed: string[];
 };
@@ -32,7 +31,6 @@ export async function applyReconcileFixes(
   const result: AppliedFixes = {
     conflictsAppended: [],
     openQuestionsAppended: [],
-    proposalCardsUpdated: [],
     claimsUpdated: [],
     relationsFixed: [],
   };
@@ -81,27 +79,9 @@ export async function applyReconcileFixes(
     await appendFile(conflictsPath, conflictNewLines.join(""), "utf8");
   }
 
-  // ── 3. proposal card updates — stale proposals ───────────────────────────
-
   const cards = await loadMemoryCards(options);
-  const noteMarker = `Stale proposal — flagged by reconcile on ${todayStr}. Evidence insufficient; review required.`;
 
-  for (const proposal of report.staleProposals || []) {
-    const card = findCardById(cards, proposal.cardId);
-    if (!card) continue;
-    // Idempotency: skip if note already present
-    if (card.body.includes(noteMarker)) continue;
-
-    const newBody = card.body + `\n\n${noteMarker}\n`;
-    await updateMemoryCard(proposal.cardId, {
-      ...options,
-      fields: { status: "needs_review", last_reviewed: todayStr },
-      body: newBody,
-    });
-    result.proposalCardsUpdated.push(proposal.cardId);
-  }
-
-  // ── 4. Claim evidence update — changed claim evidence ──────────────────
+  // ── 3. Claim evidence update — changed claim evidence ──────────────────
   const changedEvidence = report.changedClaimEvidence ?? [];
   if (changedEvidence.length > 0) {
     const discoveryReport = discovery ?? await discoverProject(options);
@@ -129,31 +109,44 @@ export async function applyReconcileFixes(
     }
   }
 
-  // ── 5. Broken relations — remove invalid IDs from relation fields ──────
+  // ── 4. Broken relations — flag & log (non-destructive) ────────────────
   const brokenRelations = report.brokenRelations ?? [];
   if (brokenRelations.length > 0) {
-    // Group by cardId + field to batch updates
-    const byCard = new Map<string, Map<string, Set<string>>>();
+    // Group by cardId to batch the has_broken_relations flag update
+    const byCard = new Map<string, { fields: Set<string>; targets: Set<string>; entries: typeof brokenRelations }>();
     for (const br of brokenRelations) {
-      if (!byCard.has(br.cardId)) byCard.set(br.cardId, new Map());
-      const cardMap = byCard.get(br.cardId)!;
-      if (!cardMap.has(br.field)) cardMap.set(br.field, new Set());
-      cardMap.get(br.field)!.add(br.targetId);
+      if (!byCard.has(br.cardId)) byCard.set(br.cardId, { fields: new Set(), targets: new Set(), entries: [] });
+      const cardData = byCard.get(br.cardId)!;
+      cardData.fields.add(br.field);
+      cardData.targets.add(br.targetId);
+      cardData.entries.push(br);
     }
 
-    for (const [cardId, fields] of byCard) {
+    // Append each broken relation to open-questions.md
+    const existingBQ = await readFileIfExists(openQuestionsPath);
+    const brNewLines: string[] = [];
+    for (const br of brokenRelations) {
+      // Idempotency: dedup by content (cardId+field+targetId), not by date — prevents duplicates across daily runs
+      const dedupKey = `card=${br.cardId}, field=${br.field}, target=${br.targetId}`;
+      const alreadyLogged = existingBQ.includes(`card=${br.cardId}, field=${br.field}, target=${br.targetId}`);
+      if (!alreadyLogged) {
+        const line = `- [reconcile ${todayStr}] Broken relation: ${dedupKey} (target does not exist)`;
+        brNewLines.push(`\n${line}\n`);
+        result.openQuestionsAppended.push(br.cardId);
+      }
+    }
+
+    if (brNewLines.length > 0) {
+      await appendFile(openQuestionsPath, brNewLines.join(""), "utf8");
+    }
+
+    // Set has_broken_relations flag on affected cards (do NOT delete IDs from frontmatter)
+    for (const [cardId] of byCard) {
       const card = findCardById(cards, cardId);
       if (!card) continue;
-      const updatedFields: Record<string, unknown> = {};
-      for (const [field, invalidIds] of fields) {
-        const current = (card.meta as Record<string, unknown[]>)[field] ?? [];
-        const filtered = current.filter((item) => {
-          const id = typeof item === "string" ? item : (item as { id?: string })?.id ?? String(item);
-          return !invalidIds.has(id);
-        });
-        updatedFields[field] = filtered;
-      }
-      await updateMemoryCard(cardId, { ...options, fields: updatedFields });
+      // Skip if already flagged (idempotency)
+      if (card.meta.has_broken_relations) continue;
+      await updateMemoryCard(cardId, { ...options, fields: { has_broken_relations: true } });
       result.relationsFixed.push(cardId);
     }
   }

@@ -96,6 +96,20 @@ export async function updateMemoryCard(id: string, options: UpdateOptions): Prom
     }
   }
 
+  // Phase 3: increment cross_link_attempts when cross-link fields are updated
+  // NOTE: non-atomic increment — safe under sequential per-card updates (one agent per card).
+  // Parallel updateCard on the same card could race; acceptable given bootstrap dispatch model.
+  const CROSS_LINK_FIELDS = ["related_modules", "affects_modules", "related_scenarios", "related_decisions", "affects_scenarios"];
+  const trackingEnabled = process.env.ENABLE_CROSS_LINK_TRACKING === "1" || process.env.ENABLE_CROSS_LINK_TRACKING === "true";
+  if (trackingEnabled && options.fields) {
+    const hasCrossLinkField = CROSS_LINK_FIELDS.some((field) => Object.prototype.hasOwnProperty.call(options.fields, field));
+    if (hasCrossLinkField) {
+      const currentAttempts = ((newMeta.cross_link_attempts ?? card.meta.cross_link_attempts ?? 0) as number);
+      newMeta.cross_link_attempts = currentAttempts + 1;
+      changes.push("frontmatter.cross_link_attempts");
+    }
+  }
+
   // Auto-sync usage_policy when status/evidence changes.
   // Module cards: current + code_confirmed/test_confirmed → can_answer_current_behavior: true.
   // Otherwise → false. Prevents inconsistent state where current+confirmed cards can't answer.

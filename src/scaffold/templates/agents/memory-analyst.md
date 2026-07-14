@@ -192,6 +192,8 @@ NEVER leave placeholder text like "Требует ревью — ..." in card se
 3. NEVER write "Требует ревью — ..." — this is the CLI placeholder, your job is to REPLACE it.
 4. NEVER write "Не задокументировано в спецификации." for rationale or alternatives — this is a LAZY fallback. Your job is to ANALYZE and INFER, not to report absence.
 
+**For proposal cards specifically:** if the spec lacks explicit rationale or alternatives, YOU MUST INFER from the requirements, proposed solution, and trade-offs. Write 2-4 sentences of rationale. Mark `evidence_level: inferred` if inferred (not explicitly stated in spec) or `reviewed_doc` if directly extracted. NEVER leave `## Обоснование из спецификации` empty or as placeholder like "Не задокументировано" — always infer or extract.
+
 ## Content first, evidence second
 
 Your primary job is CONTENT EXTRACTION — extracting rationale, alternatives, consequences from specs. Evidence verification (file:line refs) is memory-coder's job, NOT yours. Do NOT pad sections with excessive file references. Focus on:

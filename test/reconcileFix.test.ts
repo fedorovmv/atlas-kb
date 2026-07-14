@@ -84,8 +84,8 @@ describe("applyReconcileFixes", () => {
     await rm(dest, { recursive: true, force: true });
   });
 
-  it("marks stale proposals as needs_review", async () => {
-    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-fix-proposal-"));
+  it("broken relations — sets flag, preserves IDs, appends to open-questions", async () => {
+    const dest = await mkdtemp(path.join(tmpdir(), "reconcile-fix-rel-"));
     await mkdir(path.join(dest, "internal/registry"), { recursive: true });
     await writeFile(
       path.join(dest, "internal/registry/access_filter.go"),
@@ -94,50 +94,42 @@ describe("applyReconcileFixes", () => {
     );
     await bootstrapMemory({ root: dest });
 
-    // Now create a stale proposal card (after bootstrap so it's not overwritten)
-    await mkdir(path.join(dest, ".ai/memory/proposals"), { recursive: true });
-    const proposalCard = `---
-entity_type: proposal
-id: proposal-test-feature
-title: Test Feature
-status: proposed
-authority: proposed
-evidence_level: spec_only
-stability: experimental
-source_confidence: low
-last_reviewed: ${daysAgo(100)}
-review_required: true
-knowledge_types:
-  - proposed_behavior
-usage_policy:
-  can_answer_current_behavior: false
-  can_generate_code_from: false
-  can_use_as_rationale: true
-  requires_code_check_before_change: true
----
+    // Add a broken relation: supersedes → nonexistent-id-123
+    const cards = await loadMemoryCards({ root: dest });
+    const moduleCard = cards.find((c) => c.meta.entity_type === "module");
+    expect(moduleCard).toBeDefined();
+    const moduleId = moduleCard!.meta.id;
 
-# Test Feature (proposal)
+    await updateMemoryCard(moduleId, {
+      root: dest,
+      fields: { related_modules: ["nonexistent-id-123"] },
+    });
 
-Proposed behavior — requires evidence.
-`;
-    await writeFile(
-      path.join(dest, ".ai/memory/proposals/test-feature.md"),
-      proposalCard,
-      "utf8"
-    );
-
-    const report = await reconcileMemory({ root: dest, staleProposalDays: 90 });
-    expect(report.staleProposals).toBeDefined();
-    expect(report.staleProposals!.length).toBeGreaterThan(0);
+    const report = await reconcileMemory({ root: dest });
+    expect(report.brokenRelations).toBeDefined();
+    expect(report.brokenRelations!.length).toBeGreaterThan(0);
+    expect(report.brokenRelations![0].targetId).toBe("nonexistent-id-123");
 
     const result = await applyReconcileFixes(report, { root: dest });
-    expect(result.proposalCardsUpdated.length).toBeGreaterThan(0);
+    expect(result.relationsFixed.length).toBeGreaterThan(0);
+    expect(result.openQuestionsAppended.length).toBeGreaterThan(0);
 
+    // IDs are NOT deleted from frontmatter
     const updatedCards = await loadMemoryCards({ root: dest });
-    const updatedCard = updatedCards.find((c) => c.meta.id === "proposal-test-feature");
+    const updatedCard = updatedCards.find((c) => c.meta.id === moduleId);
     expect(updatedCard).toBeDefined();
-    expect(updatedCard!.meta.status).toBe("needs_review");
-    expect(updatedCard!.body).toContain("Stale proposal");
+    expect(updatedCard!.meta.related_modules).toContain("nonexistent-id-123");
+
+    // has_broken_relations flag is set
+    expect(updatedCard!.meta.has_broken_relations).toBe(true);
+
+    // open-questions.md contains broken relation entry
+    const openQ = await readFile(
+      path.join(dest, ".ai/memory/reconciliation/open-questions.md"),
+      "utf8"
+    );
+    expect(openQ).toContain("Broken relation");
+    expect(openQ).toContain("nonexistent-id-123");
 
     await rm(dest, { recursive: true, force: true });
   });
@@ -210,7 +202,7 @@ Proposed behavior — requires evidence.
     const result = await applyReconcileFixes(emptyReport, { root: dest });
     expect(result.openQuestionsAppended).toEqual([]);
     expect(result.conflictsAppended).toEqual([]);
-    expect(result.proposalCardsUpdated).toEqual([]);
+    expect(result.relationsFixed).toEqual([]);
 
     const afterOpenQ = await readFile(
       path.join(dest, ".ai/memory/reconciliation/open-questions.md"),

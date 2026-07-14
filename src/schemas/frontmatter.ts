@@ -154,6 +154,10 @@ export const MemoryFrontmatterSchema = z.object({
 
   runtime_tier: RuntimeTierSchema.optional(),
   source_status: SourceStatusSchema.optional(),
+
+  // Phase 3: cross-link tracking — added BEFORE .passthrough() so typos become zod errors
+  cross_link_attempts: z.number().int().min(0).optional().default(0),
+  has_broken_relations: z.boolean().optional().default(false),
 }).passthrough();
 
 export type MemoryFrontmatter = z.infer<typeof MemoryFrontmatterSchema>;

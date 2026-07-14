@@ -151,6 +151,8 @@ export function synthesizeFrontmatter(
     claims: [],
     runtime_tier: v3fm.runtime_tier,
     source_status: v3fm.source_status,
+    cross_link_attempts: 0,
+    has_broken_relations: false,
   };
 }
 

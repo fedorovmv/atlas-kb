@@ -29,6 +29,7 @@ const KNOWN_FRONTMATTER_KEYS = new Set([
   "code_refs", "test_refs", "source_refs",
   "usage_policy", "claims",
   "runtime_tier", "source_status",
+  "cross_link_attempts", "has_broken_relations",
 ]);
 
 /** Simple Levenshtein distance for typo suggestion. */
@@ -233,7 +234,7 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
 
   // Card sections validation — skip cards still needing review or auto-generated from weak evidence
   for (const card of cards) {
-    if (card.meta.review_required || card.meta.evidence_level === "spec_only") continue;
+    if (card.meta.review_required) continue;
     const sectionResult = validateCardSections(card);
     for (const err of sectionResult.errors) {
       errors.push(err);

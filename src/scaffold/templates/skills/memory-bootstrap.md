@@ -15,6 +15,36 @@ Populate `.ai/memory` from project source, tests, docs, and specs in one workflo
 
 **Do NOT ask the user "Would you like me to proceed?" — just proceed.** The user invoked `/memory-bootstrap` which means they want the FULL pipeline. Asking is a waste of their time. Dispatch subagents immediately after Phase 1.
 
+## Progress-based stop (LOOP safety)
+
+**THIS IS A LOOP, NOT A LINE.** If `ls --needs-enrichment` returns cards after an iteration, dispatch the next batch. Repeat until empty OR stop condition triggers.
+
+**Stop conditions (ANY triggers STOP + report):**
+1. `ls --needs-enrichment` returns `[]` AND `ls --status needs_review` returns `[]` → DONE, report "bootstrap complete".
+2. Content hash unchanged for 2 consecutive iterations → STOP, report "bootstrap incomplete — N cards stuck, see reconciliation/open-questions.md".
+3. Hard cap: 5 iterations reached → STOP, report remaining as stuck.
+
+**Content hash (per card):** `hash(body + evidence_level + status + claims[].text)`. EXCLUDE `last_reviewed`, `review_required`, `cross_link_attempts` (churn without content progress). Sort `claims` by `id` before hashing (deterministic).
+
+Note: `computeSubjectHash` in `src/core/legacyIngest.ts` exists but is specific to `LegacyCandidate` objects (legacy ingest pipeline) — NOT reusable for memory card content hashing. Use the formula above directly, implemented as a deterministic string hash (e.g., `crypto.createHash('sha256').update(str).digest('hex')`).
+
+After each STEP 2→3→4 iteration, compare hash set against the previous iteration. If 2 iterations with no hash change → STOP.
+
+**Completion gate (MANDATORY before reporting "done"):**
+```bash
+.ai/memory-tool/bin/memory ls --needs-enrichment --json   # must be []
+.ai/memory-tool/bin/memory ls --status needs_review --json  # must be []
+```
+If BOTH empty → validate → report "done".
+If EITHER non-empty → go back to STEP 2. Do NOT report "done". Do NOT ask the user. Loop.
+
+**Split enrichment flags (after Phase 3):**
+- `ls --needs-enrichment-content --json` — placeholders, weak evidence, missing sections
+- `ls --needs-enrichment-links --json` — empty cross-links (accept-empty after 2 attempts if ENABLE_CROSS_LINK_TRACKING)
+- `ls --needs-enrichment-review --json` — status=needs_review
+
+`ls --needs-enrichment` = union of all 3 (backward compat).
+
 ## Workflow
 
 ### Phase 1 — Deterministic scaffold (CLI)
@@ -40,7 +70,7 @@ This returns cards that have weak evidence (`inferred`, `spec_only`, `unknown`),
 **If this command returns `[]` (empty array) — bootstrap is complete, skip Phase 2.**
 
 **⚠️ Do NOT rationalize skipping Phase 2.** Common false excuses:
-- "spec_only is expected for proposals" — FALSE. Proposals with spec_only still need analyst to extract `## Предлагаемое поведение`, `## Обоснование из спецификации`, `## Утверждения` from the spec. spec_only means "no code verification yet", NOT "content is complete".
+- "spec_only is expected for proposals" — PARTIALLY TRUE. Proposals with spec_only AND complete sections are terminal (done). But spec_only proposals with placeholder content or missing sections STILL need analyst. Trust `ls --needs-enrichment` — if it returns a card, enrich it; if not, it's done.
 - "review_required=true means awaiting human decision" — FALSE. review_required means analyst hasn't filled rationale/alternatives yet. Analyst MUST infer WHY and fill sections before reviewer can promote.
 - "inferred evidence is acceptable" — FALSE for decision cards. Decision cards with inferred evidence need analyst to extract real rationale from specs, not leave "Не задокументировано".
 - "cards are already enriched" — FALSE if `--needs-enrichment` returns them. The CLI found placeholder text or weak evidence. Trust the CLI, not your assumption.
@@ -70,11 +100,13 @@ If the result contains ANY cards, the bootstrap is INCOMPLETE. You MUST continue
 ```
 Stage A: module cards      → extractor → coder → reviewer
 Stage B: scenario cards    → extractor → coder → reviewer
-Stage C: decision/proposal/historical cards → analyst → coder (proposals only) → reviewer
+Stage C: decision/proposal/historical cards → analyst → coder (proposals only, if code_refs present) → reviewer
 Stage D: architecture cards → analyst (synthesis) → **auto: reviewer**
 Stage E: reference cards → analyst (synthesis from guide docs) → **auto: reviewer**
 Stage F: validate + summary
 ```
+
+**⚠️ MANDATORY: STEP 3 (reviewer) after STEP 2 (enrichment).** Strong-evidence cards (code_confirmed / contract_confirmed / test_confirmed) with complete sections and `status: needs_review` MUST be promoted by memory-reviewer. Do NOT skip STEP 3 even if `ls --needs-enrichment` returns `[]` — if `ls --status needs_review` returns cards, dispatch reviewer. The orchestrator must run STEP 3 after STEP 2 completes, every iteration.
 
 **Auto-reviewer dispatch (Stages D & E):**
 After analyst completes enrichment for a stage, **automatically dispatch memory-reviewer** for all cards in that stage. Do NOT wait for manual trigger. Reviewer promotes cards from `needs_review` to `current` (if evidence is sufficient) or adds to `open-questions.md` (if content is incomplete).
@@ -98,8 +130,13 @@ If you stop after Stage A or B without completing Stage C (analyst for decision/
 | module | extractor → coder → reviewer | Read code, fill Responsibility/Behavior, verify symbols |
 | scenario | extractor → coder → reviewer | Read source_refs, fill Goal/Flow/Actors, verify against code |
 | decision | **analyst** → reviewer | Read spec, extract Rationale/Alternatives/Consequences |
-| proposal | **analyst** → coder → reviewer | Read spec, extract proposed behavior, check partial implementation |
+| proposal (with code_refs) | **analyst** → coder → reviewer | Read spec, extract proposed behavior, check partial implementation |
+| proposal (no code_refs) | **analyst** → reviewer | Read spec, extract proposed behavior — no code to verify |
 | historical | **analyst** → reviewer | Read spec, extract survived decisions, prior approach |
+
+**Coder for proposals ONLY if `code_refs` present in frontmatter.** If a proposal has no `code_refs` (pure spec/ADR), skip coder — go analyst → reviewer directly.
+
+**Note on `heuristic_match` evidence for decision/historical cards:** These card types are spec-based (no code_refs). `evidence_level=heuristic_match` is a CLI keyword-match artifact, not a signal that coder verification is needed. Decision/historical cards with `heuristic_match` are EXCLUDED from `--needs-enrichment-content` gate — they don't need enrichment, they need reviewer promotion (if sections complete).
 
 #### 2a. Module cards — memory-extractor
 

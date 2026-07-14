@@ -51,10 +51,22 @@ program
   .option("--type <type>", "filter by entity_type")
   .option("--status <status>", "filter by status")
   .option("--needs-enrichment", "show only cards with weak evidence or placeholder content")
+  .option("--needs-enrichment-content", "show cards with placeholder content, weak evidence, or missing sections")
+  .option("--needs-enrichment-links", "show cards with empty cross-links")
+  .option("--needs-enrichment-review", "show cards with status=needs_review")
   .option("--json", "print JSON", false)
   .action(async (opts) => {
     const root = program.opts().root;
-    await listMemory({ root, type: opts.type, status: opts.status, json: opts.json, needsEnrichment: opts.needsEnrichment });
+    await listMemory({
+      root,
+      type: opts.type,
+      status: opts.status,
+      json: opts.json,
+      needsEnrichment: opts.needsEnrichment,
+      needsEnrichmentContent: opts.needsEnrichmentContent,
+      needsEnrichmentLinks: opts.needsEnrichmentLinks,
+      needsEnrichmentReview: opts.needsEnrichmentReview,
+    });
   });
 
 program

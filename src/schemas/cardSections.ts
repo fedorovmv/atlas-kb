@@ -1,6 +1,17 @@
 import { z } from "zod";
 import type { EntityType } from "../schemas/frontmatter.js";
 
+/**
+ * Card Section Contracts — exact H2 heading strings agents must use in card bodies.
+ *
+ * These strings are matched EXACTLY (case-sensitive) by the validator (validate.ts / cardSections.ts).
+ * The ls.ts gate (hasMissingRequiredSections) uses case-insensitive matching for leniency,
+ * but agents should always use the exact strings below to avoid any ambiguity.
+ *
+ * Sync these with the heading table in `src/scaffold/templates/agents/memory-analyst.md`
+ * and `src/scaffold/templates/agents/memory-extractor.md` when adding/updating entity types.
+ */
+
 export interface SectionContract {
   required: string[];   // mandatory sections (H2 headings)
   recommended?: string[]; // recommended sections (warning, not error)

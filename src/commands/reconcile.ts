@@ -39,11 +39,10 @@ export async function reconcileMemoryCommand(options: RepoMemoryOptions & { json
   if (report.brokenRelations?.length) for (const r of report.brokenRelations) console.log(`- ${r.cardId}: ${r.field} → ${r.targetId}`); else console.log("- none");
 
   if (appliedFixes !== undefined) {
-    const total = appliedFixes.conflictsAppended.length + appliedFixes.openQuestionsAppended.length + appliedFixes.proposalCardsUpdated.length + appliedFixes.relationsFixed.length;
+    const total = appliedFixes.conflictsAppended.length + appliedFixes.openQuestionsAppended.length + appliedFixes.relationsFixed.length;
     console.log(`\n## Applied fixes (${total})`);
     console.log(`- conflicts: ${appliedFixes.conflictsAppended.length}`);
     console.log(`- open-questions: ${appliedFixes.openQuestionsAppended.length}`);
-    console.log(`- proposals updated: ${appliedFixes.proposalCardsUpdated.length}`);
-    console.log(`- relations fixed: ${appliedFixes.relationsFixed.length}`);
+    console.log(`- relations flagged: ${appliedFixes.relationsFixed.length}`);
   }
 }
