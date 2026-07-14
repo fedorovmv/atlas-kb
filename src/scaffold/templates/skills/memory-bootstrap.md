@@ -39,6 +39,12 @@ This creates skeleton cards: module cards with code_refs/test_refs/source_refs b
 
 This returns a NUMBER. If the number is **0** — bootstrap is complete, skip Phase 2. If the number is **>0** — there are cards with weak content, placeholder rationale, or missing enrichment. You **MUST proceed to Phase 2** to dispatch subagents. Do NOT ask the user. Do NOT offer options. Do NOT report "bootstrap complete" until this number is 0.
 
+**⚠️ Do NOT rationalize skipping Phase 2.** Common false excuses:
+- "spec_only is expected for proposals" — FALSE. Proposals with spec_only still need analyst to extract `## Предлагаемое поведение`, `## Обоснование из спецификации`, `## Утверждения` from the spec. spec_only means "no code verification yet", NOT "content is complete".
+- "review_required=true means awaiting human decision" — FALSE. review_required means analyst hasn't filled rationale/alternatives yet. Analyst MUST infer WHY and fill sections before reviewer can promote.
+- "inferred evidence is acceptable" — FALSE for decision cards. Decision cards with inferred evidence need analyst to extract real rationale from specs, not leave "Не задокументировано".
+- "cards are already enriched" — verify by reading 2-3 cards. If ANY section says "Требует ревью" or "Не задокументировано" — enrichment is INCOMPLETE.
+
 To see which cards need work, run:
 ```bash
 .ai/memory-tool/bin/memory ls --json | jq '[.[] | select(
