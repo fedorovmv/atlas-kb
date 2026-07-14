@@ -25,11 +25,16 @@ Run from project root:
 
 This creates skeleton cards: module cards with code_refs/test_refs/source_refs but placeholder content ("Needs review", "Preliminary responsibility"). It also creates `reconciliation/conflicts.md` and `reconciliation/open-questions.md`.
 
-Then get the list of cards that need enrichment:
-
+**MANDATORY after scaffold:** Run this command and SAVE the output:
 ```bash
 .ai/memory-tool/bin/memory ls --status needs_review --json
 ```
+
+**If this command returns ANY cards — you MUST proceed to Phase 2.** Do NOT report "bootstrap complete" yet. The cards have placeholder content and need LLM enrichment.
+
+**If this command returns 0 cards — bootstrap is complete, skip Phase 2.**
+
+Phase 2 below describes how to dispatch subagents for enrichment.
 
 ### Phase 2 — LLM enrichment (agents)
 
