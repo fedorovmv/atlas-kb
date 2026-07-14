@@ -159,17 +159,24 @@ Report format for reviewer:
 
 ## Cross-linking — MANDATORY
 
-After filling card content, you MUST populate cross-link fields in frontmatter:
+After filling card content, you MUST populate cross-link fields in frontmatter.
 
-1. **`related_modules`**: list module card ids that this decision/proposal affects. Read existing module cards (`.ai/memory/modules/*.md`) and identify which modules implement or are affected by the spec.
-2. **`related_scenarios`**: list scenario card ids that this decision/proposal impacts. Read existing scenario cards (`.ai/memory/scenarios/*.md`).
-3. **`related_decisions`**: list decision card ids that are related to this card (same topic, superseded, alternative).
-4. **`affects_modules`**: for decisions — which modules are changed by this decision.
-5. **`affects_scenarios`**: for decisions — which scenarios are changed by this decision.
+**CRITICAL — use REAL card IDs only.** Do NOT guess card IDs. Before setting cross-links:
 
-If no related cards exist — write `[]` (empty array). Do NOT leave these fields with placeholder text.
+1. Run `.ai/memory-tool/bin/memory ls --json` to get ALL existing card IDs.
+2. Match related modules/scenarios/decisions by comparing card IDs from the ls output.
+3. Only use IDs that EXIST in the ls output. Do NOT invent IDs like "internal-intake2" if no such card exists.
 
-Use `memory_updateCard` with `fields` parameter to set these frontmatter fields.
+Then set cross-link fields:
+1. **`related_modules`**: list module card ids (from ls output) that this decision/proposal affects.
+2. **`related_scenarios`**: list scenario card ids (from ls output) that this decision/proposal impacts.
+3. **`related_decisions`**: list decision card ids (from ls output) that are related.
+4. **`affects_modules`**: for decisions — which module ids (from ls output) are changed.
+5. **`affects_scenarios`**: for decisions — which scenario ids (from ls output) are changed.
+
+If no related cards exist (verified via ls) — write `[]` (empty array). Do NOT leave these fields with placeholder text.
+
+Use `memory_updateCard` with `setFields` parameter to set these frontmatter fields.
 
 ## Placeholder policy — CRITICAL
 

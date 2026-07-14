@@ -57,18 +57,24 @@ If STEP 1 returned ANY cards needing enrichment — you MUST dispatch subagents 
 
    **You (the orchestrator) MUST dispatch subagents using the Task tool. Do NOT do the enrichment work yourself. Your job is dispatch + reconcile + validate.**
 
-## STEP 3 — Reviewer promotion (run this IMMEDIATELY after STEP 2)
+## STEP 3 — Reviewer promotion (MANDATORY — run this IMMEDIATELY after STEP 2)
 
 After all enrichment subagents complete, run:
 ```bash
 .ai/memory-tool/bin/memory ls --status needs_review --json
 ```
 
-If this returns ANY cards — dispatch `memory-reviewer` subagent for EACH card. Reviewer promotes `needs_review` → `current` (if evidence is sufficient) or adds to `open-questions.md` (if content is incomplete).
+If this returns ANY cards — you MUST dispatch `memory-reviewer` subagent for EACH card. This is NOT optional. This is NOT "next steps". This is STEP 3 — you are here because STEP 2 completed.
 
-**Do NOT skip this step.** Cards with `status: needs_review` are NOT complete — they are enriched but not yet promoted. You MUST dispatch reviewer for every needs_review card.
+**Cards with `status: needs_review` are NOT complete.** They are enriched but NOT promoted. You MUST dispatch reviewer for every needs_review card.
 
-**Do NOT offer options "A/B/C" to the user.** The pipeline is not done until ALL needs_review cards are promoted or deferred.
+**Do NOT offer options "A/B/C" to the user.** Do NOT say "next steps (optional)". Do NOT say "would you like me to". Just dispatch reviewer subagents.
+
+Dispatch `memory-reviewer` for each needs_review card (one card per dispatch, max 5 parallel). Reviewer will:
+- Check required sections are filled
+- Promote `needs_review` → `current` (if evidence is sufficient)
+- Add incomplete cards to `open-questions.md` (if content is incomplete)
+- Set `review_required: false` for promoted cards
 
 ## STEP 4 — Validate + summary
 
