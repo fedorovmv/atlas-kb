@@ -1,28 +1,28 @@
 profiles:
   quality:
     orchestrator: claude-opus-4
-    memory-extractor: claude-opus-4
-    memory-analyst: claude-opus-4
-    memory-coder: claude-opus-4
-    memory-reviewer: claude-opus-4
+    atlas-extractor: claude-opus-4
+    atlas-analyst: claude-opus-4
+    atlas-coder: claude-opus-4
+    atlas-reviewer: claude-opus-4
   balanced:
     orchestrator: claude-sonnet-4
-    memory-extractor: claude-sonnet-4
-    memory-analyst: claude-sonnet-4
-    memory-coder: claude-sonnet-4
-    memory-reviewer: claude-sonnet-4
+    atlas-extractor: claude-sonnet-4
+    atlas-analyst: claude-sonnet-4
+    atlas-coder: claude-sonnet-4
+    atlas-reviewer: claude-sonnet-4
   economy:
     orchestrator: claude-haiku-4
-    memory-extractor: claude-haiku-4
-    memory-analyst: claude-sonnet-4
-    memory-coder: claude-sonnet-4
-    memory-reviewer: claude-haiku-4
+    atlas-extractor: claude-haiku-4
+    atlas-analyst: claude-sonnet-4
+    atlas-coder: claude-sonnet-4
+    atlas-reviewer: claude-haiku-4
 
 activeProfile: balanced
 
 routing:
-  discovery: memory-extractor
-  analysis: memory-analyst
-  implementation: memory-coder
-  review: memory-reviewer
+  discovery: atlas-extractor
+  analysis: atlas-analyst
+  implementation: atlas-coder
+  review: atlas-reviewer
   orchestration: orchestrator

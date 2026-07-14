@@ -2,10 +2,10 @@ import { z } from "zod";
 
 export const MODEL_ROLES = {
   orchestrator: "orchestrator",
-  repositoryDiscovery: "memory-extractor",
-  architectureSynthesis: "memory-analyst",
-  implementation: "memory-coder",
-  semanticReview: "memory-reviewer",
+  repositoryDiscovery: "atlas-extractor",
+  architectureSynthesis: "atlas-analyst",
+  implementation: "atlas-coder",
+  semanticReview: "atlas-reviewer",
 } as const;
 
 export const ModelProfileSchema = z.record(z.string(), z.string());

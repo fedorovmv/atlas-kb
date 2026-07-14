@@ -17,8 +17,8 @@ export async function validateMemoryCommand(options: { root?: string; json?: boo
   if (!enrichment.enriched && cards.length > 0) {
     result.warnings.push(
       `Memory bank not enriched: ${enrichment.needsReviewCount} cards need review, 0 current. ` +
-      `Dispatch LLM agents (see AGENTS.md): memory-extractor → memory-coder → memory-reviewer. ` +
-      `${enrichment.heuristicCount} cards have heuristic_match evidence — require memory-coder to promote to code_confirmed.`
+      `Dispatch LLM agents (see AGENTS.md): atlas-extractor → atlas-coder → atlas-reviewer. ` +
+      `${enrichment.heuristicCount} cards have heuristic_match evidence — require atlas-coder to promote to code_confirmed.`
     );
   }
 

@@ -52,14 +52,14 @@ export async function bootstrapMemoryCommand(options: RepoMemoryOptions & { forc
     console.log("Bootstrap is NOT complete. You MUST dispatch subagents to enrich these cards.");
     console.log("Do NOT ask the user. Do NOT offer options. Proceed to Phase 2 now.");
     console.log("\nTo see which cards need work:");
-    console.log("  .ai/atlas/bin/memory ls --needs-enrichment --json");
+    console.log("  .ai/atlas/bin/atlas ls --needs-enrichment --json");
     console.log("\nThen dispatch subagents per card type:");
-    console.log("  module/scenario cards → memory-extractor → memory-coder → memory-reviewer");
-    console.log("  decision/proposal/historical cards → memory-analyst → memory-reviewer");
-    console.log("  architecture cards → memory-analyst → memory-reviewer");
-    console.log("  reference cards → memory-analyst → memory-reviewer");
+    console.log("  module/scenario cards → atlas-extractor → atlas-coder → atlas-reviewer");
+    console.log("  decision/proposal/historical cards → atlas-analyst → atlas-reviewer");
+    console.log("  architecture cards → atlas-analyst → atlas-reviewer");
+    console.log("  reference cards → atlas-analyst → atlas-reviewer");
     console.log("\nAfter all subagents complete, run:");
-    console.log("  .ai/atlas/bin/memory ls --needs-enrichment --json");
+    console.log("  .ai/atlas/bin/atlas ls --needs-enrichment --json");
     console.log("  .ai/atlas/bin/atlas validate");
     console.log("If needs-enrichment returns [] — bootstrap is complete.");
     // Signal incomplete via exit code only in JSON mode (for programmatic use)
@@ -72,9 +72,9 @@ export async function bootstrapMemoryCommand(options: RepoMemoryOptions & { forc
     console.log("\n## Next steps — LLM enrichment required");
     console.log("Cards are created with `needs_review` status and `heuristic_match` evidence level.");
     console.log("To promote cards to `current`, dispatch LLM agents (see AGENTS.md):");
-    console.log("  1. memory-extractor — fills card content from code reading");
-    console.log("  2. memory-coder — verifies code evidence, promotes to `code_confirmed`");
-    console.log("  3. memory-reviewer — quality gate, promotes `needs_review` → `current`");
+    console.log("  1. atlas-extractor — fills card content from code reading");
+    console.log("  2. atlas-coder — verifies code evidence, promotes to `code_confirmed`");
+    console.log("  3. atlas-reviewer — quality gate, promotes `needs_review` → `current`");
     console.log("Without LLM enrichment, `validate` will reject `heuristic_match` cards as `current`.");
   }
 }

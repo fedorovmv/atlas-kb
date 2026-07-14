@@ -8,8 +8,8 @@ import type { EntityType } from "../schemas/frontmatter.js";
  * The ls.ts gate (hasMissingRequiredSections) uses case-insensitive matching for leniency,
  * but agents should always use the exact strings below to avoid any ambiguity.
  *
- * Sync these with the heading table in `src/scaffold/templates/agents/memory-analyst.md`
- * and `src/scaffold/templates/agents/memory-extractor.md` when adding/updating entity types.
+ * Sync these with the heading table in `src/scaffold/templates/agents/atlas-analyst.md`
+ * and `src/scaffold/templates/agents/atlas-extractor.md` when adding/updating entity types.
  */
 
 export interface SectionContract {

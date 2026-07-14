@@ -69,7 +69,7 @@ export function getHookTemplates(): ScaffoldFile[] {
 
 export function getCiTemplate(): ScaffoldFile {
   return {
-    path: ".github/workflows/memory-bank.yml",
-    content: loadTemplate(".github/workflows/memory-bank.yml"),
+    path: ".github/workflows/atlas-bank.yml",
+    content: loadTemplate(".github/workflows/atlas-bank.yml"),
   };
 }

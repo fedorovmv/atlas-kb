@@ -12,9 +12,9 @@ function makeValidAttempt(overrides: Partial<SpecialistAttempt> = {}): Specialis
   return {
     attemptId: "test-1234567890ab",
     phase: "discovery-semantic",
-    expectedAgent: "memory-extractor",
-    requestedAgent: "memory-extractor",
-    actualAgent: "memory-extractor",
+    expectedAgent: "atlas-extractor",
+    requestedAgent: "atlas-extractor",
+    actualAgent: "atlas-extractor",
     tool: "task",
     runtime: "opencode",
     status: "named-task",
@@ -32,9 +32,9 @@ describe("recordDispatchAttempt", () => {
       await mkdir(path.join(root, ".ai/memory-build/latest"), { recursive: true });
       const id = await recordDispatchAttempt({
         phase: "code-evidence",
-        expectedAgent: "memory-coder",
-        requestedAgent: "memory-coder",
-        actualAgent: "memory-coder",
+        expectedAgent: "atlas-coder",
+        requestedAgent: "atlas-coder",
+        actualAgent: "atlas-coder",
         tool: "task",
         runtime: "opencode",
         status: "named-task",
@@ -57,9 +57,9 @@ describe("recordDispatchAttempt", () => {
       await mkdir(path.join(root, ".ai/memory-build/latest"), { recursive: true });
       const attemptInput = {
         phase: "rationale-extraction" as const,
-        expectedAgent: "memory-analyst",
-        requestedAgent: "memory-analyst",
-        actualAgent: "memory-analyst",
+        expectedAgent: "atlas-analyst",
+        requestedAgent: "atlas-analyst",
+        actualAgent: "atlas-analyst",
         tool: "task" as const,
         runtime: "opencode" as const,
         status: "named-task" as const,

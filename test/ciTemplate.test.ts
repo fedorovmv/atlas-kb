@@ -8,15 +8,15 @@ import { getCiTemplate } from "../src/scaffold/templates.js";
 const TEMPLATES_DIR = path.resolve(__dirname, "../src/scaffold/templates");
 
 describe("CI template file", () => {
-  it("CI template exists at templates/.github/workflows/memory-bank.yml", () => {
+  it("CI template exists at templates/.github/workflows/atlas-bank.yml", () => {
     expect(
-      existsSync(path.join(TEMPLATES_DIR, ".github/workflows/memory-bank.yml"))
+      existsSync(path.join(TEMPLATES_DIR, ".github/workflows/atlas-bank.yml"))
     ).toBe(true);
   });
 
   it("is valid YAML", async () => {
     const content = await readFile(
-      path.join(TEMPLATES_DIR, ".github/workflows/memory-bank.yml"),
+      path.join(TEMPLATES_DIR, ".github/workflows/atlas-bank.yml"),
       "utf8"
     );
     expect(() => yaml.load(content)).not.toThrow();
@@ -24,7 +24,7 @@ describe("CI template file", () => {
 
   it("contains atlas validate", async () => {
     const content = await readFile(
-      path.join(TEMPLATES_DIR, ".github/workflows/memory-bank.yml"),
+      path.join(TEMPLATES_DIR, ".github/workflows/atlas-bank.yml"),
       "utf8"
     );
     expect(content).toContain("atlas validate");
@@ -32,7 +32,7 @@ describe("CI template file", () => {
 
   it("contains --require-source-coverage", async () => {
     const content = await readFile(
-      path.join(TEMPLATES_DIR, ".github/workflows/memory-bank.yml"),
+      path.join(TEMPLATES_DIR, ".github/workflows/atlas-bank.yml"),
       "utf8"
     );
     expect(content).toContain("--require-source-coverage");
@@ -41,7 +41,7 @@ describe("CI template file", () => {
   it("runs on pull_request", async () => {
     const parsed = yaml.load(
       await readFile(
-        path.join(TEMPLATES_DIR, ".github/workflows/memory-bank.yml"),
+        path.join(TEMPLATES_DIR, ".github/workflows/atlas-bank.yml"),
         "utf8"
       )
     ) as any;
@@ -51,7 +51,7 @@ describe("CI template file", () => {
   it("uses ubuntu-latest", async () => {
     const parsed = yaml.load(
       await readFile(
-        path.join(TEMPLATES_DIR, ".github/workflows/memory-bank.yml"),
+        path.join(TEMPLATES_DIR, ".github/workflows/atlas-bank.yml"),
         "utf8"
       )
     ) as any;
@@ -61,7 +61,7 @@ describe("CI template file", () => {
   it("uses Node 20", async () => {
     const parsed = yaml.load(
       await readFile(
-        path.join(TEMPLATES_DIR, ".github/workflows/memory-bank.yml"),
+        path.join(TEMPLATES_DIR, ".github/workflows/atlas-bank.yml"),
         "utf8"
       )
     ) as any;
@@ -77,7 +77,7 @@ describe("CI template file", () => {
 describe("getCiTemplate", () => {
   it("returns correct path", () => {
     const template = getCiTemplate();
-    expect(template.path).toBe(".github/workflows/memory-bank.yml");
+    expect(template.path).toBe(".github/workflows/atlas-bank.yml");
   });
 
   it("returns non-empty content", () => {

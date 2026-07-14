@@ -29,32 +29,32 @@ const validConfig = {
   profiles: {
     quality: {
       orchestrator: "claude-opus-4",
-      "memory-extractor": "claude-opus-4",
-      "memory-analyst": "claude-opus-4",
-      "memory-coder": "claude-opus-4",
-      "memory-reviewer": "claude-opus-4",
+      "atlas-extractor": "claude-opus-4",
+      "atlas-analyst": "claude-opus-4",
+      "atlas-coder": "claude-opus-4",
+      "atlas-reviewer": "claude-opus-4",
     },
     balanced: {
       orchestrator: "claude-sonnet-4",
-      "memory-extractor": "claude-sonnet-4",
-      "memory-analyst": "claude-sonnet-4",
-      "memory-coder": "claude-sonnet-4",
-      "memory-reviewer": "claude-sonnet-4",
+      "atlas-extractor": "claude-sonnet-4",
+      "atlas-analyst": "claude-sonnet-4",
+      "atlas-coder": "claude-sonnet-4",
+      "atlas-reviewer": "claude-sonnet-4",
     },
     economy: {
       orchestrator: "claude-haiku-4",
-      "memory-extractor": "claude-haiku-4",
-      "memory-analyst": "claude-sonnet-4",
-      "memory-coder": "claude-sonnet-4",
-      "memory-reviewer": "claude-haiku-4",
+      "atlas-extractor": "claude-haiku-4",
+      "atlas-analyst": "claude-sonnet-4",
+      "atlas-coder": "claude-sonnet-4",
+      "atlas-reviewer": "claude-haiku-4",
     },
   },
   activeProfile: "balanced",
   routing: {
-    discovery: "memory-extractor",
-    analysis: "memory-analyst",
-    implementation: "memory-coder",
-    review: "memory-reviewer",
+    discovery: "atlas-extractor",
+    analysis: "atlas-analyst",
+    implementation: "atlas-coder",
+    review: "atlas-reviewer",
     orchestration: "orchestrator",
   },
 };
@@ -69,8 +69,8 @@ describe("loadModelRouting", () => {
     expect(routing).not.toBeNull();
     expect(routing!.activeProfile).toBe("balanced");
     expect(routing!.profiles.quality.orchestrator).toBe("claude-opus-4");
-    expect(routing!.profiles.economy["memory-analyst"]).toBe("claude-sonnet-4");
-    expect(routing!.routing.discovery).toBe("memory-extractor");
+    expect(routing!.profiles.economy["atlas-analyst"]).toBe("claude-sonnet-4");
+    expect(routing!.routing.discovery).toBe("atlas-extractor");
   });
 
   it("missing file returns null", async () => {
@@ -106,7 +106,7 @@ describe("switchProfile", () => {
     expect(Object.keys(routing!.profiles)).toContain("balanced");
     expect(Object.keys(routing!.profiles)).toContain("economy");
     expect(routing!.profiles.quality.orchestrator).toBe("claude-opus-4");
-    expect(routing!.routing.discovery).toBe("memory-extractor");
+    expect(routing!.routing.discovery).toBe("atlas-extractor");
     expect(routing!.routing.orchestration).toBe("orchestrator");
   });
 
@@ -115,7 +115,7 @@ describe("switchProfile", () => {
     await mkdir(configDir, { recursive: true });
     await writeFile(
       path.join(configDir, "model-routing.yaml"),
-      "activeProfile: quality\nrouting:\n  discovery: memory-extractor\n",
+      "activeProfile: quality\nrouting:\n  discovery: atlas-extractor\n",
       "utf8"
     );
 
@@ -153,7 +153,7 @@ describe("ModelRoutingSchema", () => {
   it("missing profiles throws parse error", () => {
     const invalidConfig = {
       activeProfile: "balanced",
-      routing: { discovery: "memory-extractor" },
+      routing: { discovery: "atlas-extractor" },
     };
     expect(() => ModelRoutingSchema.parse(invalidConfig)).toThrow();
   });

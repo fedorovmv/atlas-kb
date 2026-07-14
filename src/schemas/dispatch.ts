@@ -11,10 +11,10 @@ export const DispatchModeSchema = z.enum([
 export type DispatchMode = z.infer<typeof DispatchModeSchema>;
 
 export const SPECIALIST_PHASE_AGENTS: Record<SpecialistPhase, string> = {
-  "discovery-semantic": "memory-extractor",
-  "code-evidence": "memory-coder",
-  "rationale-extraction": "memory-analyst",
-  "quality-review": "memory-reviewer",
+  "discovery-semantic": "atlas-extractor",
+  "code-evidence": "atlas-coder",
+  "rationale-extraction": "atlas-analyst",
+  "quality-review": "atlas-reviewer",
 };
 
 export const GENERIC_AGENT_NAMES = new Set([
