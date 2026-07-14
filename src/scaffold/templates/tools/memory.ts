@@ -78,7 +78,7 @@ export const bootstrap = tool({
 });
 
 export const updateCard = tool({
-  description: "Safely update a memory card body or frontmatter fields by id. Use this instead of Write to avoid corrupting frontmatter.",
+  description: "Safely update a memory card body or frontmatter fields by id. Use this instead of Write to avoid corrupting frontmatter. Supports arbitrary frontmatter fields via setFields (e.g. claims, related_modules, affects_modules).",
   args: {
     id: tool.schema.string().describe("Memory entity id to update"),
     body: tool.schema.string().optional().describe("New body content (replaces existing body). Read code first before writing."),
@@ -87,6 +87,7 @@ export const updateCard = tool({
     setSourceConfidence: tool.schema.string().optional().describe("Set source_confidence field"),
     setStatus: tool.schema.string().optional().describe("Set status field"),
     setReviewRequired: tool.schema.boolean().optional().describe("Set review_required field"),
+    setFields: tool.schema.object({}).optional().describe("Set arbitrary frontmatter fields as JSON object. Examples: {claims: [{id:'c1',text:'...',type:'current_behavior'}], related_modules: ['mod1'], affects_modules: ['mod2']}"),
   },
   async execute(args) {
     const setArgs: string[] = [];
@@ -95,6 +96,11 @@ export const updateCard = tool({
     if (args.setSourceConfidence) setArgs.push("--set", "source_confidence=" + JSON.stringify(args.setSourceConfidence));
     if (args.setStatus) setArgs.push("--set", "status=" + JSON.stringify(args.setStatus));
     if (args.setReviewRequired !== undefined) setArgs.push("--set", "review_required=" + args.setReviewRequired);
+    if (args.setFields) {
+      for (const [key, value] of Object.entries(args.setFields)) {
+        setArgs.push("--set", `${key}=${JSON.stringify(value)}`);
+      }
+    }
     const bodyArgs = args.body ? ["--body", args.body] : [];
     return runMemory(["update", args.id, ...bodyArgs, ...setArgs, "--json"]);
   },
