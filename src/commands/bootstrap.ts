@@ -1,10 +1,34 @@
 import { bootstrapMemory } from "../core/bootstrapMemory.js";
+import { loadMemoryCardsBestEffort } from "../core/loadMemory.js";
 import type { RepoMemoryOptions } from "../core/types.js";
+
+const PLACEHOLDER_PATTERNS = [
+  /Требует ревью/,
+  /Не задокументировано в спецификации/,
+  /Не задокументировано в коде/,
+  /^Needs review/i,
+  /^TBD/i,
+  /^TODO/i,
+];
+
+function countNeedsEnrichment(cards: { meta: { status: string; evidence_level: string; review_required?: boolean }; body: string }[]): number {
+  return cards.filter((card) => {
+    const weakEvidence = ["inferred", "spec_only", "unknown", "heuristic_match"].includes(card.meta.evidence_level);
+    const needsReview = card.meta.status === "needs_review" || card.meta.review_required === true;
+    const hasPlaceholder = PLACEHOLDER_PATTERNS.some((pat) => pat.test(card.body));
+    return weakEvidence || needsReview || hasPlaceholder;
+  }).length;
+}
 
 export async function bootstrapMemoryCommand(options: RepoMemoryOptions & { force?: boolean; dryRun?: boolean; json?: boolean } = {}) {
   const result = await bootstrapMemory(options);
+
+  // Always check needs-enrichment count
+  const allCards = await loadMemoryCardsBestEffort({ root: options.root });
+  const needsEnrichmentCount = countNeedsEnrichment(allCards);
+
   if (options.json) {
-    console.log(JSON.stringify({ written: result.written, skipped: result.skipped, moduleCount: result.report.candidateModules.length }, null, 2));
+    console.log(JSON.stringify({ written: result.written, skipped: result.skipped, moduleCount: result.report.candidateModules.length, needsEnrichment: needsEnrichmentCount }, null, 2));
     return;
   }
   console.log(`# Memory bootstrap ${options.dryRun ? "plan" : "complete"}`);
@@ -21,6 +45,17 @@ export async function bootstrapMemoryCommand(options: RepoMemoryOptions & { forc
   console.log(`- Files written: ${result.written.length}`);
   console.log(`- Files skipped: ${result.skipped.length}`);
   if (!options.force && result.skipped.length) console.log("\nUse --force to overwrite existing memory cards.");
+
+  // ALWAYS show enrichment status — even if all cards were skipped
+  if (needsEnrichmentCount > 0) {
+    console.log(`\n## ⚠️ ${needsEnrichmentCount} cards need LLM enrichment`);
+    console.log("Run `memory ls --needs-enrichment --json` to see which cards.");
+    console.log("These cards have weak evidence_level, placeholder content, or needs_review status.");
+    console.log("Dispatch LLM agents (memory-extractor, memory-analyst, memory-coder, memory-reviewer) to enrich them.");
+    console.log("Bootstrap is NOT complete until needs-enrichment count is 0.");
+  } else {
+    console.log("\n## ✅ All cards enriched — no LLM enrichment needed");
+  }
 
   if (result.written.length > 0 && !options.dryRun) {
     console.log("\n## Next steps — LLM enrichment required");
