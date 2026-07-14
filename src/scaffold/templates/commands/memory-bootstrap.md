@@ -56,12 +56,12 @@ If STEP 1 returned ANY cards needing enrichment — you MUST dispatch subagents 
    ```
    You are memory-<role> agent. Your task is to enrich ONE card: <card path>.
 
-   Execution mode: You are a leaf subagent. Do ALL work yourself — read files, fill content, update via updateCard tool. Do NOT spawn tasks or delegate.
+   Execution mode: You are a leaf subagent. Do ALL work yourself — read files, fill content, update via memory_updateCard tool. Do NOT spawn tasks or delegate.
 
    1. Read the card file: <card path>
    2. Read its source_refs/code_refs files (from frontmatter)
    3. Fill in card body sections per your agent instructions
-   4. Use updateCard tool to save — NEVER use Write tool
+   4. Use memory_updateCard tool to save — NEVER use Write tool
    ```
 
    **You (the orchestrator) MUST dispatch subagents using the Task tool. Do NOT do the enrichment work yourself. Your job is dispatch + reconcile + validate.**

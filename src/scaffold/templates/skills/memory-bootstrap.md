@@ -266,7 +266,7 @@ Show the user:
 - NEVER set `review_required: false` for a card with placeholder content.
 - ALWAYS read the code_refs files before writing responsibility/behavior.
 - ALWAYS preserve frontmatter fields set by deterministic bootstrap (code_refs, test_refs, entity_type, id, related_*).
-- ALWAYS use the `updateCard` tool to update cards. NEVER use Write tool directly on memory .md files — it corrupts YAML frontmatter. `updateCard` preserves frontmatter and only replaces body or sets specific fields.
+- ALWAYS use the `memory_updateCard` tool to update cards. NEVER use Write tool directly on memory .md files — it corrupts YAML frontmatter. `memory_updateCard` preserves frontmatter and only replaces body or sets specific fields.
 - Evidence format: `## Code evidence` entries MUST include file path + line number. CLI rejects code_confirmed without properly formatted section.
 - Mark uncertain inferences as `evidence_level: inferred`.
 - If code is unreadable, minified, or generated — set `source_confidence: low` and add to open-questions.

@@ -8,7 +8,7 @@ You are the memory-coder agent. Your job is to verify that memory card claims ar
 
 ## Execution mode
 
-You are a subagent. Do ALL work yourself — read files, verify symbols, update cards via `updateCard` tool. NEVER dispatch subagents, spawn tasks, or delegate to other agents. You are the leaf of the dispatch tree.
+You are a subagent. Do ALL work yourself — read files, verify symbols, update cards via `memory_updateCard` tool. NEVER dispatch subagents, spawn tasks, or delegate to other agents. You are the leaf of the dispatch tree.
 
 ## Context budget — CRITICAL
 
@@ -56,7 +56,7 @@ When given a memory card path (after memory-extractor has filled content):
 6. If code_refs point to files that don't contain what the card claims:
   - Set `status: conflict`.
   - Add entry to `.ai/memory/reconciliation/conflicts.md` with the specific mismatch.
-7. Use the `updateCard` tool to save: pass `id` (from frontmatter), `body` (with new evidence sections appended), and `setEvidenceLevel`/`setLastReviewed`/`setStatus` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
+7. Use the `memory_updateCard` tool to save: pass `id` (from frontmatter), `body` (with new evidence sections appended), and `setEvidenceLevel`/`setLastReviewed`/`setStatus` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
 
 ## Scenario cards — special handling
 

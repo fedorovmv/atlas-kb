@@ -50,7 +50,7 @@ The section CONTENT can be in English if the source is English — but the H2 HE
 
 ## Execution mode
 
-You are a subagent. Do ALL work yourself — read specs, extract rationale, update via `updateCard` tool. NEVER dispatch subagents, spawn tasks, or delegate to other agents. You are the leaf of the dispatch tree.
+You are a subagent. Do ALL work yourself — read specs, extract rationale, update via `memory_updateCard` tool. NEVER dispatch subagents, spawn tasks, or delegate to other agents. You are the leaf of the dispatch tree.
 
 ## What you do
 
@@ -103,7 +103,7 @@ For each claim with evidence:
 Report format for reviewer:
 - claim_id | status | evidence_summary | what is missing (if partial)
 
-## Quality checklist (before calling updateCard)
+## Quality checklist (before calling memory_updateCard)
 
 **Decision/Proposal/Historical cards:**
 - [ ] `## Проблема`: specific problem statement, not "Needs review"
@@ -152,7 +152,7 @@ Report format for reviewer:
 ## Rules
 - ALWAYS read the full spec content before filling sections.
 - If rationale is explicitly stated in spec - mark `evidence_level: reviewed_doc`. If inferred - `evidence_level: inferred`.
-- Use updateCard tool to save. NEVER use Write tool — it corrupts YAML frontmatter and causes duplicate `---` blocks.
+- Use memory_updateCard tool to save. NEVER use Write tool — it corrupts YAML frontmatter and causes duplicate `---` blocks.
 - Do NOT set `status: current` - only memory-reviewer can promote.
 - Do NOT change code_refs, test_refs, entity_type, id.
 - Semantic dedup is advisory - report duplicates, don't auto-merge (reviewer decides).
@@ -169,7 +169,7 @@ After filling card content, you MUST populate cross-link fields in frontmatter:
 
 If no related cards exist — write `[]` (empty array). Do NOT leave these fields with placeholder text.
 
-Use `updateCard` with `fields` parameter to set these frontmatter fields.
+Use `memory_updateCard` with `fields` parameter to set these frontmatter fields.
 
 ## Placeholder policy — CRITICAL
 

@@ -36,7 +36,7 @@ Extract search, ranking, and result-explanation algorithms of Agent Registry...
 
 ## Execution mode
 
-You are a subagent. Do ALL work yourself — read files, fill card content, update via `updateCard` tool. NEVER dispatch subagents, spawn tasks, or delegate to other agents. You are the leaf of the dispatch tree.
+You are a subagent. Do ALL work yourself — read files, fill card content, update via `memory_updateCard` tool. NEVER dispatch subagents, spawn tasks, or delegate to other agents. You are the leaf of the dispatch tree.
 
 ## What you do
 
@@ -74,9 +74,9 @@ When given a memory card path with `needs_review` status:
    - `source_confidence`: `medium` if code was readable and consistent; `low` if sparse, ambiguous, or generated.
    - `evidence_level`: keep as-is unless you have strong reason to change. Do NOT set `code_confirmed` — that's memory-coder's job after evidence verification.
    - `last_reviewed`: today's date.
-6. Use the `updateCard` tool to save: pass `id` (from frontmatter), `body` (new body content), and `setLastReviewed`/`setSourceConfidence` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
+6. Use the `memory_updateCard` tool to save: pass `id` (from frontmatter), `body` (new body content), and `setLastReviewed`/`setSourceConfidence` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
 
-## Quality checklist (before calling updateCard)
+## Quality checklist (before calling memory_updateCard)
 
 **Module cards:**
 - [ ] `## Ответственность`: 2-4 sentences, cites ≥1 function/type name from code_refs
