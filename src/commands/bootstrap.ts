@@ -62,8 +62,8 @@ export async function bootstrapMemoryCommand(options: RepoMemoryOptions & { forc
     console.log("  .ai/memory-tool/bin/memory ls --needs-enrichment --json");
     console.log("  .ai/memory-tool/bin/memory validate");
     console.log("If needs-enrichment returns [] — bootstrap is complete.");
-    // Exit with non-zero code to signal incomplete bootstrap
-    process.exitCode = 1;
+    // Signal incomplete via exit code only in JSON mode (for programmatic use)
+    if (options.json) process.exitCode = 1;
   } else {
     console.log("\n## ✅ All cards enriched — no LLM enrichment needed");
   }

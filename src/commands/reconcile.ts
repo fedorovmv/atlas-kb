@@ -35,12 +35,15 @@ export async function reconcileMemoryCommand(options: RepoMemoryOptions & { json
   if (report.duplicateClaims?.length) for (const d of report.duplicateClaims) console.log(`- ${d.cardIdA}/${d.claimIdA} == ${d.cardIdB}/${d.claimIdB}: "${d.canonicalText.slice(0, 50)}"`); else console.log("- none");
   console.log(`\n## Broken claim links (${report.brokenClaimLinks?.length ?? 0})`);
   if (report.brokenClaimLinks?.length) for (const l of report.brokenClaimLinks) console.log(`- ${l.cardId}/${l.claimId} ${l.field} → ${l.targetId}`); else console.log("- none");
+  console.log(`\n## Broken relations (${report.brokenRelations?.length ?? 0})`);
+  if (report.brokenRelations?.length) for (const r of report.brokenRelations) console.log(`- ${r.cardId}: ${r.field} → ${r.targetId}`); else console.log("- none");
 
   if (appliedFixes !== undefined) {
-    const total = appliedFixes.conflictsAppended.length + appliedFixes.openQuestionsAppended.length + appliedFixes.proposalCardsUpdated.length;
+    const total = appliedFixes.conflictsAppended.length + appliedFixes.openQuestionsAppended.length + appliedFixes.proposalCardsUpdated.length + appliedFixes.relationsFixed.length;
     console.log(`\n## Applied fixes (${total})`);
     console.log(`- conflicts: ${appliedFixes.conflictsAppended.length}`);
     console.log(`- open-questions: ${appliedFixes.openQuestionsAppended.length}`);
     console.log(`- proposals updated: ${appliedFixes.proposalCardsUpdated.length}`);
+    console.log(`- relations fixed: ${appliedFixes.relationsFixed.length}`);
   }
 }

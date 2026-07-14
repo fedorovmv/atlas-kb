@@ -16,6 +16,7 @@ export type AppliedFixes = {
   openQuestionsAppended: string[];
   proposalCardsUpdated: string[];
   claimsUpdated: string[];
+  relationsFixed: string[];
 };
 
 export async function applyReconcileFixes(
@@ -33,6 +34,7 @@ export async function applyReconcileFixes(
     openQuestionsAppended: [],
     proposalCardsUpdated: [],
     claimsUpdated: [],
+    relationsFixed: [],
   };
 
   // ── 1. open-questions.md — stale refs + orphan modules ──────────────────
@@ -124,6 +126,35 @@ export async function applyReconcileFixes(
       await updateMemoryCard(change.cardId, { ...options, fields: { claims: updatedClaims } });
       result.claimsUpdated.push(change.cardId);
       updatedCardIds.add(change.cardId);
+    }
+  }
+
+  // ── 5. Broken relations — remove invalid IDs from relation fields ──────
+  const brokenRelations = report.brokenRelations ?? [];
+  if (brokenRelations.length > 0) {
+    // Group by cardId + field to batch updates
+    const byCard = new Map<string, Map<string, Set<string>>>();
+    for (const br of brokenRelations) {
+      if (!byCard.has(br.cardId)) byCard.set(br.cardId, new Map());
+      const cardMap = byCard.get(br.cardId)!;
+      if (!cardMap.has(br.field)) cardMap.set(br.field, new Set());
+      cardMap.get(br.field)!.add(br.targetId);
+    }
+
+    for (const [cardId, fields] of byCard) {
+      const card = findCardById(cards, cardId);
+      if (!card) continue;
+      const updatedFields: Record<string, unknown> = {};
+      for (const [field, invalidIds] of fields) {
+        const current = (card.meta as Record<string, unknown[]>)[field] ?? [];
+        const filtered = current.filter((item) => {
+          const id = typeof item === "string" ? item : (item as { id?: string })?.id ?? String(item);
+          return !invalidIds.has(id);
+        });
+        updatedFields[field] = filtered;
+      }
+      await updateMemoryCard(cardId, { ...options, fields: updatedFields });
+      result.relationsFixed.push(cardId);
     }
   }
 
