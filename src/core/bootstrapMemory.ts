@@ -118,7 +118,7 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
   await createSubdir("reference");
   // Module cards from candidate modules (confidence >= medium)
   for (const mod of report.candidateModules) {
-    if (mod.confidence === "low" && mod.codeFiles.length === 0) continue;
+    if (mod.confidence === "low" && mod.codeFiles.length === 0 && mod.testFiles.length === 0) continue;
     const hasCode = mod.codeFiles.length > 0;
     const status = "needs_review";
     const evidenceLevel = hasCode ? "heuristic_match" : "inferred";
@@ -171,7 +171,7 @@ export async function bootstrapMemory(options: { root?: string; memoryRoot?: str
 
   // Architecture cards — one per module (synthesis of module architecture)
   for (const mod of report.candidateModules) {
-    if (mod.confidence === "low" && mod.codeFiles.length === 0) continue;
+    if (mod.confidence === "low" && mod.codeFiles.length === 0 && mod.testFiles.length === 0) continue;
     const archCard = renderArchitectureCard(mod);
     await writeCard(`architecture/arch-${mod.id}.md`, archCard);
   }
