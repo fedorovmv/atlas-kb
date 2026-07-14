@@ -7,16 +7,16 @@ Use the memory-bootstrap skill.
 You are the orchestrator. Run the full pipeline yourself, dispatching subagents for each role:
 
 1. **Scaffold**: Run `.ai/memory-tool/bin/memory bootstrap --root .` — deterministic CLI creates skeleton cards: module cards from code, decision/proposal/historical cards from specs/docs. All with placeholder content. Enriched cards (review_required=false or evidence_level=code_confirmed) are preserved automatically.
-2. **List needs_review**: Run `.ai/memory-tool/bin/memory ls --status needs_review --json` — get cards to enrich.
+2. **List cards needing enrichment**: Run `.ai/memory-tool/bin/memory ls --needs-enrichment --json` — get cards with weak evidence OR placeholder content. This catches cards that have status=current but still contain "Требует ревью" or "Не задокументировано" in body.
 3. **Enrich by card type** (dispatch subagents, do NOT do the work yourself):
 
    **CRITICAL — one card per subagent dispatch.** Never bundle multiple cards into a single subagent task. Each subagent gets exactly one card, reads its source_refs, fills content, returns. This keeps context bounded and quality high.
 
    **Concurrency limit — max 5 parallel subagents.** Dispatch in batches of 5. Wait for each batch to complete before starting next batch. Subagents are lightweight (one card, bounded context), so 5 parallel is safe.
 
-   **Progress tracking — MANDATORY.** After each batch, run `.ai/memory-tool/bin/memory ls --status needs_review --json` and count remaining. Do NOT advance to next stage until current stage has 0 needs_review cards of that entity_type.
+   **Progress tracking — MANDATORY.** After each batch, run `.ai/memory-tool/bin/memory ls --needs-enrichment --json` and count remaining. Do NOT advance to next stage until current stage has 0 cards of that entity_type.
 
-   **Completion gate — MANDATORY.** Before reporting "done", run `.ai/memory-tool/bin/memory ls --status needs_review --json`. If ANY cards remain, bootstrap is INCOMPLETE — continue dispatching. Do NOT report "done" until needs_review count is 0 (or remaining cards are explicitly deferred in open-questions.md with a reason).
+   **Completion gate — MANDATORY.** Before reporting "done", run `.ai/memory-tool/bin/memory ls --needs-enrichment --json`. If ANY cards remain, bootstrap is INCOMPLETE — continue dispatching. Do NOT report "done" until needs-enrichment returns `[]` (or remaining cards are explicitly deferred in open-questions.md with a reason). Do NOT rationalize: "spec_only is expected" or "awaiting human decision" are FALSE — analyst MUST fill content before reviewer can promote.
 
    **MUST COMPLETE ALL STAGES.** Do NOT stop after module enrichment. The pipeline has 6 mandatory subagent dispatch stages. Complete ALL before reporting "done":
 
