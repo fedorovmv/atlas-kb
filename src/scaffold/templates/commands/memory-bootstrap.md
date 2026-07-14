@@ -14,7 +14,7 @@ Then run: `.ai/memory-tool/bin/memory ls --needs-enrichment --json`
 
 Save the output. Count how many cards need enrichment.
 
-## STEP 2 — Dispatch subagents (run this IMMEDIATELY after STEP 1)
+## STEP 2 — Dispatch enrichment subagents (run this IMMEDIATELY after STEP 1)
 
 If STEP 1 returned ANY cards needing enrichment — you MUST dispatch subagents NOW. Not after asking the user. Not after offering options. NOW.
 
@@ -24,33 +24,24 @@ If STEP 1 returned ANY cards needing enrichment — you MUST dispatch subagents 
 
    **Concurrency limit — max 5 parallel subagents.** Dispatch in batches of 5. Wait for each batch to complete before starting next batch. Subagents are lightweight (one card, bounded context), so 5 parallel is safe.
 
-   **Progress tracking — MANDATORY.** After each batch, run `.ai/memory-tool/bin/memory ls --needs-enrichment --json` and count remaining. Do NOT advance to next stage until current stage has 0 cards of that entity_type.
-
-   **Completion gate — MANDATORY.** Before reporting "done", run `.ai/memory-tool/bin/memory ls --needs-enrichment --json`. If ANY cards remain, bootstrap is INCOMPLETE — continue dispatching. Do NOT report "done" until needs-enrichment returns `[]` (or remaining cards are explicitly deferred in open-questions.md with a reason). Do NOT rationalize: "spec_only is expected" or "awaiting human decision" are FALSE — analyst MUST fill content before reviewer can promote.
-
    **MUST COMPLETE ALL STAGES.** Do NOT stop after module enrichment. The pipeline has 6 mandatory subagent dispatch stages. Complete ALL before reporting "done":
 
    ```
    Stage A: module cards      → extractor → coder → reviewer
    Stage B: scenario cards    → extractor → coder → reviewer
    Stage C: decision/proposal/historical cards → analyst → coder (proposals only) → reviewer
-   Stage D: architecture cards → analyst (synthesis) → auto: reviewer
-   Stage E: reference cards → analyst (synthesis from guide docs) → auto: reviewer
+   Stage D: architecture cards → analyst (synthesis) → reviewer
+   Stage E: reference cards → analyst (synthesis from guide docs) → reviewer
    Stage F: validate + summary
    ```
 
-   **Auto-reviewer dispatch (Stages D & E):**
-   After analyst completes enrichment for a stage, **automatically dispatch memory-reviewer** for all cards in that stage. Do NOT wait for manual trigger. Reviewer promotes cards from `needs_review` to `current` (if evidence is sufficient) or adds to `open-questions.md` (if content is incomplete).
+   **Per-stage: enrichment → reviewer.** Each stage has TWO subagent roles: first enrich (extractor/analyst fills content), then review (reviewer promotes needs_review→current). Do NOT skip the reviewer step. Cards with `status: needs_review` after enrichment are NOT complete — they need reviewer to promote to `current`.
 
-   **Per-stage checkpoint:** after each stage, run `.ai/memory-tool/bin/memory ls --needs-enrichment --json` filtered by entity_type. If count >0 — continue dispatching. Do NOT proceed to next stage until count is 0.
-
-   If you stop after Stage A or B without completing Stage C (analyst for decision/proposal/historical), the bootstrap is INCOMPLETE. Decision cards will have placeholder rationale "Требует ревью — какие альтернативы были рассмотрены?" — this is unacceptable.
-
-   - **module cards** → for EACH module card: dispatch `memory-extractor` with that one card path (reads code_refs, fills Ответственность/Поведение) → then dispatch `memory-coder` with same card (verifies symbols, adds Свидетельства из кода) → then `memory-reviewer` (quality gate, promotes needs_review→current).
-   - **decision/proposal/historical cards** → for EACH card: dispatch `memory-analyst` with that one card path (reads source_refs/specs, extracts Rationale/Alternatives/Consequences) → then `memory-coder` (for proposal cards: checks if proposed behavior is partially implemented) → then `memory-reviewer` (quality gate, promotes decision→current, keeps proposal→proposed).
+   - **module cards** → for EACH module card: dispatch `memory-extractor` (reads code_refs, fills Ответственность/Поведение) → then dispatch `memory-coder` (verifies symbols, adds Свидетельства из кода) → then `memory-reviewer` (quality gate, promotes needs_review→current).
+   - **decision/proposal/historical cards** → for EACH card: dispatch `memory-analyst` (reads source_refs/specs, extracts Rationale/Alternatives/Consequences) → then `memory-coder` (for proposal cards: checks if proposed behavior is partially implemented) → then `memory-reviewer` (quality gate, promotes decision→current, keeps proposal→proposed).
    - **scenario cards** → for EACH scenario card: dispatch `memory-extractor` (reads source_refs, fills Цель/Участники/Поток выполнения/Связанные модули/Связанные тесты) → then `memory-coder` (verifies flow against code, fills Свидетельства из кода/тестов) → then `memory-reviewer`.
-   - **architecture cards** → for EACH architecture card: dispatch `memory-analyst` (reads module card + source_refs, synthesizes architecture overview/components/dependencies/data flow) → then `memory-reviewer` (quality gate). **AUTO-DISPATCH**: after analyst completes ALL architecture cards, dispatch reviewer for the entire batch.
-   - **reference cards** → for EACH reference card: dispatch `memory-analyst` (reads guide docs + module card, synthesizes reference content: migrated behavior, invariants, error handling, compatibility) → then `memory-reviewer` (quality gate). **AUTO-DISPATCH**: after analyst completes ALL reference cards, dispatch reviewer for the entire batch.
+   - **architecture cards** → for EACH architecture card: dispatch `memory-analyst` (reads module card + source_refs, synthesizes architecture overview/components/dependencies/data flow) → then `memory-reviewer` (quality gate).
+   - **reference cards** → for EACH reference card: dispatch `memory-analyst` (reads guide docs + module card, synthesizes reference content: migrated behavior, invariants, error handling, compatibility) → then `memory-reviewer` (quality gate).
 
    Subagent dispatch prompt template (send this text TO the subagent):
    ```
@@ -66,8 +57,26 @@ If STEP 1 returned ANY cards needing enrichment — you MUST dispatch subagents 
 
    **You (the orchestrator) MUST dispatch subagents using the Task tool. Do NOT do the enrichment work yourself. Your job is dispatch + reconcile + validate.**
 
-4. **Validate**: Run `.ai/memory-tool/bin/memory validate` — ensure no errors. Fix if needed.
-5. **Summary**: Show card counts by type (created/enriched/still-needs-review) and `git diff .ai/memory/`.
+## STEP 3 — Reviewer promotion (run this IMMEDIATELY after STEP 2)
+
+After all enrichment subagents complete, run:
+```bash
+.ai/memory-tool/bin/memory ls --status needs_review --json
+```
+
+If this returns ANY cards — dispatch `memory-reviewer` subagent for EACH card. Reviewer promotes `needs_review` → `current` (if evidence is sufficient) or adds to `open-questions.md` (if content is incomplete).
+
+**Do NOT skip this step.** Cards with `status: needs_review` are NOT complete — they are enriched but not yet promoted. You MUST dispatch reviewer for every needs_review card.
+
+**Do NOT offer options "A/B/C" to the user.** The pipeline is not done until ALL needs_review cards are promoted or deferred.
+
+## STEP 4 — Validate + summary
+
+Run `.ai/memory-tool/bin/memory validate` — ensure no errors.
+
+Run `.ai/memory-tool/bin/memory ls --needs-enrichment --json` — if returns `[]`, bootstrap is complete. If returns ANY cards — go back to STEP 2.
+
+Show card counts by type (created/enriched/still-needs-review) and `git diff .ai/memory/`.
 
 Do NOT ask the user to manually classify specs or fill cards. The subagents do this automatically.
 Do NOT ask "Would you like me to proceed?" — the user invoked /memory-bootstrap, they want the FULL pipeline. Proceed automatically.
