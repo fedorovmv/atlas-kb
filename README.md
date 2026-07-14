@@ -30,17 +30,17 @@ Memory bank решает это: **детерминированный CLI** со
 | Validate: frontmatter, relations, evidence format | Quality rubric: scoring content specificity |
 | Reconcile: stale refs, broken links, duplicates | Re-read code, verify cited symbols exist |
 
-CLI не парсит код, не понимает семантику. LLM не пишет frontmatter напрямую (через `updateCard` tool). CLI enforcement: `code_confirmed` без `## Code evidence` секции с `file:line` → ERROR.
+CLI не парсит код, не понимает семантику. LLM не пишет frontmatter напрямую (через `atlas_updateCard` tool). CLI enforcement: `code_confirmed` без `## Code evidence` секции с `file:line` → ERROR.
 
 ## Memory card — структура
 
 ```yaml
 ---
-entity_type: module          # module|scenario|decision|proposal|historical|conflict|open_question
+entity_type: module          # module|scenario|decision|proposal|historical|architecture|reference|conflict|open_question|...
 id: agent-tool-registry
 title: Agent & Tool Registry
 status: current              # current|proposed|historical|deprecated|needs_review|conflict
-evidence_level: code_confirmed  # code_confirmed|test_confirmed|reviewed_doc|spec_only|inferred|unknown
+evidence_level: code_confirmed  # code_confirmed|test_confirmed|contract_confirmed|reviewed_doc|heuristic_match|spec_only|inferred|unknown
 review_required: false
 claims:                      # извлечённые claims с evidence
   - id: claim-001
@@ -87,10 +87,21 @@ FilterCardsForCaller(caller string) returns []string of visible card IDs.
    3b. atlas-coder (qwen-coder)      → LLM: verifies symbols, добавляет ## Code evidence
    3c. atlas-reviewer (qwen-thinking)→ LLM: quality gate, promotes to current
 4. validate      → CLI: проверяет инварианты (блокирует code_confirmed без evidence)
-5. ingest-spec   → CLI: claims → evidence → classify → cards + cross-spec relations
+5. ingest        → CLI: claims → evidence → classify → cards + cross-spec relations
 6. reconcile     → CLI: stale refs, changed evidence, broken links, duplicates
-7. reconcile --fix → CLI: patches (idempotent)
+7. reconcile --fix → CLI: non-destructive patches (flag broken relations, log to open-questions.md, idempotent)
 ```
+
+### /atlas-bootstrap — bounded LOOP
+
+`/atlas-bootstrap` — это **цикл, не линия**. STEP 2 (enrich) → STEP 3 (review) → STEP 4 (check) повторяются пока `ls --needs-enrichment` и `ls --status needs_review` не вернут `[]`.
+
+**Stop conditions:**
+1. Оба гейта пусты → DONE
+2. Content hash неизменен 2 итерации → STOP, stuck cards в open-questions.md
+3. Hard cap: 5 итераций
+
+**Terminal statuses** — proposal/historical+spec_only, decision/architecture+reviewed_doc с полными секциями исключаются из needs-enrichment (не требуют enrichment, они завершены).
 
 ## 4 агента + модели
 
@@ -101,7 +112,7 @@ FilterCardsForCaller(caller string) returns []string of visible card IDs.
 | atlas-coder | qwen-coder-next | Верифицирует evidence: открывает code_refs, ищет symbols, добавляет `## Code evidence` |
 | atlas-reviewer | qwen-thinking-large | Финальный quality gate: rubric scoring, re-read verification, promotes to current |
 
-**Workflow:** extractor → coder → reviewer (bootstrap); analyst → coder → reviewer (ingest-spec).
+**Workflow:** extractor → coder → reviewer (module/scenario); analyst → coder (if code_refs) → reviewer (decision/proposal/historical); analyst → reviewer (architecture/reference).
 
 ## CLI команды
 
@@ -109,14 +120,18 @@ FilterCardsForCaller(caller string) returns []string of visible card IDs.
 atlas init                    # создать .ai/memory + .opencode scaffold
 atlas discover [--json]       # инвентаризация: файлы, классификация, candidate modules
 atlas bootstrap [--force]     # skeleton cards из discovery
-atlas ingest-spec <glob>      # спека → claims → evidence → card + cross-spec relations
+atlas ingest <glob>           # спека → claims → evidence → card + cross-spec relations
 atlas reconcile [--json]      # сверка с кодом (read-only report)
-atlas reconcile --fix         # применить безопасные патчи (idempotent)
+atlas reconcile --fix         # non-destructive: flag broken relations, log to open-questions (idempotent)
 atlas validate [--strict-warnings]
 atlas ls [--type module] [--status current]
+atlas ls --needs-enrichment [--json]          # карты требующие enrichment
+atlas ls --needs-enrichment-content [--json]  # split: placeholders, weak evidence, missing sections
+atlas ls --needs-enrichment-links [--json]    # split: empty cross-links
+atlas ls --needs-enrichment-review [--json]   # split: status=needs_review
 atlas show <id>
 atlas related <id>
-atlas context <query>         # context pack для задачи
+atlas recall <query>          # context pack для задачи
 atlas update <id> [--body <text>] [--set field=value]  # safe card update
 ```
 
@@ -124,9 +139,9 @@ atlas update <id> [--body <text>] [--set field=value]  # safe card update
 
 ```bash
 .ai/atlas/bin/atlas bootstrap
-.ai/atlas/bin/atlas ingest-spec "specs/**/*.md"
+.ai/atlas/bin/atlas ingest "specs/**/*.md"
 .ai/atlas/bin/atlas reconcile --fix --json
-.ai/atlas/bin/atlas context "изменить фильтрацию agent cards"
+.ai/atlas/bin/atlas recall "изменить фильтрацию agent cards"
 .ai/atlas/bin/atlas validate
 ```
 
@@ -152,6 +167,8 @@ atlas update <id> [--body <text>] [--set field=value]  # safe card update
 | updateCard THROW | попытка выставить `code_confirmed` без evidence section |
 | atlas-guard plugin | `tool.execute.before` — advisory warning если Write без memory read |
 | AGENTS.md | "Run /atlas-recall before product behavior tasks" |
+| validate ERROR | `spec_only` cards с missing required sections (Phase 6 — spec_only skip removed) |
+| ls.ts gate | heading match case-insensitive (prevents silent loop resets on LLM casing) |
 
 ## Что умеет
 
@@ -179,12 +196,11 @@ atlas update <id> [--body <text>] [--set field=value]  # safe card update
 ### Reconcile
 - Stale refs (code_refs/test_refs paths не существуют)
 - Weak current claims (current + spec_only/inferred/unknown)
-- Stale proposals (90 дней, weak evidence → needs_review)
 - Changed claim evidence (re-run checkEvidence, сравнить со stored)
-- Broken relations (card → non-existent ID)
+- Broken relations (card → non-existent ID) — flagged with `has_broken_relations: true`, logged to open-questions.md (non-destructive, IDs не удаляются)
 - Broken claim links (claim.module/scenario/decision → non-existent card)
 - Duplicate claims (cross-card canonical)
-- `--fix` mode: append stale refs → open-questions.md, weak claims → conflicts.md, mark stale proposals, update stored evidence (idempotent)
+- `--fix` mode: append stale refs → open-questions.md, weak claims → conflicts.md, flag broken relations (idempotent, dedup by content)
 
 ### Content quality
 - Agent instructions включают quality checklist, anti-patterns, good examples
@@ -196,7 +212,7 @@ atlas update <id> [--body <text>] [--set field=value]  # safe card update
 - 4 agent definitions (extractor, analyst, coder, reviewer)
 - 4 skills (atlas-bank, atlas-bootstrap, atlas-ingest, atlas-reconcile)
 - 4 commands (slash commands для workflow)
-- 6 tools (context, validate, related, discover, bootstrap, updateCard)
+- 6 tools (recall, validate, related, discover, bootstrap, atlas_updateCard)
 - atlas-guard plugin: lifecycle hooks (auto-context injection, write enforcement, session tracking)
 - AGENTS.md: project-level instructions
 
@@ -246,9 +262,9 @@ npm run atlas -- --root /path/to/your/repo recall "изменить фильтр
 src/                    TypeScript core library and CLI
 src/schemas/            Zod-схемы frontmatter и claim/evidence
 src/core/               discovery, bootstrap, reconcile, validate, context, relations, claims
-src/commands/           CLI-команды (10 команд)
+src/commands/           CLI-команды (15 команд)
 src/scaffold/           шаблоны .ai/memory и .opencode
-test/                   Vitest-тесты (115 тестов)
+test/                   Vitest-тесты (567 тестов)
 examples/synapse-mini/  мини-пример проекта после init
 docs/                   REQUIREMENTS, LIMITATIONS, plans
 ```
