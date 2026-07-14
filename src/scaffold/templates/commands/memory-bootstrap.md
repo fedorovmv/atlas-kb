@@ -39,13 +39,14 @@ After batch completes, run `ls --status needs_review --json`. If still >0 — di
 
 ## STEP 4 — Check if done
 
-Run BOTH:
+Run ALL THREE:
 ```bash
+.ai/memory-tool/bin/memory reconcile --fix
 .ai/memory-tool/bin/memory ls --needs-enrichment --json
 .ai/memory-tool/bin/memory ls --status needs_review --json
 ```
 
-If BOTH return `[]` — run `.ai/memory-tool/bin/memory validate`, show summary, report "done".
+If BOTH ls commands return `[]` — run `.ai/memory-tool/bin/memory validate`, show summary, report "done".
 If EITHER returns cards — go back to STEP 2. Do NOT report "done". Do NOT ask the user. Loop.
 
 Do NOT ask the user to manually classify specs or fill cards. The subagents do this automatically.
