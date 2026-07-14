@@ -7,6 +7,12 @@ description: Full LLM-assisted memory bank population — deterministic scaffold
 
 Populate `.ai/memory` from project source, tests, docs, and specs in one workflow. Deterministic CLI creates the skeleton; LLM agents enrich cards with real content from code analysis.
 
+**⚠️ CRITICAL: This skill has TWO phases. You MUST complete BOTH:**
+1. **Phase 1**: Run CLI scaffold (creates skeleton cards)
+2. **Phase 2**: Dispatch subagents to enrich ALL needs_review cards (fill content, verify evidence, promote to current)
+
+**If you stop after Phase 1 without dispatching subagents — the bootstrap is INCOMPLETE.** Cards will have placeholder content "Требует ревью — ...". You MUST dispatch memory-extractor, memory-analyst, memory-coder, and memory-reviewer subagents as described in Phase 2 below.
+
 ## Workflow
 
 ### Phase 1 — Deterministic scaffold (CLI)
