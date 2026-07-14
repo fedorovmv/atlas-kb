@@ -449,28 +449,19 @@ async function renderModuleCard(
 
 function renderArchitectureCard(mod: { id: string; title: string; codeFiles: string[]; docFiles: string[] }): string {
   const todayStr = today();
-  // Detect runtime tier using universal pattern matcher (not project-specific paths)
-  const isDemo = mod.codeFiles.some((p) =>
-    /(?:^|\/)(demo|example|examples|testdata)\//.test(p) || /(?:^|\/)(demo|example)\./.test(p)
-  );
-  const isProduction = mod.codeFiles.some((p) =>
-    !/(?:^|\/)(test|tests|spec|demo|example|examples|testdata|legacy|archive)\//.test(p)
-  );
-  const runtimeTier = isDemo && !isProduction ? "demo" : isDemo && isProduction ? "mixed" : isProduction ? "production" : "unknown";
-  const tierLabel = runtimeTier === "demo" ? "демо-компонент (не production)" : runtimeTier === "mixed" ? "смешанный (demo+production)" : runtimeTier === "production" ? "production-компонент" : "неопределён";
   const fm = frontmatterYaml({
     entity_type: "architecture",
     id: `arch-${mod.id}`,
-    title: `Архитектура: ${mod.title} (${tierLabel})`,
+    title: `Архитектура: ${mod.title}`,
     status: "needs_review",
     authority: "reviewed_memory",
     evidence_level: "inferred",
-    stability: runtimeTier === "demo" ? "experimental" : "evolving",
+    stability: "evolving",
     source_confidence: "low",
     last_reviewed: todayStr,
     review_required: true,
     knowledge_types: ["design_rationale"],
-    runtime_tier: runtimeTier,
+    runtime_tier: "unknown",
     source_refs: mod.docFiles.map((p) => ({ path: p, role: "current_doc" })),
     usage_policy: {
       can_answer_current_behavior: false,
@@ -481,7 +472,7 @@ function renderArchitectureCard(mod: { id: string; title: string; codeFiles: str
   });
   const body = [
     "## Обзор архитектуры",
-    `Архитектура модуля ${mod.title}. ${tierLabel}. Требует ревью — опишите высокоуровневую структуру и границы.`,
+    `Архитектура модуля ${mod.title}. Требует ревью — опишите высокоуровневую структуру и границы.`,
     "",
     "## Компоненты",
     "Требует ревью — перечислите основные компоненты и их ответственность.",

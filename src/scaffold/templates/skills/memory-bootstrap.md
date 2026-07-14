@@ -154,6 +154,7 @@ For each enriched module/scenario card (after extractor or analyst):
 
 - Read the corresponding module card (`.ai/memory/modules/<id>.md`).
 - Read the `source_refs` docs listed in the architecture card frontmatter.
+- **Determine `runtime_tier`**: read module code_refs paths. If paths contain `demo`, `example`, `examples`, `testdata` — set `runtime_tier: demo`. If paths are production code (no demo/test patterns) — set `runtime_tier: production`. If both — `mixed`. Also consider: is this module part of a demo/experimental submodule? Is it deployed to production? Use code context to decide.
 - Fill in `## Обзор архитектуры` — high-level structure, boundaries, design rationale for this component.
 - Fill in `## Компоненты` — main components with their responsibilities.
 - Fill in `## Зависимости` — external dependencies and internal coupling points.

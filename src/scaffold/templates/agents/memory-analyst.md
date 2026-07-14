@@ -121,6 +121,7 @@ Report format for reviewer:
 - [ ] `## Зависимости`: external dependencies + internal coupling points listed
 - [ ] `## Поток данных`: describes how data flows through module
 - [ ] `## Связанные модули`: module card ids listed
+- [ ] `runtime_tier`: determined from code_refs — demo/example/testdata paths → demo, production paths → production, both → mixed. Also consider: is this a demo/experimental component? Is it deployed to production?
 - [ ] Read corresponding module card (`.ai/memory/modules/<id>.md`) for context
 - [ ] Synthesis, not extraction — combine module behavior + code structure + docs
 
