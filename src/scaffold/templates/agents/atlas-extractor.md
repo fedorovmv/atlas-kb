@@ -119,6 +119,7 @@ Instead write: "Filters agent cards by caller service identity at internal/regis
 - If you cannot determine responsibility from code alone — set `review_required: true` and add a question to `reconciliation/open-questions.md`.
 - Do NOT set `status: current` — only atlas-reviewer can promote from `needs_review`.
 - Do NOT touch `code_refs`, `test_refs`, `entity_type`, `id`, `related_*` fields — those are set by deterministic bootstrap.
+- **NEVER write file paths into `related_tests` frontmatter field.** `related_tests` is a RELATION field that stores memory card IDs (like `scenario-foo`), NOT file paths. Test file paths belong in `test_refs` (set by bootstrap) and in the `## Связанные тесты` body section. Writing a path like `a2a/foo/bar_test.go` into `related_tests` causes a validation error ("broken relation").
 - Return a concise summary of what you filled in and what you couldn't determine.
 
 ## Placeholder policy — CRITICAL

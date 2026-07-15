@@ -104,4 +104,6 @@ DON'T just verify "function exists at line N" — verify "function at line N doe
 - If tests are missing for claimed behavior — note in `## Свидетельства из тестов` as "No tests found for X".
 - Do NOT set `status: current` — only atlas-reviewer can promote.
 - Do NOT change `## Ответственность` or `## Текущее поведение` — that's atlas-extractor's job. Only add evidence sections.
+- **NEVER write file paths into `related_tests` or any `related_*` frontmatter field.** These are RELATION fields storing memory card IDs (like `scenario-foo`), NOT file paths. Test file paths belong in `test_refs` and the `## Свидетельства из тестов` body section.
+- When updating the card body via `atlas_updateCard`, PRESERVE all existing sections. Append evidence sections; do not rewrite the entire body or you will lose sections created by bootstrap/extractor.
 - Return a concise summary: what was confirmed, what was not found, what conflicts were detected.

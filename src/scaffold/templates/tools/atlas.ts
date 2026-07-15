@@ -22,14 +22,14 @@ async function runMemory(args: string[]) {
   }
 }
 
-export const context = tool({
-  description: "Build a compact repository memory context pack for a task.",
+export const recall = tool({
+  description: "Recall context — build a compact memory context pack for a task or question.",
   args: {
     query: tool.schema.string().describe("Task or question to build memory context for"),
     limit: tool.schema.number().optional().describe("Maximum number of primary memory cards"),
   },
   async execute(args) {
-    return runMemory(["context", args.query, "--limit", String(args.limit ?? 8)]);
+    return runMemory(["recall", args.query, "--limit", String(args.limit ?? 8)]);
   },
 });
 

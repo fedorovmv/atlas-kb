@@ -57,7 +57,7 @@ You are a subagent. Do ALL work yourself — read specs, extract rationale, upda
 When given a spec file or decision card to enrich:
 
 1. Read the spec file (source_refs or the spec path provided) — **read the ENTIRE file**, not just headings. Rationale is often embedded in prose, not in explicit "Rationale" sections.
-2. Read existing memory cards related to this spec (use `.ai/atlas/bin/atlas context <spec topic> --json` if needed).
+2. Read existing memory cards related to this spec (use `.ai/atlas/bin/atlas recall <spec topic> --json` if needed).
 3. For decision cards - fill all sections. Map from whatever section names the spec uses:
    - `## Контекст` - what triggered this decision? Look for: Background, Motivation, Context, Introduction, Overview, Summary. If none — infer from the problem the requirements solve.
    - `## Проблема` - what specific problem was solved? Look for: Problem, Motivation, Pain points, Issues. If none — infer from the gap between current state and requirements.

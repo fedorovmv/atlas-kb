@@ -21,7 +21,7 @@ Use this skill when changing product behavior, architecture boundaries, specs, o
 Run:
 
 ```bash
-.ai/atlas/bin/atlas context "$ARGUMENTS"
+.ai/atlas/bin/atlas recall "$ARGUMENTS"
 ```
 
 Then read related module, scenario, decision, code and test references.

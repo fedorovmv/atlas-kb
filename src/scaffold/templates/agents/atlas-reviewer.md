@@ -16,6 +16,15 @@ After atlas-extractor and atlas-coder have processed cards:
 
 1. Read all enriched cards in `.ai/memory/modules/`, `.ai/memory/scenarios/`, `.ai/memory/decisions/`.
 2. For each card, check:
+   - **ALL required sections present.** The validator rejects cards with missing required H2 headings after promotion. Before promoting, verify every required section for the card's entity_type exists in the body. Required sections by type:
+     - **module**: `## Ответственность`, `## Не входит в ответственность`, `## Текущее поведение`, `## Связанные сценарии`, `## Связанные решения`, `## Свидетельства из кода`, `## Свидетельства из тестов`, `## Известные риски`, `## Открытые вопросы`, `## Почему такие границы`
+     - **scenario**: `## Цель`, `## Участники`, `## Поток выполнения`, `## Ограничения`, `## Сценарии ошибок`, `## Связанные модули`, `## Связанные тесты`, `## Обоснование`
+     - **decision**: `## Контекст`, `## Проблема`, `## Решение`, `## Обоснование`, `## Рассмотренные альтернативы`, `## Отклонённые альтернативы`, `## Последствия`, `## Свидетельства текущего поведения`, `## Затронутые модули`, `## Затронутые сценарии`
+     - **proposal**: `## Исходная спецификация`, `## Предлагаемое поведение`, `## Обоснование из спецификации`, `## Затронутые модули`, `## Затронутые сценарии`, `## Затронутые решения`, `## Проверка текущего кода`, `## Утверждения`, `## Решение по ревью`
+     - **historical**: `## Какая проблема решалась`, `## Актуальное обоснование`, `## Устаревшие идеи`, `## Выжившие решения`, `## Ссылки на текущие решения`
+     - **architecture**: `## Обзор архитектуры`
+     - **reference**: `## Перенесённое поведение`, `## Намеренно не перенесённое поведение`, `## Инварианты и переходы состояний`, `## Отказ/повтор/отмена/восстановление`, `## Совместимость/операционные ограничения`, `## Производные сценарии и тесты`
+     If ANY required section is missing — do NOT promote. Keep `status: needs_review`, add reason to `reconciliation/open-questions.md`.
    - `## Ответственность` is filled AND specific (not placeholder, not vague). Reject: "Handles functionality", "Provides solutions", "Implements core logic". Accept: cites ≥1 function/type.
    - `## Текущее поведение` is specific and factual (not "Needs review", not generic description). Accept: references ≥1 specific function/type/method.
    - `## Публичный интерфейс` has ≥1 symbol (for module cards). If missing — keep needs_review.
@@ -37,12 +46,13 @@ After atlas-extractor and atlas-coder have processed cards:
    - If rationale says "inferred" — verify `evidence_level: inferred` is set.
 6. Check cross-card consistency:
    - No two `current` cards claim contradictory behavior for the same module. Contradictory = same function described differently, same module with conflicting responsibility statements. NOT just "different wording".
-   - `related_*` links point to existing card ids.
+   - `related_*` links point to existing card ids. **`related_tests` stores card IDs (like `scenario-foo`), NOT file paths.** If any `related_*` field contains a file path (contains `/` or ends with `.go`/`.ts`/etc.) — this is a bug. Clear it to `[]` and note in open-questions.md. File paths belong in `test_refs`/`code_refs`, not in relation fields.
    - For each card with `evidence_level=heuristic_match`: do NOT promote to `current`. This is CLI keyword match, not verified. Require atlas-coder to promote to `code_confirmed` first.
    - No `current` card has `evidence_level: spec_only` (this is a validation error).
 7. Use the `atlas_updateCard` tool to save changes: pass `id`, `body` (if you filled rationale/alternatives for decision cards), `setStatus` (current or needs_review), `setReviewRequired`, `setLastReviewed`. NEVER use Write tool — it corrupts YAML frontmatter.
 
 ## Quality checklist (before promoting a card to current)
+- [ ] **ALL required sections present** (see list in step 2) — validator rejects cards with missing headings after promotion
 - [ ] `## Ответственность`: specific, cites ≥1 function/type — not vague
 - [ ] `## Текущее поведение`: references ≥1 specific symbol from code
 - [ ] `## Публичный интерфейс`: ≥1 symbol (module cards only)

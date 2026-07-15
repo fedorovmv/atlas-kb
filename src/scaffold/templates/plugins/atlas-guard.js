@@ -22,7 +22,7 @@ function logAdvisory(msg) {
 const sessionTools = new Map();
 
 export const MemoryGuardPlugin = async ({ $, directory }) => {
-  const memoryTools = ["context", "related", "discover", "validate", "memory_context", "bootstrap"];
+  const memoryTools = ["recall", "related", "discover", "validate", "bootstrap"];
   // Только реальные write-инструменты. bash НЕ включаем — это general execution
   // (git, npm, запуск memory CLI), false positive на каждый shell-вызов.
   const writeTools = ["Write", "Edit", "write", "edit", "ast_grep_replace"];
@@ -48,7 +48,7 @@ export const MemoryGuardPlugin = async ({ $, directory }) => {
         if (!messageText || messageText.length < 5) return;
 
         // Run memory context CLI
-        const result = await `.ai/atlas/bin/atlas context ${messageText.slice(0, 200)}`.quiet();
+        const result = await `.ai/atlas/bin/atlas recall ${messageText.slice(0, 200)}`.quiet();
         const context = await result.text();
         if (context && context.trim().length > 0) {
           output.parts.push({
