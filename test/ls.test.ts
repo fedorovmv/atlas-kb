@@ -186,6 +186,8 @@ content
 ## Открытые вопросы
 content
 ## Почему такие границы
+content
+## Публичный интерфейс
 content`;
 
 function writeCard(root: string, subdir: string, filename: string, fm: Record<string, unknown>, body: string) {

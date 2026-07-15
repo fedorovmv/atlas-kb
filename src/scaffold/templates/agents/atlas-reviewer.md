@@ -27,11 +27,12 @@ After atlas-extractor and atlas-coder have processed cards:
      If ANY required section is missing — do NOT promote. Keep `status: needs_review`, add reason to `reconciliation/open-questions.md`.
    - `## Ответственность` is filled AND specific (not placeholder, not vague). Reject: "Handles functionality", "Provides solutions", "Implements core logic". Accept: cites ≥1 function/type.
    - `## Текущее поведение` is specific and factual (not "Needs review", not generic description). Accept: references ≥1 specific function/type/method.
-   - `## Публичный интерфейс` has ≥1 symbol (for module cards). If missing — keep needs_review.
+   - `## Публичный интерфейс` EXISTS and has ≥1 symbol (for module cards). If section is missing entirely — keep needs_review. This section is REQUIRED for module cards.
    - `evidence_level` is `code_confirmed` or `test_confirmed` if `status` should be `current`.
    - For each card with `evidence_level=code_confirmed`: verify `## Свидетельства из кода` section exists and contains ≥1 entry with file:line reference. Spot-check 1 entry: does the file:line actually contain the claimed symbol? If not — demote to `needs_review` and add to conflicts.md.
    - For each card with `evidence_level=test_confirmed`: verify `## Свидетельства из тестов` section exists with ≥1 entry.
    - `usage_policy` is safe: `proposal`/`historical` must have `can_answer_current_behavior: false`; `decision` must have `can_generate_code_from: false`.
+   - **Cross-link promotion block** (module/decision/scenario): refuse promotion to `current` when cross-links are empty after cross-linking was attempted. Rule — if cross-links are empty per-entity (`module` → `related_scenarios` empty; `decision` → `related_modules`+`affects_modules` empty; `scenario` → `related_modules` empty); AND `cross_link_attempts >= 2`; THEN keep `needs_review`. EXCEPTION: reviewer verified via `atlas ls` that no possible relations exist — in this case reviewer sets `has_broken_relations: true` (semantically: "no relations possible, verified") to suppress the validator error.
 3. If a card passes all checks:
    - Set `status: current` (promote from `needs_review`).
    - Set `review_required: false`.
@@ -44,23 +45,29 @@ After atlas-extractor and atlas-coder have processed cards:
    - `## Rationale` is filled and explains WHY (not WHAT).
    - `## Alternatives` has ≥1 entry or "Not documented in spec".
    - If rationale says "inferred" — verify `evidence_level: inferred` is set.
-6. Check cross-card consistency:
+   - **Rejected-alternative rationale quality**: Each entry in `## Отклонённые альтернативы` must include (a) technical constraints, (b) trade-offs versus the chosen option, (c) why it does not fit this project context. Shallow rationale such as only "реализован X" is insufficient — keep `needs_review`.
+6. **Conflict-detection responsibility**: Before promoting any card, check for semantic duplicates/contradictions among current cards. Scope: check pairs of current cards that share ≥1 `code_refs` path OR ≥1 `related_modules` entry; for each matching pair decide duplicate/contradiction/independent; write only confirmed conflicts to `reconciliation/conflicts.md`; do not block on speculative overlap. If conflict found — do NOT promote the involved card.
+7. Check cross-card consistency:
    - No two `current` cards claim contradictory behavior for the same module. Contradictory = same function described differently, same module with conflicting responsibility statements. NOT just "different wording".
    - `related_*` links point to existing card ids. **`related_tests` stores card IDs (like `scenario-foo`), NOT file paths.** If any `related_*` field contains a file path (contains `/` or ends with `.go`/`.ts`/etc.) — this is a bug. Clear it to `[]` and note in open-questions.md. File paths belong in `test_refs`/`code_refs`, not in relation fields.
    - For each card with `evidence_level=heuristic_match`: do NOT promote to `current`. This is CLI keyword match, not verified. Require atlas-coder to promote to `code_confirmed` first.
    - No `current` card has `evidence_level: spec_only` (this is a validation error).
-7. Use the `atlas_updateCard` tool to save changes: pass `id`, `body` (if you filled rationale/alternatives for decision cards), `setStatus` (current or needs_review), `setReviewRequired`, `setLastReviewed`. NEVER use Write tool — it corrupts YAML frontmatter.
+8. Use the `atlas_updateCard` tool to save changes: pass `id`, `body` (if you filled rationale/alternatives for decision cards), `setStatus` (current or needs_review), `setReviewRequired`, `setLastReviewed`. NEVER use Write tool — it corrupts YAML frontmatter.
 
 ## Quality checklist (before promoting a card to current)
 - [ ] **ALL required sections present** (see list in step 2) — validator rejects cards with missing headings after promotion
 - [ ] `## Ответственность`: specific, cites ≥1 function/type — not vague
 - [ ] `## Текущее поведение`: references ≥1 specific symbol from code
-- [ ] `## Публичный интерфейс`: ≥1 symbol (module cards only)
+- [ ] `## Публичный интерфейс`: EXISTS and has ≥1 symbol (module cards only) — section is REQUIRED, not optional
 - [ ] evidence_level: code_confirmed or test_confirmed (NOT heuristic_match, spec_only, inferred, unknown)
 - [ ] `## Свидетельства из кода`: ≥1 entry with file:line (if code_confirmed)
 - [ ] Spot-check: 1 evidence entry verified — file:line contains claimed symbol
 - [ ] usage_policy: safe values for entity_type
 - [ ] Headings are EXACTLY as specified (Russian) — validator checks them by name
+- [ ] Cross-links (module/decision/scenario): not empty after cross_link_attempts >= 2 — OR reviewer set `has_broken_relations: true` after `atlas ls` verification
+- [ ] Conflict check done: no unresolved semantic duplicates/contradictions with existing current cards
+- [ ] Decision rejected alternatives: each entry includes technical constraints, trade-offs, and project-context fit — NOT shallow rationale
+- [ ] Module `## Публичный интерфейс`: section EXISTS (not just recommended, but REQUIRED)
 
 ## Rules
 

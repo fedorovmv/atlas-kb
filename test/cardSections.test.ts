@@ -86,6 +86,7 @@ describe("validateCardSections", () => {
       "## Известные риски",
       "## Открытые вопросы",
       "## Почему такие границы",
+      "## Публичный интерфейс",
     ];
     const body = "# Full Module\n\n" + requiredSections.map((s) => `${s}\n\ncontent`).join("\n");
     const card = makeCard({ entity_type: "module", id: "full-module" }, body);
@@ -126,6 +127,7 @@ describe("validateCardSections", () => {
       "## Известные риски",
       "## Открытые вопросы",
       "## Почему такие границы",
+      "## Публичный интерфейс",
     ];
     const body = "# Partial Module\n\n" + requiredSections.map((s) => `${s}\n\ncontent`).join("\n");
     const card = makeCard({ entity_type: "module", id: "partial-module" }, body);
@@ -133,5 +135,81 @@ describe("validateCardSections", () => {
     expect(result.ok).toBe(true);
     expect(result.missingRecommended.length).toBeGreaterThan(0);
     expect(result.warnings.length).toBeGreaterThan(0);
+  });
+
+  it("module missing ## Публичный интерфейс → required error", () => {
+    const requiredSections = [
+      "## Ответственность",
+      "## Не входит в ответственность",
+      "## Текущее поведение",
+      "## Связанные сценарии",
+      "## Связанные решения",
+      "## Свидетельства из кода",
+      "## Свидетельства из тестов",
+      "## Известные риски",
+      "## Открытые вопросы",
+      "## Почему такие границы",
+    ];
+    const body = "# Module without public API\n\n" + requiredSections.map((s) => `${s}\n\ncontent`).join("\n");
+    const card = makeCard({ entity_type: "module", id: "no-public-api" }, body);
+    const result = validateCardSections(card);
+    expect(result.ok).toBe(false);
+    expect(result.missingRequired).toContain("## Публичный интерфейс");
+    const pubApiErrors = result.errors.filter((e) => e.includes("## Публичный интерфейс"));
+    expect(pubApiErrors.length).toBeGreaterThan(0);
+  });
+
+  it("module missing ## Внутренняя реализация → warning only", () => {
+    const requiredSections = [
+      "## Ответственность",
+      "## Не входит в ответственность",
+      "## Текущее поведение",
+      "## Связанные сценарии",
+      "## Связанные решения",
+      "## Свидетельства из кода",
+      "## Свидетельства из тестов",
+      "## Известные риски",
+      "## Открытые вопросы",
+      "## Почему такие границы",
+      "## Публичный интерфейс",
+    ];
+    const body = "# Module no internal impl\n\n" + requiredSections.map((s) => `${s}\n\ncontent`).join("\n");
+    const card = makeCard({ entity_type: "module", id: "no-internal-impl" }, body);
+    const result = validateCardSections(card);
+    expect(result.ok).toBe(true);
+    expect(result.missingRecommended).toContain("## Внутренняя реализация");
+    const implWarnings = result.warnings.filter((w) => w.includes("## Внутренняя реализация"));
+    expect(implWarnings.length).toBeGreaterThan(0);
+  });
+
+  it("module missing ## Примеры использования → warning only", () => {
+    const requiredSections = [
+      "## Ответственность",
+      "## Не входит в ответственность",
+      "## Текущее поведение",
+      "## Связанные сценарии",
+      "## Связанные решения",
+      "## Свидетельства из кода",
+      "## Свидетельства из тестов",
+      "## Известные риски",
+      "## Открытые вопросы",
+      "## Почему такие границы",
+      "## Публичный интерфейс",
+    ];
+    const body = "# Module no examples\n\n" + requiredSections.map((s) => `${s}\n\ncontent`).join("\n");
+    const card = makeCard({ entity_type: "module", id: "no-examples" }, body);
+    const result = validateCardSections(card);
+    expect(result.ok).toBe(true);
+    expect(result.missingRecommended).toContain("## Примеры использования");
+    const exampleWarnings = result.warnings.filter((w) => w.includes("## Примеры использования"));
+    expect(exampleWarnings.length).toBeGreaterThan(0);
+  });
+
+  it("decision missing ## Примеры использования → warning only", () => {
+    const decisionBody = `# Decision\n\n## Контекст\ncontent\n## Проблема\ncontent\n## Решение\ncontent\n## Обоснование\ncontent\n## Рассмотренные альтернативы\ncontent\n## Отклонённые альтернативы\ncontent\n## Последствия\ncontent\n## Свидетельства текущего поведения\ncontent\n## Затронутые модули\ncontent\n## Затронутые сценарии\ncontent`;
+    const card = makeCard({ entity_type: "decision", id: "decision-no-examples" }, decisionBody);
+    const result = validateCardSections(card);
+    expect(result.ok).toBe(true);
+    expect(result.missingRecommended).toContain("## Примеры использования");
   });
 });

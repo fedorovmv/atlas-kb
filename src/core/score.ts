@@ -14,6 +14,7 @@ export function cardHaystack(card: MemoryCard) {
     m.authority,
     m.evidence_level,
     m.stability,
+    ...(m.agent_summary ? [m.agent_summary] : []),
     ...m.knowledge_types,
     ...m.product_areas,
     ...m.aliases,

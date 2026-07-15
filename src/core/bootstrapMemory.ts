@@ -404,6 +404,7 @@ async function renderModuleCard(
       requires_code_check_before_change: true,
     },
     runtime_tier: tier,
+    agent_summary: "",
   });
   // Filter boilerplate — if doc content looks like a template, use fallback instead
   const cleanResponsibilities = docResponsibilities && !isBoilerplate(docResponsibilities) ? docResponsibilities : "";
@@ -455,6 +456,15 @@ async function renderModuleCard(
     "",
     "## Почему такие границы",
     "Требует ревью — определите rationale границ модуля (cohesion, coupling, deploy boundary).",
+    "",
+    "## Публичный интерфейс",
+    "Требует ревью — опишите публичное API модуля (функции, классы, endpoints).",
+    "",
+    "## Внутренняя реализация",
+    "Требует ревью — опишите ключевые внутренние компоненты и их взаимодействие.",
+    "",
+    "## Примеры использования",
+    "Требует ревью — приведите примеры использования модуля из кода или документации.",
   ].join("\n");
   return `---\n${fm}\n---\n\n${body}\n`;
 }
@@ -481,6 +491,7 @@ function renderArchitectureCard(mod: { id: string; title: string; codeFiles: str
       can_use_as_rationale: true,
       requires_code_check_before_change: true,
     },
+    agent_summary: "",
   });
   const body = [
     "## Обзор архитектуры",
@@ -522,6 +533,7 @@ function renderReferenceCard(mod: { id: string; title: string; docFiles: string[
       can_use_as_rationale: true,
       requires_code_check_before_change: true,
     },
+    agent_summary: "",
   });
   const body = [
     "## Перенесённое поведение",
@@ -571,6 +583,7 @@ function renderSystemArchitectureCard(modules: Array<{ id: string; title: string
       can_use_as_rationale: true,
       requires_code_check_before_change: true,
     },
+    agent_summary: "",
   });
   const body = [
     "## Обзор архитектуры",
@@ -615,6 +628,7 @@ function renderScenarioCard(s: { id: string; title: string; topics: string[]; so
       can_use_as_rationale: true,
       requires_code_check_before_change: true,
     },
+    agent_summary: "",
   });
   return `---\n${fm}\n---\n\n# ${s.title}\n\n## Цель\n${goalContent || "Требует ревью — прочитайте source_refs для описания цели."}\n\n## Участники\n${actorsContent || "Требует ревью — определите участников из кода/тестов/документации."}\n\n## Поток выполнения\n${flowContent || "Требует ревью — прочитайте source_refs и код для описания потока."}\n\n## Ограничения\n${constraintsContent || "Требует ревью — определите ограничения, лимиты, условия ошибок."}\n\n## Сценарии ошибок\n${errorsContent || "Требует ревью — определите известные сценарии ошибок."}\n\n## Связанные модули\nНе выявлены — определите модули, участвующие в сценарии.\n\n## Связанные тесты\nНе выявлены — определите тесты, покрывающие сценарий.\n\n## Свидетельства из кода\nНе проверено — atlas-coder должен подтвердить поток по коду.\n\n## Свидетельства из тестов\nНе проверено — atlas-coder должен подтвердить покрытие тестами для этого сценария.\n\n## Обоснование\n${rationaleContent || "Требует ревью — почему существует этот сценарий, а не другой?"}\n`;
 }
@@ -651,8 +665,11 @@ function renderDecisionCard(
       can_use_as_rationale: true,
       requires_code_check_before_change: true,
     },
+    agent_summary: "",
+    related_modules: [],
+    affects_modules: [],
   });
-  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Контекст\n${context || "Требует ревью — какая проблема привела к этому решению?"}\n\n## Проблема\n${problem || "Требует ревью — какая конкретная проблема решена?"}\n\n## Решение\n${decisionText || "Требует ревью — что было решено?"}\n\n## Обоснование\n${rationale || d.rationale || "Не задокументировано в спецификации."}\n\n## Рассмотренные альтернативы\n${alternatives || "Требует ревью — какие альтернативы были рассмотрены?"}\n\n## Отклонённые альтернативы\n${rejectedAlt || (alternatives ? "См. альтернативы выше." : "Требует ревью — что было отклонено и почему?")}\n\n## Последствия\n${consequences || "Требует ревью — какие компромиссы были приняты?"}\n\n## Свидетельства текущего поведения\nТребует ревью — действительно ли решение актуально для текущего кода?\n\n## Затронутые модули\n${affectedModules || "Требует ревью — какие модули затронуты этим решением?"}\n\n## Затронутые сценарии\n${affectedScenarios || "Требует ревью — какие сценарии затронуты этим решением?"}\n`;
+  return `---\n${fm}\n---\n\n# ${d.title}\n\n## Контекст\n${context || "Требует ревью — какая проблема привела к этому решению?"}\n\n## Проблема\n${problem || "Требует ревью — какая конкретная проблема решена?"}\n\n## Решение\n${decisionText || "Требует ревью — что было решено?"}\n\n## Обоснование\n${rationale || d.rationale || "Не задокументировано в спецификации."}\n\n## Рассмотренные альтернативы\n${alternatives || "Требует ревью — какие альтернативы были рассмотрены?"}\n\n## Отклонённые альтернативы\n${rejectedAlt || (alternatives ? "См. альтернативы выше." : "Требует ревью — что было отклонено и почему?")}\n\n## Последствия\n${consequences || "Требует ревью — какие компромиссы были приняты?"}\n\n## Свидетельства текущего поведения\nТребует ревью — действительно ли решение актуально для текущего кода?\n\n## Затронутые модули\n${affectedModules || "Требует ревью — какие модули затронуты этим решением?"}\n\n## Затронутые сценарии\n${affectedScenarios || "Требует ревью — какие сценарии затронуты этим решением?"}\n\n## Примеры использования\nТребует ревью — приведите примеры использования этого решения в коде.\n`;
 }
 
 function renderHistoricalCard(

@@ -30,10 +30,12 @@ export const CARD_SECTION_CONTRACTS: Record<EntityType, SectionContract> = {
       "## Известные риски",
       "## Открытые вопросы",
       "## Почему такие границы",
+      "## Публичный интерфейс",
     ],
     recommended: [
-      "## Публичный интерфейс",
       "## Зависимости",
+      "## Внутренняя реализация",
+      "## Примеры использования",
     ],
   },
   flow: {
@@ -62,6 +64,9 @@ export const CARD_SECTION_CONTRACTS: Record<EntityType, SectionContract> = {
       "## Свидетельства текущего поведения",
       "## Затронутые модули",
       "## Затронутые сценарии",
+    ],
+    recommended: [
+      "## Примеры использования",
     ],
   },
   scenario: {

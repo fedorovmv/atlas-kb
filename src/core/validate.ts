@@ -17,6 +17,7 @@ import { SourceCoverageSchema } from "../schemas/sourceCoverage.js";
 import { validateSourceCoverage } from "./sourceCoverage.js";
 import { readFileIfExists } from "./utils.js";
 import { checkDispatchAdvisory } from "./dispatch.js";
+import { areCrossLinksEmpty } from "../commands/ls.js";
 
 // Known frontmatter keys — anything else is likely a typo
 const KNOWN_FRONTMATTER_KEYS = new Set([
@@ -29,6 +30,7 @@ const KNOWN_FRONTMATTER_KEYS = new Set([
   "code_refs", "test_refs", "source_refs",
   "usage_policy", "claims",
   "runtime_tier", "source_status",
+  "agent_summary",
   "cross_link_attempts", "has_broken_relations",
 ]);
 
@@ -204,6 +206,22 @@ export async function validateMemory(options: RepoMemoryOptions = {}): Promise<V
 
     if (m.status === "current" && m.review_required) {
       warnings.push(`${card.relativePath}: current file still has review_required=true`);
+    }
+
+    // Cross-link validation: warn/error for current cards with empty cross-links
+    if (m.status === "current" && ["module", "decision", "scenario"].includes(m.entity_type)) {
+      if (areCrossLinksEmpty(m)) {
+        if (m.cross_link_attempts >= 2 && !m.has_broken_relations) {
+          errors.push(`${card.relativePath}: current ${m.entity_type} card has empty cross-links after ${m.cross_link_attempts} attempts — run atlas-analyst cross-linking pass`);
+        } else if (m.cross_link_attempts < 2) {
+          warnings.push(`${card.relativePath}: current ${m.entity_type} card has empty cross-links (attempts: ${m.cross_link_attempts}) — cross-linking needed`);
+        }
+      }
+    }
+
+    // agent_summary warning for current cards
+    if (m.status === "current" && !m.agent_summary?.trim()) {
+      warnings.push(`${card.relativePath}: current card without agent_summary — add 1-2 sentence summary for agent use`);
     }
 
     if (m.evidence_level === "spec_only" && m.knowledge_types.includes("current_behavior")) {

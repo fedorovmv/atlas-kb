@@ -191,3 +191,26 @@ describe("MemoryFrontmatterSchema with runtime_tier", () => {
     expect(result.source_status).toBe("active-rationale");
   });
 });
+
+describe("MemoryFrontmatterSchema agent_summary", () => {
+  it("parses card with agent_summary → ok", () => {
+    const result = MemoryFrontmatterSchema.parse({
+      ...baseFrontmatter,
+      agent_summary: "This module handles access filtering for card registries.",
+    });
+    expect(result.agent_summary).toBe("This module handles access filtering for card registries.");
+  });
+
+  it("parses card without agent_summary → ok (optional)", () => {
+    const result = MemoryFrontmatterSchema.parse(baseFrontmatter);
+    expect(result.agent_summary).toBeUndefined();
+  });
+
+  it("rejects agent_summary if not a string", () => {
+    const result = MemoryFrontmatterSchema.safeParse({
+      ...baseFrontmatter,
+      agent_summary: 123,
+    });
+    expect(result.success).toBe(false);
+  });
+});

@@ -87,6 +87,29 @@ usage_policy:
 
 Реестр остаётся компонентом обнаружения, чтобы не смешивать хранение метаданных, выбор цели и runtime-оркестрацию.
 
+## Публичный интерфейс
+
+- `FilterCardsForCaller(ctx, identity, policy)` — фильтрация доступных карточек агентов для вызывающего сервиса.
+- `ListAgents(filter, options)` — получение списка агентов с поддержкой фильтров и пагинации.
+- `GetAgent(id)` — получение метаданных конкретного агента.
+- `GetTool(id)` — получение метаданных конкретного инструмента.
+
+## Внутренняя реализация
+
+- `internal/registry/access_filter.go` — логика фильтрации по идентичности и политикам доступа.
+- `pkg/agentcard/agent_card.go` — структуры и сериализация карточек агентов.
+- Внутренние хелперы форматирования и кэширования (не использовать напрямую).
+
+## Примеры использования
+
+```go
+// Пример: получить доступные агенты для вызывающего сервиса
+filtered := registry.FilterCardsForCaller(ctx, callerIdentity, policy)
+for _, card := range filtered {
+    fmt.Printf("Agent: %s [%s]\n", card.Name, card.Kind)
+}
+```
+
 ## Подтверждения в коде
 
 - Функция FilterCardsForCaller в internal/registry/access_filter.go:5 (FilterCardsForCaller)

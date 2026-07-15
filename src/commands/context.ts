@@ -6,8 +6,8 @@ export async function contextMemory(query: string, options: { root?: string; lim
   if (options.json) {
     console.log(JSON.stringify({
       query: context.query,
-      selected: context.selected.map((card) => ({ id: card.meta.id, path: card.relativePath, type: card.meta.entity_type, status: card.meta.status })),
-      related: context.related.map((card) => ({ id: card.meta.id, path: card.relativePath, type: card.meta.entity_type, status: card.meta.status })),
+      selected: context.selected.map((card) => ({ id: card.meta.id, path: card.relativePath, type: card.meta.entity_type, status: card.meta.status, ...(card.meta.agent_summary?.trim() ? { agent_summary: card.meta.agent_summary.trim() } : {}) })),
+      related: context.related.map((card) => ({ id: card.meta.id, path: card.relativePath, type: card.meta.entity_type, status: card.meta.status, ...(card.meta.agent_summary?.trim() ? { agent_summary: card.meta.agent_summary.trim() } : {}) })),
       codeRefs: context.codeRefs,
       testRefs: context.testRefs,
     }, null, 2));

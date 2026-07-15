@@ -58,15 +58,17 @@ When given a spec file or decision card to enrich:
 
 1. Read the spec file (source_refs or the spec path provided) — **read the ENTIRE file**, not just headings. Rationale is often embedded in prose, not in explicit "Rationale" sections.
 2. Read existing memory cards related to this spec (use `.ai/atlas/bin/atlas recall <spec topic> --json` if needed).
-3. For decision cards - fill all sections. Map from whatever section names the spec uses:
-   - `## Контекст` - what triggered this decision? Look for: Background, Motivation, Context, Introduction, Overview, Summary. If none — infer from the problem the requirements solve.
+3. For decision cards - fill `agent_summary` in frontmatter AND fill all body sections. Map from whatever section names the spec uses:
+    - `agent_summary` (frontmatter): 1–2 sentences describing what was decided and why. Target max 280 characters. If the decision is complex, focus on the core outcome and the primary reason for the choice. Example: "Replaced centralized routing with identity-scoped discovery to eliminate SPOF and reduce latency. Trade-off: callers handle own agent selection."
+    - `## Контекст` - what triggered this decision? Look for: Background, Motivation, Context, Introduction, Overview, Summary. If none — infer from the problem the requirements solve.
    - `## Проблема` - what specific problem was solved? Look for: Problem, Motivation, Pain points, Issues. If none — infer from the gap between current state and requirements.
    - `## Решение` - what was decided? Look for: Decision, Solution, Approach, Design, Requirements. If no explicit decision section — the decision IS the set of requirements.
    - `## Обоснование` - **WHY this decision.** This is the MOST IMPORTANT section. Look for: Rationale, Why, Motivation, Justification, Trade-offs. If not explicitly stated — **you MUST infer** from the problem, alternatives, and constraints. Write 2-4 sentences explaining WHY this approach was chosen. Do NOT write "Не задокументировано" — infer and mark `evidence_level: inferred`.
    - `## Рассмотренные альтернативы` - extract from: Alternatives, Options, Rejected, Prior approach, Comparison. For each: name + status + reason. If none mentioned — **infer from the problem domain**: what other approaches could solve this? List 1-2 plausible alternatives and why they were likely rejected (complexity, coupling, performance). Mark `evidence_level: inferred`.
-   - `## Отклонённые альтернативы` - specific rejected options with reasons. Look for: Rejected, Deprecated, Prior approach, Non-goals.
-   - `## Последствия` - trade-offs accepted. Look for: Consequences, Trade-offs, Risks, Implications. Extract or infer from decision rationale.
-   - If the spec has NO rationale at all (pure requirements only) — fill Context and Problem from requirements, set Decision = requirements summary, set Rationale = "Not explicitly stated in spec — inferred from requirements and constraints", mark `evidence_level: inferred`, set `review_required: true`.
+    - `## Отклонённые альтернативы` - specific rejected options with reasons. Look for: Rejected, Deprecated, Prior approach, Non-goals. **For each rejected alternative, include all three of:** (a) technical constraints — what technical limitations does this alternative have? (b) trade-offs versus chosen option — what does this option give up or gain vs the chosen one? (c) why it does not fit this project context — what specific project constraint makes it unsuitable?
+    - `## Последствия` - trade-offs accepted. Look for: Consequences, Trade-offs, Risks, Implications. Extract or infer from decision rationale.
+    - `## Примеры использования` — code snippets or concrete references showing how the decision manifests in code. Include 1-3 snippets from `code_refs` files, or concrete usage examples (API calls, config fragments, query patterns). If no code_refs exist, describe the usage pattern verbally with enough detail that a developer can replicate it.
+    - If the spec has NO rationale at all (pure requirements only) — fill Context and Problem from requirements, set Decision = requirements summary, set Rationale = "Not explicitly stated in spec — inferred from requirements and constraints", mark `evidence_level: inferred`, set `review_required: true`.
 4. For claims - RE-EXTRACT beyond CLI and semantic deduplication:
    - CLI extractClaims catches: headings, bullets with modal verbs (must/shall/should), rationale paragraphs, backtick code refs.
    - CLI MISSES: numbered requirements ("1. The registry SHALL..."), prose without modal verbs, embedded constraints, non-goals, performance/security requirements, acceptance criteria, implicit claims in examples.
@@ -106,10 +108,13 @@ Report format for reviewer:
 ## Quality checklist (before calling atlas_updateCard)
 
 **Decision/Proposal/Historical cards:**
-- [ ] `## Проблема`: specific problem statement, not "Needs review"
+  - [ ] `agent_summary` (frontmatter): 1–2 sentences, ≤280 chars, states what was decided and why
+  - [ ] `## Проблема`: specific problem statement, not "Needs review"
 - [ ] `## Решение`: concrete decision, not vague
 - [ ] `## Обоснование`: explains WHY in 2-4 sentences — **NOT "Не задокументировано"**. If inferred — set `evidence_level: inferred`
-- [ ] `## Рассмотренные альтернативы`: ≥1 alternative with status + reason — **NOT "Не задокументировано"**. If inferred — mark `evidence_level: inferred`
+  - [ ] `## Рассмотренные альтернативы`: ≥1 alternative with status + reason — **NOT "Не задокументировано"**. If inferred — mark `evidence_level: inferred`
+  - [ ] `## Отклонённые альтернативы`: each rejected alternative includes technical constraints, trade-offs vs chosen option, and project-context fit
+  - [ ] `## Примеры использования`: 1-3 code snippets or concrete usage references
 - [ ] `## Затронутые модули`: module ids affected or "Не выявлены"
 - [ ] `## Затронутые сценарии`: scenario ids affected or "Не выявлены"
 - [ ] Each section cites spec content or marks as inferred
@@ -138,10 +143,12 @@ Report format for reviewer:
 - [ ] Synthesis — combine guide docs + module behavior + operational knowledge
 
 ## Anti-patterns - DON'T write:
-- "This decision was made for technical reasons" - too vague
-- "Various alternatives were considered" - name them
-- "The team decided to go with this approach" - say WHY
-- "This provides a good balance" - what trade-offs?
+  - "This decision was made for technical reasons" - too vague
+  - "Various alternatives were considered" - name them
+  - "The team decided to go with this approach" - say WHY
+  - "This provides a good balance" - what trade-offs?
+  - "Реализован X" (just stating "X was implemented") — this is NOT sufficient. You must explain WHY X was chosen over Y, not just report that X exists. Saying a thing is implemented says nothing about the decision rationale, the alternatives considered, or the trade-offs accepted.
+  - "Не задокументировано" for rationale or alternatives — this is a lazy fallback. Your job is to analyze and infer.
 
 ## Good examples:
 - Problem: "Centralized message router created a bottleneck: every agent request passed through a single service, adding latency and coupling."

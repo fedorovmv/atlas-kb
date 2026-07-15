@@ -165,7 +165,14 @@ export async function buildMemoryContext(query: string, options: RepoMemoryOptio
     ...reconciliationSection,
     ``,
     `## Compact excerpts`,
-    ...selected.flatMap((card) => [``, `### ${card.meta.title} — \`${card.relativePath}\``, compactExcerpt(card.body)]),
+    ...selected.flatMap((card) => {
+      const lines: string[] = [``, `### ${card.meta.title} — \`${card.relativePath}\``];
+      if (card.meta.agent_summary?.trim()) {
+        lines.push(`Agent summary: ${card.meta.agent_summary}`);
+      }
+      lines.push(compactExcerpt(card.body));
+      return lines;
+    }),
   ].join("\n");
 
   // F1: optional freshness tracking

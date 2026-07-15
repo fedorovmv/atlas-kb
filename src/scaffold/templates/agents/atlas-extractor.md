@@ -51,9 +51,11 @@ When given a memory card path with `needs_review` status:
    **Module cards** (entity_type: module):
    - `## Ответственность` — 2-4 sentences: what this module does, inferred from exports, package names, function signatures, main types. Be specific: "Filters agent cards by caller service identity" not "Handles agent stuff".
    - `## Не входит в ответственность` — what this module deliberately does NOT handle. Infer from imports, sibling modules, boundary patterns.
-   - `## Текущее поведение` — concise summary of actual behavior from reading the code AND tests. Reference specific functions/types. Include key exported functions with signatures.
-   - `## Публичный интерфейс` — list the main exported symbols (functions, types, structs) with one-line descriptions. Format: `FuncName(params) → ReturnType — what it does`. This is the quick-reference for agents.
-   - `## Известные риски` — TODO/FIXME comments, deprecated markers, missing error handling, unsafe patterns, untested critical paths. Only if found.
+    - `## Текущее поведение` — concise summary of actual behavior from reading the code AND tests. Reference specific functions/types. Include key exported functions with signatures.
+    - `## Публичный интерфейс` — REQUIRED for module cards. List the main exported symbols (functions, types, structs) with one-line descriptions. Format: `FuncName(params) → ReturnType — what it does`. This is the quick-reference for agents.
+    - `## Внутренняя реализация` — list non-exported/internal functions and types that implement the module's logic. Mark each internal entry with "не использовать напрямую" to make clear these are implementation details, not for direct agent use. Omit if nothing noteworthy.
+    - `## Примеры использования` — provide typical code snippets showing how to use the module's public API. Include 1–2 concise examples. Omit if the module has no clear usage pattern.
+    - `## Известные риски` — TODO/FIXME comments, deprecated markers, missing error handling, unsafe patterns, untested critical paths. Only if found.
    - `## Почему такие границы` — why does this module end here? What's the boundary rationale (cohesion, coupling, team ownership, deploy boundary)?
    - `## Связанные сценарии` — list scenario card ids that involve this module (from discovery or cross-ref). If none — write "Не выявлены".
    - `## Связанные решения` — list decision card ids that affect this module. If none — write "Не выявлены".
@@ -71,9 +73,10 @@ When given a memory card path with `needs_review` status:
    - `## Свидетельства из тестов` — leave for atlas-coder. Write "Не проверено — atlas-coder должен подтвердить покрытие тестами.".
    - `## Обоснование` — WHY this scenario exists. Read source_refs for rationale. If not documented — write "Не задокументировано — сценарий описывает основной поток взаимодействия.".
 5. Update frontmatter:
-   - `source_confidence`: `medium` if code was readable and consistent; `low` if sparse, ambiguous, or generated.
-   - `evidence_level`: keep as-is unless you have strong reason to change. Do NOT set `code_confirmed` — that's atlas-coder's job after evidence verification.
-   - `last_reviewed`: today's date.
+    - `agent_summary`: REQUIRED for module cards. Write 1–2 sentences: what the module does and how agents should use it. Target max length 280 characters. Example: "Registry stores and filters agent metadata by caller identity. Agents use it to query available agent cards, not to orchestrate runtime execution."
+    - `source_confidence`: `medium` if code was readable and consistent; `low` if sparse, ambiguous, or generated.
+    - `evidence_level`: keep as-is unless you have strong reason to change. Do NOT set `code_confirmed` — that's atlas-coder's job after evidence verification.
+    - `last_reviewed`: today's date.
 6. Use the `atlas_updateCard` tool to save: pass `id` (from frontmatter), `body` (new body content), and `setLastReviewed`/`setSourceConfidence` for frontmatter fields. NEVER use Write tool — it corrupts YAML frontmatter.
 
 ## Quality checklist (before calling atlas_updateCard)

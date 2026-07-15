@@ -697,6 +697,66 @@ usage_policy:
     await rm(root, { recursive: true, force: true });
   });
 
+  it("no warning for agent_summary frontmatter field", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "validate-agent-summary-"));
+    const dir = path.join(root, ".ai/memory/modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "with-agent-summary.md"),
+      `---
+entity_type: module
+id: agent-summary-card
+title: Agent Summary Card
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-15
+review_required: false
+knowledge_types:
+  - current_behavior
+agent_summary: This module handles access filtering for card registries.
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Agent Summary Card
+
+## Ответственность
+content
+## Не входит в ответственность
+content
+## Текущее поведение
+content
+## Связанные сценарии
+content
+## Связанные решения
+content
+## Свидетельства из кода
+content
+## Свидетельства из тестов
+content
+## Известные риски
+content
+## Открытые вопросы
+content
+## Почему такие границы
+content
+## Публичный интерфейс
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const unknownWarnings = result.warnings.filter((w) => w.includes("agent_summary") && w.includes("unknown frontmatter"));
+    expect(unknownWarnings.length).toBe(0);
+    await rm(root, { recursive: true, force: true });
+  });
+
   it("errors for decision without required sections → section errors present", async () => {
     const root = await createTempProject();
     const dir = path.join(root, ".ai/memory/decisions");
@@ -783,6 +843,8 @@ content
 ## Открытые вопросы
 content
 ## Почему такие границы
+content
+## Публичный интерфейс
 content
 `,
       "utf8",
@@ -901,6 +963,8 @@ content
 content
 ## Почему такие границы
 content
+## Публичный интерфейс
+content
 `,
         "utf8",
       );
@@ -984,6 +1048,8 @@ content
 content
 ## Почему такие границы
 content
+## Публичный интерфейс
+content
 `,
       "utf8",
     );
@@ -1049,6 +1115,8 @@ content
 content
 ## Почему такие границы
 content
+## Публичный интерфейс
+content
 `,
       "utf8",
     );
@@ -1095,5 +1163,464 @@ Here are the modules.
     const tierWarnings = result.warnings.filter((w) => w.toLowerCase().includes("production") && w.toLowerCase().includes("demo"));
     expect(tierWarnings.length).toBeGreaterThan(0);
     expect(tierWarnings[0]).toContain("tier split");
+  });
+
+  // ── Cross-link validation ──────────────────────────────────────────────
+
+  it("current module with empty cross-links and cross_link_attempts=0 → warning, no error", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai", "memory", "modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "empty-crosslinks.md"),
+      `---
+entity_type: module
+id: empty-crosslinks
+title: Empty Crosslinks
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+cross_link_attempts: 0
+has_broken_relations: false
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Empty Crosslinks
+
+## Ответственность
+content
+## Не входит в ответственность
+content
+## Текущее поведение
+content
+## Связанные сценарии
+content
+## Связанные решения
+content
+## Свидетельства из кода
+content
+## Свидетельства из тестов
+content
+## Известные риски
+content
+## Открытые вопросы
+content
+## Почему такие границы
+content
+## Публичный интерфейс
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const clWarnings = result.warnings.filter((w) => w.includes("empty-crosslinks") && w.toLowerCase().includes("empty cross-links"));
+    expect(clWarnings.length).toBeGreaterThan(0);
+    const clErrors = result.errors.filter((e) => e.includes("empty-crosslinks") && e.toLowerCase().includes("empty cross-links"));
+    expect(clErrors.length).toBe(0);
+  });
+
+  it("current scenario with empty related_modules and cross_link_attempts=1 → warning", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai", "memory", "scenarios");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "empty-scenario-links.md"),
+      `---
+entity_type: scenario
+id: empty-scenario-links
+title: Empty Scenario Links
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+cross_link_attempts: 1
+has_broken_relations: false
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Empty Scenario Links
+
+## Сценарий
+content
+## Входные данные
+content
+## Ожидаемый результат
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const clWarnings = result.warnings.filter((w) => w.includes("empty-scenario-links") && w.toLowerCase().includes("empty cross-links"));
+    expect(clWarnings.length).toBeGreaterThan(0);
+    expect(clWarnings[0]).toContain("scenario");
+  });
+
+  it("current decision with empty cross-links and cross_link_attempts=2 → error", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai", "memory", "decisions");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "empty-decision-links.md"),
+      `---
+entity_type: decision
+id: empty-decision-links
+title: Empty Decision Links
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - design_rationale
+cross_link_attempts: 2
+has_broken_relations: false
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Empty Decision Links
+
+## Суть решения
+content
+## Обоснование
+content
+## Влияние
+content
+## Риски
+content
+## Связанные модули
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const clErrors = result.errors.filter((e) => e.includes("empty-decision-links") && e.toLowerCase().includes("empty cross-links"));
+    expect(clErrors.length).toBeGreaterThan(0);
+    expect(clErrors[0]).toContain("atlas-analyst cross-linking pass");
+  });
+
+  it("current decision with cross_link_attempts=2 but has_broken_relations=true → no cross-link error", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai", "memory", "decisions");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "broken-relations-decision.md"),
+      `---
+entity_type: decision
+id: broken-relations-decision
+title: Broken Relations Decision
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - design_rationale
+cross_link_attempts: 2
+has_broken_relations: true
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Broken Relations Decision
+
+## Суть решения
+content
+## Обоснование
+content
+## Влияние
+content
+## Риски
+content
+## Связанные модули
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const clErrors = result.errors.filter((e) => e.includes("broken-relations-decision") && e.toLowerCase().includes("empty cross-links"));
+    expect(clErrors.length).toBe(0);
+  });
+
+  it("current module with populated related_scenarios → no cross-link warning", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai", "memory", "modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "populated-crosslinks.md"),
+      `---
+entity_type: module
+id: populated-crosslinks
+title: Populated Crosslinks
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+related_scenarios:
+  - a2a-agent-discovery
+cross_link_attempts: 0
+has_broken_relations: false
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Populated Crosslinks
+
+## Ответственность
+content
+## Не входит в ответственность
+content
+## Текущее поведение
+content
+## Связанные сценарии
+content
+## Связанные решения
+content
+## Свидетельства из кода
+content
+## Свидетельства из тестов
+content
+## Известные риски
+content
+## Открытые вопросы
+content
+## Почему такие границы
+content
+## Публичный интерфейс
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const clWarnings = result.warnings.filter((w) => w.includes("populated-crosslinks") && w.toLowerCase().includes("empty cross-links"));
+    expect(clWarnings.length).toBe(0);
+    const clErrors = result.errors.filter((e) => e.includes("populated-crosslinks") && e.toLowerCase().includes("empty cross-links"));
+    expect(clErrors.length).toBe(0);
+  });
+
+  it("non-current card (needs_review) with empty cross-links → no warning/error", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai", "memory", "modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "needs-review-no-links.md"),
+      `---
+entity_type: module
+id: needs-review-no-links
+title: Needs Review No Links
+status: needs_review
+authority: reviewed_memory
+evidence_level: heuristic_match
+stability: evolving
+source_confidence: medium
+last_reviewed: 2026-07-08
+review_required: true
+knowledge_types:
+  - current_behavior
+cross_link_attempts: 3
+has_broken_relations: false
+usage_policy:
+  can_answer_current_behavior: false
+  can_generate_code_from: false
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Needs Review No Links
+
+## Ответственность
+content
+## Не входит в ответственность
+content
+## Текущее поведение
+content
+## Связанные сценарии
+content
+## Связанные решения
+content
+## Свидетельства из кода
+content
+## Свидетельства из тестов
+content
+## Известные риски
+content
+## Открытые вопросы
+content
+## Почему такие границы
+content
+## Публичный интерфейс
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const clWarnings = result.warnings.filter((w) => w.includes("needs-review-no-links") && w.toLowerCase().includes("empty cross-links"));
+    expect(clWarnings.length).toBe(0);
+    const clErrors = result.errors.filter((e) => e.includes("needs-review-no-links") && e.toLowerCase().includes("empty cross-links"));
+    expect(clErrors.length).toBe(0);
+  });
+
+  it("current card without agent_summary → warning", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai", "memory", "modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "no-agent-summary.md"),
+      `---
+entity_type: module
+id: no-agent-summary
+title: No Agent Summary
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+related_scenarios:
+  - a2a-agent-discovery
+cross_link_attempts: 0
+has_broken_relations: false
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# No Agent Summary
+
+## Ответственность
+content
+## Не входит в ответственность
+content
+## Текущее поведение
+content
+## Связанные сценарии
+content
+## Связанные решения
+content
+## Свидетельства из кода
+content
+## Свидетельства из тестов
+content
+## Известные риски
+content
+## Открытые вопросы
+content
+## Почему такие границы
+content
+## Публичный интерфейс
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const asWarnings = result.warnings.filter((w) => w.includes("no-agent-summary") && w.includes("agent_summary"));
+    expect(asWarnings.length).toBeGreaterThan(0);
+    expect(asWarnings[0]).toContain("add 1-2 sentence summary for agent use");
+  });
+
+  it("current card with whitespace-only agent_summary → warning", async () => {
+    const root = await createTempProject();
+    const dir = path.join(root, ".ai", "memory", "modules");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "ws-agent-summary.md"),
+      `---
+entity_type: module
+id: ws-agent-summary
+title: Whitespace Agent Summary
+status: current
+authority: reviewed_memory
+evidence_level: reviewed_doc
+stability: stable
+source_confidence: high
+last_reviewed: 2026-07-08
+review_required: false
+knowledge_types:
+  - current_behavior
+agent_summary: "   "
+related_scenarios:
+  - a2a-agent-discovery
+cross_link_attempts: 0
+has_broken_relations: false
+usage_policy:
+  can_answer_current_behavior: true
+  can_generate_code_from: true
+  can_use_as_rationale: true
+  requires_code_check_before_change: true
+---
+
+# Whitespace Agent Summary
+
+## Ответственность
+content
+## Не входит в ответственность
+content
+## Текущее поведение
+content
+## Связанные сценарии
+content
+## Связанные решения
+content
+## Свидетельства из кода
+content
+## Свидетельства из тестов
+content
+## Известные риски
+content
+## Открытые вопросы
+content
+## Почему такие границы
+content
+## Публичный интерфейс
+content
+`,
+      "utf8",
+    );
+    const result = await validateMemory({ root });
+    const asWarnings = result.warnings.filter((w) => w.includes("ws-agent-summary") && w.includes("agent_summary"));
+    expect(asWarnings.length).toBeGreaterThan(0);
+    expect(asWarnings[0]).toContain("add 1-2 sentence summary for agent use");
   });
 });

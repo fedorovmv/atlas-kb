@@ -275,7 +275,32 @@ For the full memory bank after enrichment:
 
 If validate reports errors, fix them (broken relations, dangerous usage policies, spec_only+current_behavior). Re-run validate until clean.
 
-### Phase 4 — Summary
+### Phase 4 — Conflict detection pass
+
+**After all cards are promoted to `current` and validation is clean, run a final conflict-detection pass via atlas-reviewer.**
+
+Dispatch `atlas-reviewer` with the following instructions:
+
+- **Scope**: check pairs of `current` cards that share ≥1 `code_refs` path OR ≥1 `related_modules` entry.
+- **For each pair**, decide:
+  - **Duplicate** — two cards describe the same thing, or one fully subsumes the other.
+  - **Contradiction** — two cards make incompatible claims about the same code, module, or behavior.
+  - **Independent** — overlap is coincidental (e.g., both reference a shared utility) and neither duplicates nor contradicts the other.
+- **Write only confirmed conflicts** (duplicate or contradiction) to `.ai/memory/reconciliation/conflicts.md`.
+- **Do not block on speculative overlap.** If you cannot determine a conflict with high confidence, mark the pair as independent and move on.
+- **Do NOT modify card content** during this pass — only report findings to `conflicts.md`.
+
+**Completion gate for conflict pass:**
+
+```bash
+.ai/atlas/bin/atlas validate
+```
+
+Re-run validate after writing any conflicts. If `conflicts.md` contains unresolved entries (duplicate or contradiction marked as "unresolved"), bootstrap is BLOCKED.
+
+**Unresolved conflicts block completion.** Do NOT report "bootstrap complete" while `reconciliation/conflicts.md` has unresolved duplicate or contradiction entries. Either resolve the conflict (merge duplicates, reconcile contradictions) or document why it cannot be resolved in `reconciliation/open-questions.md`.
+
+### Phase 5 — Summary
 
 **Run completion gate first:**
 ```bash

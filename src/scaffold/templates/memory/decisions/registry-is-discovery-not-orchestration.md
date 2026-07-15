@@ -9,6 +9,7 @@ stability: stable
 source_confidence: high
 last_reviewed: 2026-07-08
 review_required: false
+agent_summary: ""
 knowledge_types:
   - design_rationale
   - current_behavior
@@ -79,3 +80,7 @@ usage_policy:
 ## Затронутые сценарии
 
 - a2a-agent-discovery
+
+## Примеры использования
+
+Требует ревью — приведите примеры использования этого решения в коде.
