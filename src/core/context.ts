@@ -168,7 +168,7 @@ export async function buildMemoryContext(query: string, options: RepoMemoryOptio
     ...selected.flatMap((card) => {
       const lines: string[] = [``, `### ${card.meta.title} — \`${card.relativePath}\``];
       if (card.meta.agent_summary?.trim()) {
-        lines.push(`Agent summary: ${card.meta.agent_summary}`);
+        lines.push(`Agent summary: ${card.meta.agent_summary.trim()}`);
       }
       lines.push(compactExcerpt(card.body));
       return lines;
