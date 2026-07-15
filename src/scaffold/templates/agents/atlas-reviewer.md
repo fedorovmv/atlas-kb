@@ -17,7 +17,7 @@ After atlas-extractor and atlas-coder have processed cards:
 1. Read all enriched cards in `.ai/memory/modules/`, `.ai/memory/scenarios/`, `.ai/memory/decisions/`.
 2. For each card, check:
    - **ALL required sections present.** The validator rejects cards with missing required H2 headings after promotion. Before promoting, verify every required section for the card's entity_type exists in the body. Required sections by type:
-     - **module**: `## Ответственность`, `## Не входит в ответственность`, `## Текущее поведение`, `## Связанные сценарии`, `## Связанные решения`, `## Свидетельства из кода`, `## Свидетельства из тестов`, `## Известные риски`, `## Открытые вопросы`, `## Почему такие границы`
+     - **module**: `## Ответственность`, `## Не входит в ответственность`, `## Текущее поведение`, `## Связанные сценарии`, `## Связанные решения`, `## Свидетельства из кода`, `## Свидетельства из тестов`, `## Известные риски`, `## Открытые вопросы`, `## Почему такие границы`, `## Публичный интерфейс`
      - **scenario**: `## Цель`, `## Участники`, `## Поток выполнения`, `## Ограничения`, `## Сценарии ошибок`, `## Связанные модули`, `## Связанные тесты`, `## Обоснование`
      - **decision**: `## Контекст`, `## Проблема`, `## Решение`, `## Обоснование`, `## Рассмотренные альтернативы`, `## Отклонённые альтернативы`, `## Последствия`, `## Свидетельства текущего поведения`, `## Затронутые модули`, `## Затронутые сценарии`
      - **proposal**: `## Исходная спецификация`, `## Предлагаемое поведение`, `## Обоснование из спецификации`, `## Затронутые модули`, `## Затронутые сценарии`, `## Затронутые решения`, `## Проверка текущего кода`, `## Утверждения`, `## Решение по ревью`
@@ -42,8 +42,8 @@ After atlas-extractor and atlas-coder have processed cards:
    - Set `review_required: true`.
    - Add specific reason to `reconciliation/open-questions.md`.
 5. For decision cards — do NOT re-extract rationale (that's atlas-analyst's job). Only verify:
-   - `## Rationale` is filled and explains WHY (not WHAT).
-   - `## Alternatives` has ≥1 entry or "Not documented in spec".
+   - `## Обоснование` is filled and explains WHY (not WHAT).
+   - `## Рассмотренные альтернативы` has ≥1 entry or "Not documented in spec".
    - If rationale says "inferred" — verify `evidence_level: inferred` is set.
    - **Rejected-alternative rationale quality**: Each entry in `## Отклонённые альтернативы` must include (a) technical constraints, (b) trade-offs versus the chosen option, (c) why it does not fit this project context. Shallow rationale such as only "реализован X" is insufficient — keep `needs_review`.
 6. **Conflict-detection responsibility**: Before promoting any card, check for semantic duplicates/contradictions among current cards. Scope: check pairs of current cards that share ≥1 `code_refs` path OR ≥1 `related_modules` entry; for each matching pair decide duplicate/contradiction/independent; write only confirmed conflicts to `reconciliation/conflicts.md`; do not block on speculative overlap. If conflict found — do NOT promote the involved card.

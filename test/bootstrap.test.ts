@@ -96,6 +96,14 @@ describe("bootstrap", () => {
     const decisionCard = result.written.find((p) => p.includes("decisions/"));
     expect(decisionCard).toBeDefined();
 
+    // Regression (C1): bootstrapped decision cards must be needs_review with
+    // review_required: true — placeholder content must NOT be promoted to current.
+    const cards = await loadMemoryCards({ root: dest });
+    const decisionMeta = cards.find((c) => c.meta.entity_type === "decision")?.meta;
+    expect(decisionMeta).toBeDefined();
+    expect(decisionMeta!.status).toBe("needs_review");
+    expect(decisionMeta!.review_required).toBe(true);
+
     await rm(dest, { recursive: true, force: true });
   });
 

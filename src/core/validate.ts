@@ -17,7 +17,7 @@ import { SourceCoverageSchema } from "../schemas/sourceCoverage.js";
 import { validateSourceCoverage } from "./sourceCoverage.js";
 import { readFileIfExists } from "./utils.js";
 import { checkDispatchAdvisory } from "./dispatch.js";
-import { areCrossLinksEmpty } from "../commands/ls.js";
+import { areCrossLinksEmpty } from "./relations.js";
 
 // Known frontmatter keys — anything else is likely a typo
 const KNOWN_FRONTMATTER_KEYS = new Set([

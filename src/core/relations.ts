@@ -39,3 +39,21 @@ export function getRelatedCards(cards: MemoryCard[], id: string) {
   const reverse = getReverseRelated(cards, id);
   return { card, direct, reverse };
 }
+
+export function areCrossLinksEmpty(meta: { entity_type: string; related_modules?: unknown[]; related_scenarios?: unknown[]; related_decisions?: unknown[]; affects_modules?: unknown[]; affects_scenarios?: unknown[] }): boolean {
+  // Only check cross-links for card types that should have them
+  if (meta.entity_type === "decision" || meta.entity_type === "proposal") {
+    const related = (meta.related_modules ?? []) as unknown[];
+    const affects = (meta.affects_modules ?? []) as unknown[];
+    if (related.length === 0 && affects.length === 0) return true;
+  }
+  if (meta.entity_type === "module") {
+    const related = (meta.related_scenarios ?? []) as unknown[];
+    if (related.length === 0) return true;
+  }
+  if (meta.entity_type === "scenario") {
+    const related = (meta.related_modules ?? []) as unknown[];
+    if (related.length === 0) return true;
+  }
+  return false;
+}
