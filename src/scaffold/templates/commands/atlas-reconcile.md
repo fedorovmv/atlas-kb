@@ -2,7 +2,7 @@
 description: Reconcile memory bank with code, tests and docs
 ---
 
-You are the orchestrator. Use the atlas-reconcile skill.
+You are the orchestrator. Use the atlas-reconcile skill. **Load it via the `skill` tool first.**
 
 Goal: reconcile `.ai/memory` with current code, tests, contracts and docs.
 

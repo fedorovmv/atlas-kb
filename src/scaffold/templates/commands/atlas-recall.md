@@ -3,7 +3,7 @@ description: Build a compact memory context pack for a task
 agent: atlas-coder
 ---
 
-Use the atlas-bank skill.
+Use the atlas-bank skill. **Load it via the `skill` tool first.**
 
 Task:
 $ARGUMENTS

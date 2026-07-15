@@ -2,7 +2,7 @@
 description: One-command LLM-assisted memory bank population — bootstrap + agent enrichment
 ---
 
-Use the atlas-bootstrap skill.
+**MANDATORY: Load the `atlas-bootstrap` skill using the `skill` tool BEFORE doing anything else.** Do NOT proceed without loading it — the skill contains the full pipeline you must follow. Without it you have only this short command file and will miss critical instructions.
 
 You are the orchestrator. Run the full pipeline yourself, dispatching subagents for each role. This is NOT a question — the user wants the FULL pipeline. Do NOT ask "Would you like me to proceed?" — just do it.
 

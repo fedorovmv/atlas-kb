@@ -2,7 +2,7 @@
 description: Process a new spec into proposal/rationale/conflict memory updates
 ---
 
-You are the orchestrator. Use the atlas-ingest skill.
+You are the orchestrator. Use the atlas-ingest skill. **Load it via the `skill` tool first.**
 
 Spec path:
 $ARGUMENTS
